@@ -258,22 +258,40 @@ async function notifyCurrentTabToSync(sessionId) {
       const tabs = await chrome.tabs.query({});
       for (const tab of tabs) {
         if (tab && tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+          if (chrome.scripting && chrome.scripting.executeScript) {
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id, allFrames: true },
+              files: ['content.js']
+            }).catch(() => {});
+          }
           chrome.tabs.sendMessage(tab.id, {
             action: 'ACTIVATE_AUTOSYNC',
             sessionId,
             serverUrl: activeServerUrl
-          }).catch(() => {
-            if (chrome.scripting && chrome.scripting.executeScript) {
-              chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                files: ['content.js']
-              }).catch(() => {});
-            }
-          });
+          }).catch(() => {});
         }
       }
     }
   } catch (e) {}
+}
+
+function broadcastAttendeeToTabs(student) {
+  if (!student) return;
+  const sId = student.studentId || student.student_id;
+  const sName = student.fullName || student.student_name;
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+    chrome.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        if (tab && tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: 'RECORD_ATTENDEE',
+            studentId: sId,
+            fullName: sName
+          }).catch(() => {});
+        }
+      }
+    });
+  }
 }
 
 function connectDualSync(sessionId) {
@@ -333,6 +351,11 @@ function updateLiveAttendee(student, count) {
 
   const ticker = document.getElementById('liveTickerText');
   if (ticker && student) {
-    ticker.textContent = `تم رصد حضور: ${student.studentId} (${student.fullName})`;
+    const text = `تم رصد حضور: ${student.studentId || student.student_id} (${student.fullName || student.student_name})`;
+    ticker.textContent = text;
+    ticker.title = text;
   }
+
+  broadcastAttendeeToTabs(student);
 }
+

@@ -46,22 +46,25 @@ html, body {
   border: var(--neo-border);
   box-shadow: var(--neo-shadow);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  gap: 6px;
 }
 
 .brand-cluster {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
 .matany-logo-wrap {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
   overflow: hidden;
   display: flex;
@@ -81,16 +84,19 @@ html, body {
 .brand-titles {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .brand-headline {
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .company-name {
-  font-size: 0.92rem;
+  font-size: 0.90rem;
   font-weight: 900;
   color: var(--neo-black);
   letter-spacing: -0.2px;
@@ -107,22 +113,27 @@ html, body {
 }
 
 .university-sub {
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   font-weight: 700;
   color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cloud-status-pill {
   background: var(--neo-white);
   border: 1.5px solid var(--neo-black);
   box-shadow: 1.5px 1.5px 0px var(--neo-black);
-  padding: 3px 8px;
+  padding: 3px 6px;
   border-radius: 20px;
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .status-indicator-dot {
@@ -131,6 +142,7 @@ html, body {
   background: var(--emerald-green);
   border-radius: 50%;
   border: 1px solid var(--neo-black);
+  flex-shrink: 0;
 }
 
 /* MAIN BODY */
@@ -463,6 +475,7 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-height: 28px;
 }
 
 .strip-tag {
@@ -474,6 +487,9 @@ html, body {
   color: var(--neo-black);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 /* FOOTER */

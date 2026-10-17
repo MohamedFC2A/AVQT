@@ -5,6 +5,20 @@
   background-color: #ECFDF5 !important;
 }
 
+.avqr-checkbox-checked {
+  outline: 3px solid #059669 !important;
+  box-shadow: 0 0 0 2px #A7F3D0 !important;
+}
+
+.avqr-label-checked {
+  background-color: #ECFDF5 !important;
+  color: #065F46 !important;
+  font-weight: 800 !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  outline: 1.5px solid #059669 !important;
+}
+
 .avqr-badge {
   background: #059669 !important;
   color: #FFFFFF !important;
