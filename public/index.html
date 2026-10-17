@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#B91C1C">
-  <title>AVQR - بوابة الطالب الذكية | Matany Group x FUE</title>
+  <title>AVQR - بوابة الطالب | Matany Group x FUE</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- LIQUID GLASS TOPBAR -->
+  <!-- NEUBRUTALISM TOPBAR -->
   <header class="smart-topbar">
     <div class="topbar-container">
       <div class="topbar-brand">
@@ -58,34 +58,34 @@
         <div class="device-lock-banner">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           <div class="device-lock-text">
-            <strong>نظام حماية النزاهة الأكاديمية (Device Lock):</strong>
+            <strong>نظام النزاهة الأكاديمية (Device Lock):</strong>
             <span>سيتم قفل هذا الجهاز حصرياً برقمك الجامعي، ويستحيل الدخول بأي حساب آخر من نفس الجهاز.</span>
           </div>
         </div>
 
         <div class="auth-form-wrap">
-          <div class="form-group-glass">
-            <label class="glass-label">الرقم الجامعي (ID):</label>
-            <input type="text" id="authStudentIdInput" class="glass-input code-font" placeholder="20264712" value="20264712" autocomplete="off">
+          <div class="form-group-neo">
+            <label class="neo-label">الرقم الجامعي (ID):</label>
+            <input type="text" id="authStudentIdInput" class="neo-input code-font" placeholder="20264712" value="20264712" autocomplete="off">
           </div>
 
-          <div class="form-group-glass">
-            <label class="glass-label">الاسم الرباعي الرسمي:</label>
-            <input type="text" id="authFullNameInput" class="glass-input" placeholder="Mohamed Ahmed Mohamed Matany Ahmed" value="Mohamed Ahmed Mohamed Matany Ahmed">
+          <div class="form-group-neo">
+            <label class="neo-label">الاسم الرباعي الرسمي:</label>
+            <input type="text" id="authFullNameInput" class="neo-input" placeholder="Mohamed Ahmed Mohamed Matany Ahmed" value="Mohamed Ahmed Mohamed Matany Ahmed">
           </div>
 
-          <div class="form-group-glass">
-            <label class="glass-label">كلمة المرور (اختيارية للطوارئ):</label>
-            <input type="password" id="authPasswordInput" class="glass-input" placeholder="كلمة سر للاستعادة">
+          <div class="form-group-neo">
+            <label class="neo-label">كلمة المرور (اختيارية للطوارئ):</label>
+            <input type="password" id="authPasswordInput" class="neo-input" placeholder="كلمة سر للاستعادة">
           </div>
 
           <div class="btn-stack mt-2">
-            <button id="btnAuthSubmit" class="glass-btn btn-primary-red btn-full btn-large">
+            <button id="btnAuthSubmit" class="neo-btn btn-primary-red btn-full btn-large">
               تسجيل وتوثيق الجهاز الجامعي
             </button>
-            <button id="btnAuthBiometric" class="glass-btn btn-emerald btn-full">
+            <button id="btnAuthBiometric" class="neo-btn btn-emerald btn-full">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.71c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"></path></svg>
-              الدخول السريع بالبصمة البيومترية
+              الدخول بالبصمة البيومترية / Face ID
             </button>
           </div>
         </div>
@@ -95,10 +95,10 @@
     <!-- PAGE 1: ATTENDANCE (DEFAULT WHEN AUTHENTICATED) -->
     <section id="viewAttendance" class="app-view">
       <!-- Live Lecture Banner -->
-      <div class="glass-card lecture-hero-card">
+      <div class="neo-card lecture-hero-card">
         <div class="lecture-hero-header">
           <span class="live-tag">
-            <span class="live-dot"></span>
+            <span class="live-dot-solid"></span>
             محاضرة جارية الآن
           </span>
           <span class="session-id-pill" id="heroSessionId">AVQR-2026</span>
@@ -121,25 +121,25 @@
       </div>
 
       <!-- Attendance Actions Card -->
-      <div class="glass-card action-card">
+      <div class="neo-card action-card">
         <div class="card-head-row">
           <h3 class="card-section-title">تسجيل الحضور في المحاضرة</h3>
           <span id="attendanceBadge" class="status-pill pill-yellow">بانتظار التسجيل</span>
         </div>
 
-        <!-- 8-Digit Manual Entry with 5-Second Notice -->
+        <!-- 8-Digit Manual Entry with Clean Academic Wording -->
         <div class="code-entry-box">
           <div class="code-head-wrap">
             <label class="input-label">الرمز المباشر المكون من 8 أرقام:</label>
-            <span class="time-limit-badge">صلاحية 5 ثوانٍ فقط</span>
+            <span class="time-limit-badge">تحديث تلقائي</span>
           </div>
           <div class="code-input-row">
-            <input type="text" id="manualCodeInput" class="glass-input code-digit-input" maxlength="9" placeholder="8492-3105" autocomplete="off">
-            <button id="btnSubmitManualCode" class="glass-btn btn-primary-red">
+            <input type="text" id="manualCodeInput" class="neo-input code-digit-input" maxlength="9" placeholder="8492-3105" autocomplete="off">
+            <button id="btnSubmitManualCode" class="neo-btn btn-primary-red">
               تأكيد الحضور
             </button>
           </div>
-          <p class="input-hint">الرمز يتجدد تلقائياً كل 5 ثوانٍ لمنع تصوير الشاشة وتمريرها في الواتساب</p>
+          <p class="input-hint">الرمز يتجدد تلقائياً لضمان رصد الحضور اللحظي بالقاعة</p>
         </div>
 
         <div class="divider-or">
@@ -147,13 +147,13 @@
         </div>
 
         <!-- Camera Scanner Button -->
-        <button id="btnOpenScanner" class="glass-btn btn-emerald btn-full btn-large">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        <button id="btnOpenScanner" class="neo-btn btn-emerald btn-full btn-large">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
           مسح كود QR المباشر بالكاميرا
         </button>
 
         <!-- Quick One-Click Attendance Demo -->
-        <button id="btnQuickDemoPass" class="glass-btn btn-subtle-dark btn-full mt-2">
+        <button id="btnQuickDemoPass" class="neo-btn btn-subtle-dark btn-full mt-2">
           تسجيل فوري مباشر (Demo Pass 20264712)
         </button>
       </div>
@@ -161,7 +161,7 @@
       <!-- SUCCESS CONFIRMATION BOX (Hidden until attended) -->
       <div id="attendanceSuccessBox" class="attendance-success-card hidden">
         <div class="success-icon-wrap">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         <div class="success-content">
           <h3 class="success-heading">تم إثبات الحضور بنجاح</h3>
@@ -172,7 +172,7 @@
             <span id="successTimeText">الساعة 10:00 صباحاً</span>
           </div>
           <div class="success-portal-notice">
-            تم تفعيل علامة الصح تلقائياً في كشف الدكتور بنسبة خطأ 0.0%
+            تم تفعيل علامة الصح تلقائياً في كشف الدكتور بنسبة دقة 100%
           </div>
         </div>
       </div>
@@ -185,7 +185,7 @@
         <p class="view-desc">الهوية الجامعية الرسمية المعتمدة لجامعة FUE ومجموعة Matany</p>
       </div>
 
-      <!-- FUE DIGITAL STUDENT ID CARD (LIQUID GLASS CRIMSON & WHITE) -->
+      <!-- FUE DIGITAL STUDENT ID CARD (NEUBRUTALISM CRIMSON & WHITE) -->
       <div class="fue-card-wrapper">
         <div class="fue-id-card">
           <div class="id-card-topbar">
@@ -202,7 +202,7 @@
           <div class="id-card-body">
             <div class="id-photo-area">
               <div class="student-avatar-frame">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               </div>
               <span class="status-pill pill-green font-xs mt-1">طالب منتظم</span>
             </div>
@@ -238,7 +238,7 @@
           <div class="id-card-footer">
             <div class="id-barcode-mock">||| | |||| | ||| |||| | ||| ||||</div>
             <div class="id-verified-seal">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
               <span>FUE VERIFIED 2026</span>
             </div>
           </div>
@@ -246,15 +246,15 @@
       </div>
 
       <!-- Card Management Card -->
-      <div class="glass-card mt-3">
+      <div class="neo-card mt-3">
         <h3 class="card-section-title">إدارة الهوية الجامعية الرسمية</h3>
         <p class="card-desc">تم توثيق بيانات الكارنيه والاسم الرباعي من الرابط الرسمي لجامعة المستقبل.</p>
         <div class="btn-row">
-          <button id="btnFetchCardQr" class="glass-btn btn-primary-red" style="flex: 1.2;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+          <button id="btnFetchCardQr" class="neo-btn btn-primary-red" style="flex: 1.2;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line><line x1="9" y1="15" x2="15"></line></svg>
             جلب كود QR الكارنيه
           </button>
-          <button id="btnSyncCardCloud" class="glass-btn btn-subtle-dark" style="flex: 1;">
+          <button id="btnSyncCardCloud" class="neo-btn btn-subtle-dark" style="flex: 1;">
             مزامنة الهوية السحابية
           </button>
         </div>
@@ -270,17 +270,17 @@
 
       <!-- Stats Grid -->
       <div class="stats-metric-grid">
-        <div class="metric-card bg-glass-crimson">
+        <div class="metric-card bg-neo-crimson">
           <span class="metric-label">نسبة الحضور</span>
           <strong class="metric-num">100%</strong>
           <span class="metric-sub">ممتاز • التزام كامل</span>
         </div>
-        <div class="metric-card bg-glass-white">
+        <div class="metric-card bg-neo-white">
           <span class="metric-label">المحاضرات المسجلة</span>
           <strong class="metric-num text-crimson">12 / 12</strong>
-          <span class="metric-sub">رصد مؤكد بنسبة خطأ 0%</span>
+          <span class="metric-sub">رصد مؤكد بنسبة 100%</span>
         </div>
-        <div class="metric-card bg-glass-white">
+        <div class="metric-card bg-neo-white">
           <span class="metric-label">مرات الغياب</span>
           <strong class="metric-num">0</strong>
           <span class="metric-sub">0.0% نسبة غياب</span>
@@ -288,7 +288,7 @@
       </div>
 
       <!-- Recent Attendance List -->
-      <div class="glass-card mt-3">
+      <div class="neo-card mt-3">
         <h3 class="card-section-title">المحاضرات الأخيرة المرصودة:</h3>
         <div class="timeline-list">
           <div class="timeline-item">
@@ -331,44 +331,44 @@
     <section id="viewSecurity" class="app-view">
       <div class="view-header">
         <h2 class="view-title">الأمان والبصمة البيومترية</h2>
-        <p class="view-desc">حماية الحساب وقفل الجهاز البيومتري المعتمد</p>
+        <p class="view-desc">حماية الحساب بالبصمة البيومترية وقفل الجهاز الأكاديمي</p>
       </div>
 
       <!-- Biometric Card -->
-      <div class="glass-card">
+      <div class="neo-card">
         <div class="card-head-row">
           <div class="card-head-title-wrap">
-            <h3 class="card-section-title">بصمة الإصبع و WebAuthn</h3>
-            <p class="card-desc">تسجيل دخول فوري بالبصمة البيومترية ومفتاح الأمان</p>
+            <h3 class="card-section-title">بصمة الإصبع و Face ID</h3>
+            <p class="card-desc">تسجيل دخول فوري بالمصادقة البيومترية الحقيقية (Touch ID / Face ID / Windows Hello)</p>
           </div>
           <span id="bioStatusPill" class="status-pill pill-green">البصمة مفعلة</span>
         </div>
 
         <div class="bio-visual-box">
           <div class="bio-icon-large">
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.71c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"></path>
             </svg>
           </div>
           <div class="bio-visual-info">
-            <strong>البصمة مفعلة ومعتمدة سحابياً</strong>
-            <span>تشفير FIDO2 معتمد ومقترن بالسحابة الأكاديمية لـ FUE</span>
+            <strong id="bioVisualTitle">المصادقة البيومترية المعتمدة</strong>
+            <span id="bioVisualSub">اضغط على تسجيل البصمة لمطالبة جهازك بمسح بصمة الإصبع أو بصمة الوجه</span>
           </div>
         </div>
 
         <div class="btn-row mt-3">
-          <button id="btnBiometricLogin" class="glass-btn btn-emerald" style="flex: 1.2;">
-            تسجيل الدخول بالبصمة
+          <button id="btnBiometricLogin" class="neo-btn btn-emerald" style="flex: 1.2;">
+            دخول ببصمة الإصبع / Face ID
           </button>
-          <button id="btnEnrollBiometric" class="glass-btn btn-primary-red" style="flex: 1;">
-            تحديث البصمة
+          <button id="btnEnrollBiometric" class="neo-btn btn-primary-red" style="flex: 1;">
+            تسجيل بصمة جديدة
           </button>
         </div>
       </div>
 
       <!-- Device Lock Status Card -->
-      <div class="glass-card mt-3">
-        <h3 class="card-section-title">حالة اقتران وقفل الجهاز (Device Lock)</h3>
+      <div class="neo-card mt-3">
+        <h3 class="card-section-title">حالة اقتران الجهاز (Device Lock)</h3>
         <div class="device-binding-info-box">
           <div class="device-bind-row">
             <span class="bind-lbl">حالة القفل:</span>
@@ -386,33 +386,33 @@
     </section>
   </main>
 
-  <!-- LIQUID GLASS SMART BOTTOM DOCK BAR (HIDDEN WHEN ON AUTH GATE) -->
+  <!-- NEUBRUTALISM SMART BOTTOM DOCK (HIDDEN WHEN ON AUTH GATE) -->
   <nav class="smart-bottom-dock" id="smartBottomDock">
     <div class="dock-container">
       <button class="dock-item active" data-view="viewAttendance">
         <div class="dock-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
         </div>
         <span class="dock-label">الحضور</span>
       </button>
 
       <button class="dock-item" data-view="viewCard">
         <div class="dock-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><line x1="15" y1="8" x2="17" y2="8"></line><line x1="15" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><line x1="15" y1="8" x2="17" y2="8"></line><line x1="15" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>
         </div>
         <span class="dock-label">الكارنيه</span>
       </button>
 
       <button class="dock-item" data-view="viewHistory">
         <div class="dock-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         </div>
         <span class="dock-label">السجل</span>
       </button>
 
       <button class="dock-item" data-view="viewSecurity">
         <div class="dock-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         </div>
         <span class="dock-label">الأمان</span>
       </button>
@@ -423,16 +423,15 @@
   <div id="cameraModal" class="camera-modal-overlay hidden">
     <div class="camera-modal-card">
       <div class="camera-modal-header">
-        <strong>مسح كود الحضور المباشر (صلاحية 5 ثوانٍ)</strong>
+        <strong>مسح كود الحضور المباشر</strong>
         <button id="btnCloseCameraModal" class="btn-icon-close">X</button>
       </div>
       <div class="camera-viewport-frame">
         <video id="scannerVideo" class="scanner-video" playsinline></video>
-        <div class="camera-laser-scan"></div>
         <div class="camera-crosshairs"></div>
       </div>
       <p class="camera-modal-hint">وجه الكاميرا نحو كود QR المعروض في شاشة القاعة</p>
-      <button id="btnCancelScan" class="glass-btn btn-primary-red btn-full mt-2">إلغاء المسح</button>
+      <button id="btnCancelScan" class="neo-btn btn-primary-red btn-full mt-2">إلغاء المسح</button>
     </div>
   </div>
 
@@ -468,7 +467,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button id="btnCloseHelpBtn" class="glass-btn btn-primary-red btn-full">إغلاق</button>
+        <button id="btnCloseHelpBtn" class="neo-btn btn-primary-red btn-full">إغلاق</button>
       </div>
     </div>
   </div>

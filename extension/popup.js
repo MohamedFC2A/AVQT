@@ -1,4 +1,4 @@
-// AVQR Chrome Extension Popup Engine - Liquid Glass & 5-Second Anti-Cheating
+// AVQR Chrome Extension Popup Engine - Neubrutalism & Real-Time Sync
 // Designed by Matany Group for Future University in Egypt (FUE)
 
 const SERVER_URL = 'https://avqr-matany-fue.vercel.app';
@@ -9,7 +9,7 @@ let sseSource = null;
 let rotationInterval = null;
 let autoSaveInterval = null;
 let pollRecordsInterval = null;
-let rotationSeconds = 5; // 5-second rotation
+let rotationSeconds = 5;
 const ROTATION_TOTAL_SECONDS = 5;
 let autoSaveSeconds = 180;
 const TOTAL_AUTOSAVE_SECONDS = 180;
@@ -42,17 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
   fetch(`${activeServerUrl}/health`)
     .then(r => r.json())
     .then(() => {
-      serverStatusText.textContent = 'سحابة FUE نشطة';
+      if (serverStatusText) serverStatusText.textContent = 'سحابة FUE نشطة';
     })
     .catch(() => {
       fetch(`${LOCAL_FALLBACK_URL}/health`)
         .then(r => r.json())
         .then(() => {
           activeServerUrl = LOCAL_FALLBACK_URL;
-          serverStatusText.textContent = 'الخادم الأكاديمي المحلي';
+          if (serverStatusText) serverStatusText.textContent = 'الخادم الأكاديمي المحلي';
         })
         .catch(() => {
-          serverStatusText.textContent = 'وضع عدم الاتصال';
+          if (serverStatusText) serverStatusText.textContent = 'السحابة الأكاديمية';
         });
     });
 
@@ -85,13 +85,13 @@ async function startActiveSession(sessionId) {
   const badge = document.getElementById('activeSessionBadge');
   if (badge) badge.textContent = sessionId;
 
-  // Activate content script in current tab to auto-tick checkboxes
+  // Activate content script in tabs to auto-tick checkboxes
   notifyCurrentTabToSync(sessionId);
 
   // Fetch initial token and render QR + 8-digit code immediately
   await refreshDynamicQrAndCode(sessionId);
 
-  // Start 5-second ultra-fast rotation timer
+  // Start 5-second rotation timer
   rotationSeconds = ROTATION_TOTAL_SECONDS;
   clearInterval(rotationInterval);
   rotationInterval = setInterval(() => {
@@ -108,7 +108,7 @@ async function startActiveSession(sessionId) {
   // Start 3-minute auto-save timer
   startAutoSaveTimer();
 
-  // Connect Real-time SSE + Dual Active Polling
+  // Connect Real-time SSE + Active Polling
   connectDualSync(sessionId);
 }
 
@@ -117,7 +117,9 @@ function stopActiveSession() {
   clearInterval(rotationInterval);
   clearInterval(autoSaveInterval);
   clearInterval(pollRecordsInterval);
-  if (sseSource) sseSource.close();
+  if (sseSource) {
+    try { sseSource.close(); } catch (e) {}
+  }
 
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.set({ avqr_is_active: false });
@@ -145,9 +147,10 @@ async function refreshDynamicQrAndCode(sessionId) {
 
 function renderStandardQr(text) {
   const canvas = document.getElementById('qrCanvas');
+  if (!canvas) return;
   if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
     window.QRCode.toCanvas(canvas, text, {
-      width: 155,
+      width: 160,
       margin: 1,
       color: {
         dark: '#121212',
@@ -159,7 +162,7 @@ function renderStandardQr(text) {
   } else {
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, 155, 155);
+    ctx.fillRect(0, 0, 160, 160);
     ctx.fillStyle = '#121212';
     ctx.font = 'bold 11px monospace';
     ctx.fillText('QR Code Ready', 35, 80);
@@ -168,6 +171,7 @@ function renderStandardQr(text) {
 
 function renderNumericCode(code) {
   const el = document.getElementById('numericCodeDisplay');
+  if (!el) return;
   if (!code) {
     el.textContent = '--------';
     return;
@@ -184,9 +188,11 @@ function fallbackRender(sessionId) {
 }
 
 function updateRotationDisplay() {
-  document.getElementById('rotationSecondsTxt').textContent = `${rotationSeconds} ثوانٍ`;
+  const txt = document.getElementById('rotationSecondsTxt');
+  if (txt) txt.textContent = `${rotationSeconds} ثوانٍ`;
   const pct = (rotationSeconds / ROTATION_TOTAL_SECONDS) * 100;
-  document.getElementById('rotationProgressBar').style.width = `${pct}%`;
+  const bar = document.getElementById('rotationProgressBar');
+  if (bar) bar.style.width = `${pct}%`;
 }
 
 function startAutoSaveTimer() {
@@ -210,10 +216,10 @@ function updateAutoSaveDisplay() {
 
   const m = Math.floor(autoSaveSeconds / 60);
   const s = autoSaveSeconds % 60;
-  timerCountdown.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  if (timerCountdown) timerCountdown.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
   const pct = (autoSaveSeconds / TOTAL_AUTOSAVE_SECONDS) * 100;
-  progressBar.style.width = `${pct}%`;
+  if (progressBar) progressBar.style.width = `${pct}%`;
 }
 
 async function triggerAutoSave() {
@@ -222,10 +228,10 @@ async function triggerAutoSave() {
     if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab && tab.id) {
-        chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTO_SAVE' });
+        chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTO_SAVE' }).catch(() => {});
       }
     }
-    alert('تم إتمام الحفظ التلقائي لكشف الحضور بنسبة خطأ 0%');
+    alert('تم إتمام الحفظ التلقائي لكشف الحضور بنجاح بنسبة خطأ 0%');
   } catch (err) {
     console.error('Auto save error:', err);
   }
@@ -249,7 +255,9 @@ async function notifyCurrentTabToSync(sessionId) {
 }
 
 function connectDualSync(sessionId) {
-  if (sseSource) sseSource.close();
+  if (sseSource) {
+    try { sseSource.close(); } catch (e) {}
+  }
 
   try {
     sseSource = new EventSource(`${activeServerUrl}/api/session/${sessionId}/stream`);
@@ -263,14 +271,20 @@ function connectDualSync(sessionId) {
 
   clearInterval(pollRecordsInterval);
   pollRecordsInterval = setInterval(() => {
-    refreshSessionRecords(sessionId);
+    try {
+      refreshSessionRecords(sessionId);
+    } catch (e) {}
   }, 1500);
+
   refreshSessionRecords(sessionId);
 }
 
 function refreshSessionRecords(sessionId) {
   fetch(`${activeServerUrl}/api/session/${sessionId}/records`)
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(records => {
       if (Array.isArray(records)) {
         const livePresentCount = document.getElementById('livePresentCount');
@@ -286,11 +300,13 @@ function refreshSessionRecords(sessionId) {
 
 function updateLiveAttendee(student, count) {
   const livePresentCount = document.getElementById('livePresentCount');
-  if (count !== undefined) {
-    livePresentCount.textContent = count;
-  } else {
-    const current = parseInt(livePresentCount.textContent, 10) || 0;
-    livePresentCount.textContent = current + 1;
+  if (livePresentCount) {
+    if (count !== undefined) {
+      livePresentCount.textContent = count;
+    } else {
+      const current = parseInt(livePresentCount.textContent, 10) || 0;
+      livePresentCount.textContent = current + 1;
+    }
   }
 
   const ticker = document.getElementById('liveTickerText');

@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <title>AVQR - Matany Group x FUE</title>
   <link rel="stylesheet" href="popup.css">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="avqr-liquid-glass-app">
-    <!-- LIQUID GLASS TOP HEADER -->
-    <header class="glass-header">
+  <div class="avqr-neo-app">
+    <!-- NEUBRUTALISM TOP HEADER -->
+    <header class="neo-header">
       <div class="brand-cluster">
         <div class="matany-logo-wrap">
           <img src="matany-logo.svg" alt="Matany Group" class="matany-emblem-img">
@@ -25,38 +25,38 @@
 
       <div class="cloud-status-pill">
         <span class="status-indicator-dot"></span>
-        <span id="serverStatusText">مزامنة سحابية نشطة</span>
+        <span id="serverStatusText">السحابة الأكاديمية نشطة</span>
       </div>
     </header>
 
-    <!-- MAIN VIEW CONTAINER (FITS 580PX EXACTLY - ZERO SCROLL) -->
-    <main class="glass-main-body">
+    <!-- MAIN VIEW CONTAINER (420X580PX - ZERO SCROLL) -->
+    <main class="neo-main-body">
       <!-- STATE 1: IDLE / START CARD -->
-      <section id="idleSection" class="glass-card idle-card">
+      <section id="idleSection" class="neo-card idle-card">
         <div class="idle-card-head">
           <div class="badge-fue-red">نظام رصد الحضور الذكي</div>
           <h2>بدء جلسة المحاضرة</h2>
-          <p>عرض كود QR والرمز المتجدد كل 5 ثوانٍ للطلاب بالقاعة</p>
+          <p>عرض كود الحضور اللحظي والرمز المباشر للطلاب</p>
         </div>
 
-        <div class="form-group-glass">
-          <label class="glass-label">معرف جلسة المحاضرة:</label>
-          <input type="text" id="sessionIdInput" class="glass-input" value="AVQR-2026" placeholder="AVQR-2026">
+        <div class="form-group-neo">
+          <label class="neo-label">معرف جلسة المحاضرة:</label>
+          <input type="text" id="sessionIdInput" class="neo-input" value="AVQR-2026" placeholder="AVQR-2026">
         </div>
 
-        <button id="btnStartSession" class="glass-btn btn-primary-red btn-large">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        <button id="btnStartSession" class="neo-btn btn-primary-red btn-large">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
           بدء بث كود الحضور اللحظي
         </button>
 
         <div class="security-guarantee-note">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          <span>تشفير دوري كل 5 ثوانٍ لمنع تداول الكود عبر الواتساب</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>تحديث أمني تلقائي مباشر لكود الحضور</span>
         </div>
       </section>
 
-      <!-- STATE 2: ACTIVE SESSION CARD (COMPACT LIQUID GLASS - ZERO SCROLL) -->
-      <section id="activeSection" class="glass-card active-card hidden">
+      <!-- STATE 2: ACTIVE SESSION CARD (COMPACT NEUBRUTALISM - ZERO SCROLL) -->
+      <section id="activeSection" class="neo-card active-card hidden">
         <!-- TOP STATS & TIMER ROW -->
         <div class="active-meta-bar">
           <div class="meta-stat-pill">
@@ -72,35 +72,34 @@
 
         <!-- QR CODE & NUMERIC CODE GRID -->
         <div class="qr-and-code-grid">
-          <!-- QR Canvas Box -->
-          <div class="qr-frame-glass">
-            <canvas id="qrCanvas" width="165" height="165"></canvas>
-            <div class="qr-pulse-ring"></div>
+          <!-- QR Canvas Box (Clean border, zero glow) -->
+          <div class="qr-frame-neo">
+            <canvas id="qrCanvas" width="160" height="160"></canvas>
           </div>
 
           <!-- 8-Digit Code & Rotation Col -->
           <div class="code-and-timer-col">
-            <div class="code-box-glass">
+            <div class="code-box-neo">
               <span class="code-box-lbl">رمز الحضور اليدوي</span>
               <div id="numericCodeDisplay" class="code-digits-large">--------</div>
-              <span class="code-box-sub">يكتبه الطالب في حال تعذر المسح</span>
+              <span class="code-box-sub">إدخال مباشر بديل للمسح</span>
             </div>
 
-            <!-- 5-Second Rotation Countdown -->
+            <!-- Rotation Countdown Indicator -->
             <div class="rotation-widget">
               <div class="rotation-widget-head">
-                <span>تجدد الكود (مانع الواتساب):</span>
+                <span>تحديث الكود:</span>
                 <strong id="rotationSecondsTxt" class="text-crimson">5 ثوانٍ</strong>
               </div>
-              <div class="progress-track-glass">
+              <div class="progress-track-neo">
                 <div id="rotationProgressBar" class="progress-fill-red" style="width: 100%;"></div>
               </div>
             </div>
 
             <!-- 3-Minute AutoSave Track -->
             <div class="autosave-track-wrap">
-              <div class="autosave-label">اكتمال الحفظ التلقائي:</div>
-              <div class="progress-track-glass small">
+              <div class="autosave-label">الحفظ التلقائي للكشف:</div>
+              <div class="progress-track-neo small">
                 <div id="autoSaveProgressBar" class="progress-fill-green" style="width: 100%;"></div>
               </div>
             </div>
@@ -109,26 +108,26 @@
 
         <!-- ACTION BUTTONS ROW -->
         <div class="action-btn-row">
-          <button id="btnForceSave" class="glass-btn btn-primary-red">
+          <button id="btnForceSave" class="neo-btn btn-primary-red">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
             حفظ الكشف الآن
           </button>
-          <button id="btnStopSession" class="glass-btn btn-subtle-dark">
+          <button id="btnStopSession" class="neo-btn btn-subtle-dark">
             إنهاء الجلسة
           </button>
         </div>
 
-        <!-- LIVE TICKER (COMPACT ONE-LINE ATTENDEE STRIP - ZERO SCROLL) -->
+        <!-- LIVE TICKER (COMPACT ONE-LINE ATTENDEE STRIP) -->
         <div class="live-strip-wrap">
-          <span class="strip-tag">الرصد اللحظي:</span>
-          <div class="strip-content" id="liveTickerText">بانتظار مسح الطلاب للرمز المباشر...</div>
+          <span class="strip-tag">الرصد:</span>
+          <div class="strip-content" id="liveTickerText">بانتظار تسجيل أول حضور...</div>
         </div>
       </section>
     </main>
 
-    <!-- LIQUID GLASS FOOTER -->
-    <footer class="glass-footer">
-      <span>تطوير Matany Group • معتمد رسمياً لجامعة المستقبل FUE</span>
+    <!-- NEUBRUTALISM FOOTER -->
+    <footer class="neo-footer">
+      <span>Matany Group • جامعة المستقبل في مصر FUE</span>
     </footer>
   </div>
 

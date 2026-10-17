@@ -1,19 +1,13 @@
-/* AVQR In-Page Neubrutalism Styles */
+/* AVQR In-Page Neubrutalism Styles - Zero Glowing */
 
 .avqr-highlight-attended {
-  animation: avqrPulse 1s ease-in-out;
-  outline: 3px solid #00F090 !important;
-}
-
-@keyframes avqrPulse {
-  0% { transform: scale(1); background-color: #fef08a; }
-  50% { transform: scale(1.01); background-color: #a7f3d0; }
-  100% { transform: scale(1); background-color: #ecfdf5; }
+  outline: 2px solid #059669 !important;
+  background-color: #ECFDF5 !important;
 }
 
 .avqr-badge {
-  background: #00F090 !important;
-  color: #121212 !important;
+  background: #059669 !important;
+  color: #FFFFFF !important;
   border: 2px solid #121212 !important;
   box-shadow: 2px 2px 0px #121212 !important;
   font-weight: 800 !important;
@@ -29,9 +23,9 @@
   bottom: 24px;
   left: 24px;
   z-index: 9999999;
-  background: #FFE600;
-  border: 3px solid #121212;
-  box-shadow: 5px 5px 0px #121212;
+  background: #FFFFFF;
+  border: 2.5px solid #121212;
+  box-shadow: 4px 4px 0px #121212;
   border-radius: 8px;
   width: 250px;
   font-family: 'Cairo', system-ui, sans-serif;
@@ -41,20 +35,21 @@
 }
 
 .avqr-widget-header {
-  background: #121212;
-  color: #FFE600;
+  background: #B91C1C;
+  color: #FFFFFF;
   padding: 8px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: 900;
   font-size: 0.85rem;
+  border-bottom: 2px solid #121212;
 }
 
 .avqr-min-btn {
   background: transparent;
   border: none;
-  color: #FFE600;
+  color: #FFFFFF;
   font-size: 1rem;
   font-weight: 900;
   cursor: pointer;
@@ -70,13 +65,14 @@
 
 .avqr-widget-session {
   font-size: 0.75rem;
-  color: #444;
+  color: #475569;
 }
 
 .avqr-widget-session strong {
   display: block;
   font-size: 0.95rem;
   color: #121212;
+  font-family: monospace;
 }
 
 .avqr-widget-stats {
@@ -88,73 +84,84 @@
 }
 
 .avqr-count-pill {
-  background: #00F090;
+  background: #059669;
+  color: #FFFFFF;
   border: 2px solid #121212;
   box-shadow: 2px 2px 0px #121212;
-  padding: 2px 8px;
+  padding: 2px 10px;
   border-radius: 20px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 900;
 }
 
 .avqr-timer-line {
-  font-size: 0.75rem;
-  color: #666;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #64748B;
+  border-top: 1px dashed #CBD5E1;
+  padding-top: 6px;
 }
 
 .avqr-widget-btn {
-  background: #FF3366;
+  background: #B91C1C;
   color: #FFFFFF;
   border: 2px solid #121212;
-  box-shadow: 3px 3px 0px #121212;
+  box-shadow: 2px 2px 0px #121212;
   padding: 8px;
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   border-radius: 6px;
   cursor: pointer;
-  margin-top: 4px;
   font-family: inherit;
+  transition: transform 0.1s;
+}
+
+.avqr-widget-btn:hover {
+  background: #DC2626;
 }
 
 .avqr-widget-btn:active {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #121212;
+  box-shadow: 0px 0px 0px #121212;
 }
 
-/* Floating Toast Notifications */
+/* Toast Container */
 .avqr-toast-container {
   position: fixed;
   top: 24px;
-  left: 24px;
-  z-index: 10000000;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999999;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  pointer-events: none;
   direction: rtl;
   font-family: 'Cairo', system-ui, sans-serif;
 }
 
 .avqr-toast-item {
-  background: #121212;
-  color: #FFFFFF;
-  border: 2.5px solid #00F090;
-  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.4);
-  padding: 12px 18px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  animation: slideInToast 0.3s ease;
-  transition: opacity 0.4s ease;
+  background: #FFFFFF;
+  color: #121212;
+  border: 2.5px solid #121212;
+  box-shadow: 4px 4px 0px #121212;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  animation: slideDown 0.2s ease-out;
+  border-right: 6px solid #059669;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .avqr-toast-item.fade-out {
   opacity: 0;
   transform: translateY(-10px);
-}
-
-@keyframes slideInToast {
-  from { transform: translateX(-40px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  transition: all 0.3s;
 }
