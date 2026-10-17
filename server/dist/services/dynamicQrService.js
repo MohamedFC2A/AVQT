@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 const SECRET_SALT = process.env.AVQR_SECRET || 'MATANY_GROUP_AVQR_FUE_SECURITY_KEY_2026';
-const ROTATION_INTERVAL_MS = 8000; // 8 seconds per rotation
+const ROTATION_INTERVAL_MS = 5000; // 5-second ultra-fast rotation (anti-screenshot & anti-WhatsApp)
 // Convert HMAC digest slice into an 8-digit clean decimal string
 function tokenTo8DigitCode(token) {
     const hexPart = token.substring(0, 8);
@@ -18,7 +18,8 @@ export function generateDynamicQrToken(sessionId) {
     const token = hmac.digest('hex').substring(0, 16);
     const numericCode = tokenTo8DigitCode(token);
     const baseUrl = process.env.APP_URL || 'https://avqr-matany-fue.vercel.app';
-    const actionUrl = `${baseUrl}/?attend=1&sid=${encodeURIComponent(sessionId)}&code=${numericCode}&token=${token}`;
+    // Include micro-timestamp for anti-replay verification
+    const actionUrl = `${baseUrl}/?attend=1&sid=${encodeURIComponent(sessionId)}&code=${numericCode}&token=${token}&t=${now}`;
     const payload = {
         type: 'AVQR_LECTURE',
         sessionId,
@@ -36,8 +37,8 @@ export function verifyDynamicQrToken(sessionId, token) {
         return false;
     const now = Date.now();
     const currentSeq = Math.floor(now / ROTATION_INTERVAL_MS);
-    // Allow current window, immediate previous window (-1), and next (+1) for latency leeway
-    const candidateSeqs = [currentSeq, currentSeq - 1, currentSeq + 1];
+    // Strict 5-second anti-cheating window: allow only currentSeq and currentSeq - 1 (5-7 seconds max grace)
+    const candidateSeqs = [currentSeq, currentSeq - 1];
     for (const seq of candidateSeqs) {
         const hmac = crypto.createHmac('sha256', SECRET_SALT);
         hmac.update(`${sessionId}:${seq}`);
@@ -58,8 +59,8 @@ export function verifyDynamicNumericCode(sessionId, code) {
         return false;
     const now = Date.now();
     const currentSeq = Math.floor(now / ROTATION_INTERVAL_MS);
-    // Allow wider window (e.g. current and previous 3 windows = ~32 seconds) for manual student typing
-    const candidateSeqs = [currentSeq, currentSeq - 1, currentSeq - 2, currentSeq - 3, currentSeq + 1];
+    // Strict anti-cheating: allow currentSeq and currentSeq - 1 (defeats WhatsApp forward)
+    const candidateSeqs = [currentSeq, currentSeq - 1];
     for (const seq of candidateSeqs) {
         const hmac = crypto.createHmac('sha256', SECRET_SALT);
         hmac.update(`${sessionId}:${seq}`);

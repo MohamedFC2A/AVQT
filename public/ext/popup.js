@@ -1,4 +1,4 @@
-// AVQR Chrome Extension Popup Engine
+// AVQR Chrome Extension Popup Engine - Liquid Glass & 5-Second Anti-Cheating
 // Designed by Matany Group for Future University in Egypt (FUE)
 
 const SERVER_URL = 'https://avqr-matany-fue.vercel.app';
@@ -9,7 +9,8 @@ let sseSource = null;
 let rotationInterval = null;
 let autoSaveInterval = null;
 let pollRecordsInterval = null;
-let rotationSeconds = 8;
+let rotationSeconds = 5; // 5-second rotation
+const ROTATION_TOTAL_SECONDS = 5;
 let autoSaveSeconds = 180;
 const TOTAL_AUTOSAVE_SECONDS = 180;
 let isSessionActive = false;
@@ -37,19 +38,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Health check: test primary cloud server, fallback to local if offline
+  // Health check: test sovereign cloud server
   fetch(`${activeServerUrl}/health`)
     .then(r => r.json())
     .then(() => {
-      serverStatusText.textContent = 'متصل بالسحابة (Neon)';
+      serverStatusText.textContent = 'سحابة FUE نشطة';
     })
     .catch(() => {
-      // Test local server
       fetch(`${LOCAL_FALLBACK_URL}/health`)
         .then(r => r.json())
         .then(() => {
           activeServerUrl = LOCAL_FALLBACK_URL;
-          serverStatusText.textContent = 'متصل بالخادم المحلي';
+          serverStatusText.textContent = 'الخادم الأكاديمي المحلي';
         })
         .catch(() => {
           serverStatusText.textContent = 'وضع عدم الاتصال';
@@ -82,21 +82,24 @@ async function startActiveSession(sessionId) {
   document.getElementById('idleSection').classList.add('hidden');
   document.getElementById('activeSection').classList.remove('hidden');
 
+  const badge = document.getElementById('activeSessionBadge');
+  if (badge) badge.textContent = sessionId;
+
   // Activate content script in current tab to auto-tick checkboxes
   notifyCurrentTabToSync(sessionId);
 
   // Fetch initial token and render QR + 8-digit code immediately
   await refreshDynamicQrAndCode(sessionId);
 
-  // Start 8-second rotation timer
-  rotationSeconds = 8;
+  // Start 5-second ultra-fast rotation timer
+  rotationSeconds = ROTATION_TOTAL_SECONDS;
   clearInterval(rotationInterval);
   rotationInterval = setInterval(() => {
     if (rotationSeconds > 1) {
       rotationSeconds--;
       updateRotationDisplay();
     } else {
-      rotationSeconds = 8;
+      rotationSeconds = ROTATION_TOTAL_SECONDS;
       updateRotationDisplay();
       refreshDynamicQrAndCode(sessionId);
     }
@@ -144,7 +147,7 @@ function renderStandardQr(text) {
   const canvas = document.getElementById('qrCanvas');
   if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
     window.QRCode.toCanvas(canvas, text, {
-      width: 220,
+      width: 155,
       margin: 1,
       color: {
         dark: '#121212',
@@ -154,13 +157,12 @@ function renderStandardQr(text) {
       if (err) console.error('QR draw error:', err);
     });
   } else {
-    // Fallback direct draw
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, 220, 220);
+    ctx.fillRect(0, 0, 155, 155);
     ctx.fillStyle = '#121212';
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText('QR Code Ready', 60, 110);
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText('QR Code Ready', 35, 80);
   }
 }
 
@@ -170,21 +172,20 @@ function renderNumericCode(code) {
     el.textContent = '--------';
     return;
   }
-  // Format as 8 digits with space: e.g. "8492 - 3105"
   const formatted = code.length === 8 ? `${code.slice(0, 4)} - ${code.slice(4)}` : code;
   el.textContent = formatted;
 }
 
 function fallbackRender(sessionId) {
-  const mockCode = (Math.floor(Date.now() / 8000) % 90000000 + 10000000).toString();
-  const mockQr = `https://avqr-matany-fue.vercel.app/?attend=1&sid=${sessionId}&code=${mockCode}&token=FALLBACK`;
+  const mockCode = (Math.floor(Date.now() / 5000) % 90000000 + 10000000).toString();
+  const mockQr = `https://avqr-matany-fue.vercel.app/?attend=1&sid=${sessionId}&code=${mockCode}&token=FALLBACK&t=${Date.now()}`;
   renderStandardQr(mockQr);
   renderNumericCode(mockCode);
 }
 
 function updateRotationDisplay() {
   document.getElementById('rotationSecondsTxt').textContent = `${rotationSeconds} ثوانٍ`;
-  const pct = (rotationSeconds / 8) * 100;
+  const pct = (rotationSeconds / ROTATION_TOTAL_SECONDS) * 100;
   document.getElementById('rotationProgressBar').style.width = `${pct}%`;
 }
 
@@ -213,20 +214,11 @@ function updateAutoSaveDisplay() {
 
   const pct = (autoSaveSeconds / TOTAL_AUTOSAVE_SECONDS) * 100;
   progressBar.style.width = `${pct}%`;
-
-  if (autoSaveSeconds < 30) {
-    progressBar.style.background = '#FF3366';
-  } else if (autoSaveSeconds < 90) {
-    progressBar.style.background = '#FFE600';
-  } else {
-    progressBar.style.background = '#00F090';
-  }
 }
 
 async function triggerAutoSave() {
   try {
     await fetch(`${activeServerUrl}/api/session/${currentSessionId}/auto-save`, { method: 'POST' });
-    // Trigger in tab
     if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab && tab.id) {
@@ -259,18 +251,16 @@ async function notifyCurrentTabToSync(sessionId) {
 function connectDualSync(sessionId) {
   if (sseSource) sseSource.close();
 
-  // Engine 1: SSE
   try {
     sseSource = new EventSource(`${activeServerUrl}/api/session/${sessionId}/stream`);
     sseSource.addEventListener('STUDENT_ATTENDED', (e) => {
       try {
         const student = JSON.parse(e.data);
-        addStudentToUI(student);
+        updateLiveAttendee(student);
       } catch (err) {}
     });
   } catch (e) {}
 
-  // Engine 2: Periodic Records Polling (every 1.5s)
   clearInterval(pollRecordsInterval);
   pollRecordsInterval = setInterval(() => {
     refreshSessionRecords(sessionId);
@@ -285,31 +275,26 @@ function refreshSessionRecords(sessionId) {
       if (Array.isArray(records)) {
         const livePresentCount = document.getElementById('livePresentCount');
         if (livePresentCount) livePresentCount.textContent = records.length;
-        records.forEach(r => addStudentToUI({ studentId: r.student_id, fullName: r.student_name }));
+        if (records.length > 0) {
+          const last = records[records.length - 1];
+          updateLiveAttendee({ studentId: last.student_id, fullName: last.student_name }, records.length);
+        }
       }
     })
     .catch(() => {});
 }
 
-function addStudentToUI(student) {
+function updateLiveAttendee(student, count) {
   const livePresentCount = document.getElementById('livePresentCount');
-  const studentsLiveList = document.getElementById('studentsLiveList');
-
-  const emptyNotice = studentsLiveList.querySelector('.empty-feed');
-  if (emptyNotice) emptyNotice.remove();
-
-  if (studentsLiveList.querySelector(`[data-sid="${student.studentId}"]`)) {
-    return;
+  if (count !== undefined) {
+    livePresentCount.textContent = count;
+  } else {
+    const current = parseInt(livePresentCount.textContent, 10) || 0;
+    livePresentCount.textContent = current + 1;
   }
 
-  const li = document.createElement('li');
-  li.setAttribute('data-sid', student.studentId);
-  li.innerHTML = `
-    <span><strong>${student.studentId}</strong>: ${student.fullName}</span>
-    <span style="color: #059669; font-weight: 800;">حاضر</span>
-  `;
-  studentsLiveList.prepend(li);
-
-  const currentCount = parseInt(livePresentCount.textContent, 10) || 0;
-  livePresentCount.textContent = currentCount + 1;
+  const ticker = document.getElementById('liveTickerText');
+  if (ticker && student) {
+    ticker.textContent = `تم رصد حضور: ${student.studentId} (${student.fullName})`;
+  }
 }

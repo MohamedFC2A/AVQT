@@ -51,12 +51,23 @@ function broadcastToSession(sessionId: string, event: string, data: any) {
 
 app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
-    const { id, password, fullName } = req.body;
+    const { id, password, fullName, deviceUuid } = req.body;
     if (!id || typeof id !== 'string') {
       return res.status(400).json({ error: 'الرقم الجامعي مطلوب (مثال: 20264712)' });
     }
 
     const cleanId = id.trim();
+
+    // Strict Device Lock: verify device is not bound to another student
+    if (deviceUuid) {
+      const boundStudent = await db.getStudentByDevice(deviceUuid);
+      if (boundStudent && boundStudent.id !== cleanId) {
+        return res.status(403).json({
+          error: `عفواً، هذا الجهاز مقترن رسمياً بحساب الطالب (${boundStudent.id}). يستحيل تسجيل الدخول برقم جامعي آخر من هذا الجهاز حفاظاً على النزاهة الأكاديمية.`
+        });
+      }
+    }
+
     let passwordHash: string | undefined;
     if (password) {
       passwordHash = await bcrypt.hash(password, 10);
@@ -65,14 +76,15 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     const student = await db.upsertStudent({
       id: cleanId,
       full_name: fullName || `طالب ${cleanId}`,
-      password_hash: passwordHash
+      password_hash: passwordHash,
+      device_uuid: deviceUuid
     });
 
     const token = jwt.sign({ id: student.id }, JWT_SECRET, { expiresIn: '30d' });
 
     res.json({
       success: true,
-      message: 'تم تسجيل الحساب بنجاح',
+      message: 'تم تسجيل الحساب وتوثيق الجهاز الجامعي بنجاح',
       student,
       token
     });
@@ -83,21 +95,37 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
 
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
-    const { id, password } = req.body;
+    const { id, password, deviceUuid } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'الرقم الجامعي مطلوب' });
     }
 
     const cleanId = id.trim();
+
+    // Strict Device Lock
+    if (deviceUuid) {
+      const boundStudent = await db.getStudentByDevice(deviceUuid);
+      if (boundStudent && boundStudent.id !== cleanId) {
+        return res.status(403).json({
+          error: `عفواً، هذا الجهاز مقترن رسمياً بحساب الطالب (${boundStudent.id}). يستحيل تسجيل الدخول برقم جامعي آخر من هذا الجهاز حفاظاً على النزاهة الأكاديمية.`
+        });
+      }
+    }
+
     let student = await db.getStudent(cleanId);
 
     if (!student) {
       // Auto-register convenience for student flow
-      student = await db.upsertStudent({ id: cleanId });
-    } else if (password && student.password_hash) {
-      const match = await bcrypt.compare(password, student.password_hash);
-      if (!match) {
-        return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
+      student = await db.upsertStudent({ id: cleanId, device_uuid: deviceUuid });
+    } else {
+      if (deviceUuid && !student.device_uuid) {
+        student = await db.upsertStudent({ id: cleanId, device_uuid: deviceUuid });
+      }
+      if (password && student.password_hash) {
+        const match = await bcrypt.compare(password, student.password_hash);
+        if (!match) {
+          return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
+        }
       }
     }
 
@@ -105,7 +133,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: 'تم تسجيل الدخول بنجاح',
+      message: 'تم تسجيل الدخول وتوثيق الجهاز بنجاح',
       student,
       token
     });
@@ -133,7 +161,7 @@ app.post('/api/auth/biometric/register', async (req: Request, res: Response) => 
 
     res.json({
       success: true,
-      message: 'تم حفظ وتفعيل بصمة الإصبع في Neon.tech بنجاح'
+      message: 'تم تفعيل واعتماد البصمة البيومترية بالسحابة الأكاديمية بنجاح'
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -349,10 +377,20 @@ app.get('/api/session/:id/stream', (req: Request, res: Response) => {
 // Student Submits Dynamic QR or 8-Digit Numeric Code Attendance
 app.post('/api/session/attend', async (req: Request, res: Response) => {
   try {
-    const { sessionId, qrString, token, numericCode, studentId } = req.body;
+    const { sessionId, qrString, token, numericCode, studentId, deviceUuid } = req.body;
 
     if (!sessionId || !studentId) {
       return res.status(400).json({ error: 'معرف الجلسة ورقم الطالب مطلوبان' });
+    }
+
+    // Strict Device Lock Check during attendance
+    if (deviceUuid) {
+      const boundStudent = await db.getStudentByDevice(deviceUuid);
+      if (boundStudent && boundStudent.id !== studentId) {
+        return res.status(403).json({
+          error: `تم رفض الحضور: هذا الجهاز مقترن رسمياً بحساب الطالب (${boundStudent.id}). يستحيل تسجيل حضور طالب آخر من نفس الجهاز حفاظاً على النزاهة الأكاديمية.`
+        });
+      }
     }
 
     // Extract token if raw qrString or URL was passed
@@ -426,15 +464,20 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
         level: '1-First',
         card_verified: true,
         card_ss_uuid: 'cc011cc7-ceb7-4867-973a-79d0a44e5214',
-        card_verified_at: new Date().toISOString()
+        card_verified_at: new Date().toISOString(),
+        device_uuid: deviceUuid
       });
-    } else if (!student.card_verified) {
-      student = await db.upsertStudent({
-        id: student.id,
-        full_name: student.id === '20264712' ? 'Mohamed Ahmed Mohamed Matany Ahmed' : student.full_name,
-        card_verified: true,
-        card_verified_at: new Date().toISOString()
-      });
+    } else {
+      const updates: any = { id: student.id };
+      if (!student.card_verified) {
+        updates.card_verified = true;
+        updates.full_name = student.id === '20264712' ? 'Mohamed Ahmed Mohamed Matany Ahmed' : student.full_name;
+        updates.card_verified_at = new Date().toISOString();
+      }
+      if (deviceUuid && !student.device_uuid) {
+        updates.device_uuid = deviceUuid;
+      }
+      student = await db.upsertStudent(updates);
     }
 
     // 3. Record attendance in database

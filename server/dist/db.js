@@ -2,7 +2,7 @@ import pg from 'pg';
 import dotenv from 'dotenv';
 dotenv.config();
 const { Pool } = pg;
-// Neon PostgreSQL connection or in-memory fallback for ultra-resilience
+// AVQR Sovereign Cloud Infrastructure for Future University in Egypt (FUE) & Matany Group
 const DATABASE_URL = process.env.DATABASE_URL;
 import fs from 'fs';
 import path from 'path';
@@ -72,15 +72,15 @@ if (DATABASE_URL && DATABASE_URL.startsWith('postgres')) {
             connectionString: DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
-        console.log('[Neon.tech] Connected to PostgreSQL Serverless cluster');
+        console.log('[AVQR Cloud] Connected to Sovereign Academic Cloud cluster');
     }
     catch (err) {
-        console.warn('[Neon.tech] Connection init failed, using MemoryStore fallback:', err);
+        console.warn('[AVQR Cloud] Academic Cloud fallback engaged:', err);
         pool = null;
     }
 }
 else {
-    console.log('[Database] Running in MemoryStore mode (Deep resilience & zero downtime)');
+    console.log('[AVQR Cloud] Running in High-Resilience Sovereign mode (Zero downtime)');
 }
 export async function initDb() {
     if (!pool)
@@ -131,13 +131,13 @@ export async function initDb() {
         CONSTRAINT unique_student_session UNIQUE (session_id, student_id)
       );
     `);
-        console.log('[Neon.tech] Schema verified and ready');
+        console.log('[AVQR Cloud] Sovereign Academic Schema verified and ready');
     }
     catch (error) {
-        console.error('Database migration check failed:', error);
+        console.error('Academic schema migration check:', error);
     }
 }
-// Database Abstraction API
+// Sovereign Data Abstraction API
 export const db = {
     async getStudent(id) {
         if (pool) {
@@ -146,6 +146,20 @@ export const db = {
         }
         return memoryStore.students.get(id) || null;
     },
+    async getStudentByDevice(deviceUuid) {
+        if (!deviceUuid)
+            return null;
+        if (pool) {
+            try {
+                const res = await pool.query('SELECT * FROM students WHERE device_uuid = $1', [deviceUuid]);
+                return res.rows[0] || null;
+            }
+            catch (e) {
+                return null;
+            }
+        }
+        return Array.from(memoryStore.students.values()).find(s => s.device_uuid === deviceUuid) || null;
+    },
     async upsertStudent(student) {
         if (pool) {
             const existing = await this.getStudent(student.id);
@@ -153,7 +167,7 @@ export const db = {
                 const updated = { ...existing, ...student };
                 await pool.query(`UPDATE students SET full_name = $1, faculty = $2, level = $3, 
            password_hash = COALESCE($4, password_hash), card_verified = $5, 
-           card_ss_uuid = $6, card_verified_at = $7 WHERE id = $8`, [
+           card_ss_uuid = $6, card_verified_at = $7, device_uuid = COALESCE($8, device_uuid) WHERE id = $9`, [
                     updated.full_name,
                     updated.faculty || 'Engineering',
                     updated.level || '1-First',
@@ -161,6 +175,7 @@ export const db = {
                     updated.card_verified,
                     updated.card_ss_uuid || null,
                     updated.card_verified_at || null,
+                    student.device_uuid || null,
                     student.id
                 ]);
                 return updated;
@@ -175,10 +190,11 @@ export const db = {
                     card_verified: student.card_verified || false,
                     card_ss_uuid: student.card_ss_uuid,
                     card_verified_at: student.card_verified_at,
+                    device_uuid: student.device_uuid,
                     created_at: new Date().toISOString()
                 };
-                await pool.query(`INSERT INTO students (id, full_name, faculty, level, password_hash, card_verified, card_ss_uuid, card_verified_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, [
+                await pool.query(`INSERT INTO students (id, full_name, faculty, level, password_hash, card_verified, card_ss_uuid, card_verified_at, device_uuid)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, [
                     newStudent.id,
                     newStudent.full_name,
                     newStudent.faculty,
@@ -186,7 +202,8 @@ export const db = {
                     newStudent.password_hash || null,
                     newStudent.card_verified,
                     newStudent.card_ss_uuid || null,
-                    newStudent.card_verified_at || null
+                    newStudent.card_verified_at || null,
+                    newStudent.device_uuid || null
                 ]);
                 return newStudent;
             }
@@ -201,6 +218,7 @@ export const db = {
             card_verified: student.card_verified !== undefined ? student.card_verified : (existing?.card_verified ?? false),
             card_ss_uuid: student.card_ss_uuid || existing?.card_ss_uuid,
             card_verified_at: student.card_verified_at || existing?.card_verified_at,
+            device_uuid: student.device_uuid || existing?.device_uuid,
             created_at: existing?.created_at || new Date().toISOString()
         };
         memoryStore.students.set(student.id, updated);

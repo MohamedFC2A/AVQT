@@ -104,4 +104,23 @@ describe('AVQR Database & Attendance Lifecycle', () => {
     assert.strictEqual(record.student_name, 'Verified Student Name');
     assert.strictEqual(record.synced_to_portal, true);
   });
+
+  test('correctly binds and verifies student device lock', async () => {
+    const studentId = '20267777';
+    const deviceUuid = 'DEV-LOCK-UUID-999';
+
+    await db.upsertStudent({
+      id: studentId,
+      full_name: 'Bound Device Student',
+      device_uuid: deviceUuid
+    });
+
+    const studentByDevice = await db.getStudentByDevice(deviceUuid);
+    assert.ok(studentByDevice);
+    assert.strictEqual(studentByDevice.id, studentId);
+
+    // Non-existent device should return null
+    const notFound = await db.getStudentByDevice('NON-EXISTENT-DEVICE');
+    assert.strictEqual(notFound, null);
+  });
 });

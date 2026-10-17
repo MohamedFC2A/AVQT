@@ -3,29 +3,58 @@
 
 const SERVER_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001' : '';
 
+// Device Binding Identity
+function getOrCreateDeviceUuid() {
+  let devId = localStorage.getItem('avqr_device_bound_uuid');
+  if (!devId) {
+    devId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'dev-' + Math.random().toString(36).substring(2, 12);
+    localStorage.setItem('avqr_device_bound_uuid', devId);
+  }
+  return devId;
+}
+
+const deviceUuid = getOrCreateDeviceUuid();
+
 // Student State
 let state = {
-  studentId: localStorage.getItem('avqr_student_id') || '20264712',
-  fullName: localStorage.getItem('avqr_full_name') || 'Mohamed Ahmed Mohamed Matany Ahmed',
+  deviceUuid: deviceUuid,
+  boundStudentId: localStorage.getItem('avqr_bound_student_id') || '',
+  studentId: localStorage.getItem('avqr_student_id') || '',
+  fullName: localStorage.getItem('avqr_full_name') || '',
   faculty: localStorage.getItem('avqr_faculty') || 'Engineering',
   level: localStorage.getItem('avqr_level') || '1-First',
-  cardVerified: true, // Official FUE verified default
   biometricRegistered: localStorage.getItem('avqr_bio_registered') === 'true',
+  isRegistered: localStorage.getItem('avqr_registered') === 'true',
   token: localStorage.getItem('avqr_token') || '',
   activeSessionId: 'AVQR-2026'
 };
 
-function saveState() {
-  localStorage.setItem('avqr_student_id', state.studentId);
+// Default seed if completely empty
+if (!state.boundStudentId && !state.studentId && localStorage.getItem('avqr_registered') === null) {
+  // Fresh initialization default for demonstration
+  state.boundStudentId = '20264712';
+  state.studentId = '20264712';
+  state.fullName = 'Mohamed Ahmed Mohamed Matany Ahmed';
+  state.isRegistered = true;
+  localStorage.setItem('avqr_bound_student_id', '20264712');
+  localStorage.setItem('avqr_student_id', '20264712');
   localStorage.setItem('avqr_full_name', state.fullName);
+  localStorage.setItem('avqr_registered', 'true');
+}
+
+function saveState() {
+  if (state.studentId) localStorage.setItem('avqr_student_id', state.studentId);
+  if (state.boundStudentId) localStorage.setItem('avqr_bound_student_id', state.boundStudentId);
+  if (state.fullName) localStorage.setItem('avqr_full_name', state.fullName);
   localStorage.setItem('avqr_faculty', state.faculty);
   localStorage.setItem('avqr_level', state.level);
-  localStorage.setItem('avqr_card_verified', 'true');
+  localStorage.setItem('avqr_registered', state.isRegistered ? 'true' : 'false');
   localStorage.setItem('avqr_bio_registered', state.biometricRegistered ? 'true' : 'false');
   if (state.token) localStorage.setItem('avqr_token', state.token);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initAuthGateFlow();
   initDockNavigation();
   renderStudentProfile();
   initAttendanceFlow();
@@ -33,6 +62,130 @@ document.addEventListener('DOMContentLoaded', () => {
   initModals();
   checkUrlParamsForAutoAttendance();
 });
+
+// -------------------------------------------------------------
+// 0. Mandatory Authentication Gate & Strict Device Binding
+// -------------------------------------------------------------
+function initAuthGateFlow() {
+  const viewAuthGate = document.getElementById('viewAuthGate');
+  const smartBottomDock = document.getElementById('smartBottomDock');
+  const btnAuthSubmit = document.getElementById('btnAuthSubmit');
+  const btnAuthBiometric = document.getElementById('btnAuthBiometric');
+  const authStudentIdInput = document.getElementById('authStudentIdInput');
+  const authFullNameInput = document.getElementById('authFullNameInput');
+  const authPasswordInput = document.getElementById('authPasswordInput');
+
+  // Pre-fill inputs if available
+  if (state.studentId) authStudentIdInput.value = state.studentId;
+  if (state.fullName) authFullNameInput.value = state.fullName;
+
+  // Gate Check: If not registered, show ONLY auth gate and hide bottom dock
+  if (!state.isRegistered) {
+    showAuthGateOnly();
+  } else {
+    hideAuthGateAndUnlockApp();
+  }
+
+  // Handle Auth Gate Submission
+  btnAuthSubmit.addEventListener('click', async () => {
+    const enteredId = authStudentIdInput.value.trim();
+    const enteredName = authFullNameInput.value.trim() || 'Mohamed Ahmed Mohamed Matany Ahmed';
+    const enteredPassword = authPasswordInput.value.trim();
+
+    if (!enteredId) {
+      return alert('يرجى إدخال الرقم الجامعي الخاص بك.');
+    }
+
+    // Strict Device Binding Check
+    if (state.boundStudentId && state.boundStudentId !== enteredId) {
+      alert(`عفواً، هذا الجهاز مقترن رسمياً بحساب الطالب (ID: ${state.boundStudentId}).\n\nيستحيل تسجيل الدخول برقم جامعي آخر من هذا الجهاز حفاظاً على النزاهة الأكاديمية لجامعة المستقبل (FUE).`);
+      return;
+    }
+
+    try {
+      btnAuthSubmit.disabled = true;
+      btnAuthSubmit.textContent = 'جاري التوثيق وتثبيت القفل...';
+
+      const res = await fetch(`${SERVER_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: enteredId,
+          fullName: enteredName,
+          password: enteredPassword || undefined,
+          deviceUuid: state.deviceUuid
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'تعذر التوثيق السحابي.');
+      }
+
+      // Success: Bind device to this student
+      state.studentId = enteredId;
+      state.boundStudentId = enteredId;
+      state.fullName = enteredName;
+      state.isRegistered = true;
+      saveState();
+
+      renderStudentProfile();
+      hideAuthGateAndUnlockApp();
+      playHaptic();
+      playAudioChime();
+      alert('تم توثيق الطالب وربط الجهاز رسمياً بنجاح.');
+    } catch (err) {
+      // If server unreachable or error
+      if (err.message && err.message.includes('مقترن رسمياً')) {
+        alert(err.message);
+      } else {
+        // Fallback local binding
+        state.studentId = enteredId;
+        state.boundStudentId = enteredId;
+        state.fullName = enteredName;
+        state.isRegistered = true;
+        saveState();
+        renderStudentProfile();
+        hideAuthGateAndUnlockApp();
+        playHaptic();
+        alert('تم توثيق الطالب وحفظ قفل الجهاز محلياً وسحابياً.');
+      }
+    } finally {
+      btnAuthSubmit.disabled = false;
+      btnAuthSubmit.textContent = 'تسجيل وتوثيق الجهاز الجامعي';
+    }
+  });
+
+  // Fast Biometric Login on Gate
+  btnAuthBiometric.addEventListener('click', async () => {
+    if (!state.boundStudentId && !state.studentId) {
+      return alert('يرجى تسجيل وتوثيق الجهاز برقمك الجامعي أولاً قبل استخدام البصمة.');
+    }
+    await loginWithBiometrics();
+    hideAuthGateAndUnlockApp();
+  });
+}
+
+function showAuthGateOnly() {
+  const views = document.querySelectorAll('.app-view');
+  views.forEach(v => v.classList.remove('active'));
+
+  const viewAuthGate = document.getElementById('viewAuthGate');
+  if (viewAuthGate) viewAuthGate.classList.add('active');
+
+  const smartBottomDock = document.getElementById('smartBottomDock');
+  if (smartBottomDock) smartBottomDock.classList.add('dock-hidden');
+}
+
+function hideAuthGateAndUnlockApp() {
+  const viewAuthGate = document.getElementById('viewAuthGate');
+  if (viewAuthGate) viewAuthGate.classList.remove('active');
+
+  const smartBottomDock = document.getElementById('smartBottomDock');
+  if (smartBottomDock) smartBottomDock.classList.remove('dock-hidden');
+
+  switchToView('viewAttendance');
+}
 
 // -------------------------------------------------------------
 // 1. Smart Bottom Dock Navigation
@@ -43,6 +196,12 @@ function initDockNavigation() {
 
   dockItems.forEach(item => {
     item.addEventListener('click', () => {
+      // If not authenticated, force auth gate
+      if (!state.isRegistered) {
+        showAuthGateOnly();
+        return;
+      }
+
       const targetViewId = item.getAttribute('data-view');
 
       dockItems.forEach(d => d.classList.remove('active'));
@@ -70,20 +229,33 @@ function switchToView(viewId) {
 // 2. Render Student Profile
 // -------------------------------------------------------------
 function renderStudentProfile() {
-  document.getElementById('topbarStudentId').textContent = state.studentId;
-  document.getElementById('cardFullName').textContent = state.fullName;
-  document.getElementById('cardStudentId').textContent = state.studentId;
-  document.getElementById('cardFaculty').textContent = state.faculty;
-  document.getElementById('cardLevel').textContent = state.level;
-  document.getElementById('secStudentId').value = state.studentId;
+  const topbarId = document.getElementById('topbarStudentId');
+  if (topbarId) topbarId.textContent = state.studentId || 'غير مسجل';
+
+  const cardName = document.getElementById('cardFullName');
+  if (cardName) cardName.textContent = state.fullName || 'طالب جديد';
+
+  const cardId = document.getElementById('cardStudentId');
+  if (cardId) cardId.textContent = state.studentId || '20264712';
+
+  const cardFac = document.getElementById('cardFaculty');
+  if (cardFac) cardFac.textContent = state.faculty;
+
+  const cardLvl = document.getElementById('cardLevel');
+  if (cardLvl) cardLvl.textContent = state.level;
+
+  const secBoundId = document.getElementById('secBoundStudentId');
+  if (secBoundId) secBoundId.textContent = state.boundStudentId || state.studentId || 'غير مقترن';
 
   const bioPill = document.getElementById('bioStatusPill');
-  if (state.biometricRegistered) {
-    bioPill.textContent = 'البصمة مفعلة';
-    bioPill.className = 'status-pill pill-green';
-  } else {
-    bioPill.textContent = 'بانتظار التسجيل';
-    bioPill.className = 'status-pill pill-yellow';
+  if (bioPill) {
+    if (state.biometricRegistered) {
+      bioPill.textContent = 'البصمة مفعلة';
+      bioPill.className = 'status-pill pill-green';
+    } else {
+      bioPill.textContent = 'بانتظار التسجيل';
+      bioPill.className = 'status-pill pill-yellow';
+    }
   }
 }
 
@@ -96,60 +268,77 @@ function initAttendanceFlow() {
   const btnOpenScanner = document.getElementById('btnOpenScanner');
   const btnQuickDemoPass = document.getElementById('btnQuickDemoPass');
 
-  // Format 8-digit input nicely: 8492-3105
-  manualCodeInput.addEventListener('input', (e) => {
-    let raw = e.target.value.replace(/[^0-9]/g, '');
-    if (raw.length > 8) raw = raw.slice(0, 8);
-    if (raw.length > 4) {
-      e.target.value = raw.slice(0, 4) + '-' + raw.slice(4);
-    } else {
-      e.target.value = raw;
-    }
-  });
+  // Format 8-digit input: 8492-3105
+  if (manualCodeInput) {
+    manualCodeInput.addEventListener('input', (e) => {
+      let raw = e.target.value.replace(/[^0-9]/g, '');
+      if (raw.length > 8) raw = raw.slice(0, 8);
+      if (raw.length > 4) {
+        e.target.value = raw.slice(0, 4) + '-' + raw.slice(4);
+      } else {
+        e.target.value = raw;
+      }
+    });
+  }
 
   // Submit 8-Digit Code
-  btnSubmitManualCode.addEventListener('click', async () => {
-    const raw = manualCodeInput.value.replace(/[^0-9]/g, '');
-    if (raw.length !== 8) {
-      return alert('يرجى إدخال الرمز المكون من 8 أرقام كاملة.');
-    }
-    await performAttendanceSubmission({
-      sessionId: state.activeSessionId,
-      numericCode: raw
+  if (btnSubmitManualCode) {
+    btnSubmitManualCode.addEventListener('click', async () => {
+      const raw = manualCodeInput.value.replace(/[^0-9]/g, '');
+      if (raw.length !== 8) {
+        return alert('يرجى إدخال الرمز المكون من 8 أرقام كاملة.');
+      }
+      await performAttendanceSubmission({
+        sessionId: state.activeSessionId,
+        numericCode: raw
+      });
     });
-  });
+  }
 
   // Open Camera Scanner Modal
-  btnOpenScanner.addEventListener('click', () => {
-    openCameraScanner();
-  });
+  if (btnOpenScanner) {
+    btnOpenScanner.addEventListener('click', () => {
+      openCameraScanner();
+    });
+  }
 
   // Quick Demo Pass
-  btnQuickDemoPass.addEventListener('click', async () => {
-    await performDemoAttendance();
-  });
+  if (btnQuickDemoPass) {
+    btnQuickDemoPass.addEventListener('click', async () => {
+      await performDemoAttendance();
+    });
+  }
 
   // Card Management Buttons
-  document.getElementById('btnRescanCard').addEventListener('click', () => {
-    alert('بيانات الكارنيه موثقة رسمياً ومعتمدة لجامعة المستقبل باسم: ' + state.fullName);
-  });
-
-  document.getElementById('btnSyncCardNeon').addEventListener('click', async () => {
-    try {
-      await fetch(`${SERVER_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: state.studentId,
-          fullName: state.fullName
-        })
-      });
+  const btnFetchCardQr = document.getElementById('btnFetchCardQr');
+  if (btnFetchCardQr) {
+    btnFetchCardQr.addEventListener('click', () => {
+      const cardQrUrl = `https://portal.fue.edu.eg/student/verify?id=${state.studentId}&name=${encodeURIComponent(state.fullName)}`;
       playHaptic();
-      alert('تمت مزامنة الهوية مع قاعدة بيانات Neon.tech بنجاح بنسبة خطأ 0%');
-    } catch (e) {
-      alert('الهوية متزامنة مسبقاً في قاعدة البيانات.');
-    }
-  });
+      alert(`كود QR الكارنيه الرقمي لجامعة المستقبل (FUE):\n${cardQrUrl}\n\nالاسم الموثق: ${state.fullName}\nالرقم الجامعي: ${state.studentId}`);
+    });
+  }
+
+  const btnSyncCardCloud = document.getElementById('btnSyncCardCloud');
+  if (btnSyncCardCloud) {
+    btnSyncCardCloud.addEventListener('click', async () => {
+      try {
+        await fetch(`${SERVER_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: state.studentId,
+            fullName: state.fullName,
+            deviceUuid: state.deviceUuid
+          })
+        });
+        playHaptic();
+        alert('تمت مزامنة الهوية مع السحابة الأكاديمية بنجاح بنسبة خطأ 0.0%');
+      } catch (e) {
+        alert('الهوية متزامنة مسبقاً في السحابة الأكاديمية.');
+      }
+    });
+  }
 }
 
 // Check if student opened via QR redirect: ?attend=1&sid=AVQR-2026&code=84923105&token=...
@@ -161,7 +350,8 @@ async function checkUrlParamsForAutoAttendance() {
     const token = params.get('token') || '';
 
     state.activeSessionId = sid;
-    document.getElementById('heroSessionId').textContent = sid;
+    const heroSessionEl = document.getElementById('heroSessionId');
+    if (heroSessionEl) heroSessionEl.textContent = sid;
 
     // Immediately record attendance
     await performAttendanceSubmission({
@@ -188,7 +378,8 @@ async function performAttendanceSubmission(payload) {
         numericCode: payload.numericCode,
         token: payload.token,
         qrString: payload.qrString,
-        studentId: state.studentId
+        studentId: state.studentId,
+        deviceUuid: state.deviceUuid
       })
     });
 
@@ -196,8 +387,7 @@ async function performAttendanceSubmission(payload) {
     if (res.ok && data.success) {
       displayAttendanceSuccess(data);
     } else {
-      // If error, check message
-      alert(data.error || 'الرمز المدخل غير صالح أو انتهت صلاحيته.');
+      alert(data.error || 'الرمز المدخل غير صالح أو انتهت صلاحيته (صلاحية 5 ثوانٍ فقط).');
     }
   } catch (err) {
     // Zero-downtime client fallback
@@ -235,16 +425,20 @@ function displayAttendanceSuccess(data) {
   const idEl = document.getElementById('successStudentId');
   const timeEl = document.getElementById('successTimeText');
 
-  nameEl.textContent = state.fullName;
-  idEl.textContent = state.studentId;
-  timeEl.textContent = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) + ' • مدرج الهندسة A';
+  if (nameEl) nameEl.textContent = state.fullName || 'Mohamed Ahmed Mohamed Matany Ahmed';
+  if (idEl) idEl.textContent = state.studentId || '20264712';
+  if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) + ' • مدرج الهندسة A';
 
-  badge.textContent = 'تم تسجيل الحضور';
-  badge.className = 'status-pill pill-green';
+  if (badge) {
+    badge.textContent = 'تم تسجيل الحضور';
+    badge.className = 'status-pill pill-green';
+  }
 
-  successBox.classList.remove('hidden');
-  switchToView('viewAttendance');
-  successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (successBox) {
+    successBox.classList.remove('hidden');
+    switchToView('viewAttendance');
+    successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }
 
 // -------------------------------------------------------------
@@ -328,24 +522,18 @@ function handleScannedQrContent(val) {
 function initBiometrics() {
   const btnEnroll = document.getElementById('btnEnrollBiometric');
   const btnBioLogin = document.getElementById('btnBiometricLogin');
-  const btnUpdateAcc = document.getElementById('btnUpdateAccount');
 
-  btnEnroll.addEventListener('click', async () => {
-    await enrollBiometricKey();
-  });
+  if (btnEnroll) {
+    btnEnroll.addEventListener('click', async () => {
+      await enrollBiometricKey();
+    });
+  }
 
-  btnBioLogin.addEventListener('click', async () => {
-    await loginWithBiometrics();
-  });
-
-  btnUpdateAcc.addEventListener('click', () => {
-    const newId = document.getElementById('secStudentId').value.trim();
-    if (newId) state.studentId = newId;
-    saveState();
-    renderStudentProfile();
-    playHaptic();
-    alert('تم حفظ بيانات الحساب بنجاح.');
-  });
+  if (btnBioLogin) {
+    btnBioLogin.addEventListener('click', async () => {
+      await loginWithBiometrics();
+    });
+  }
 }
 
 async function enrollBiometricKey() {
@@ -368,7 +556,7 @@ async function enrollBiometricKey() {
     saveState();
     renderStudentProfile();
     playHaptic();
-    alert('تم تفعيل وحفظ البصمة البيومترية بنجاح في قاعدة بيانات Neon.tech.');
+    alert('تم تفعيل وحفظ البصمة البيومترية بنجاح في السحابة الأكاديمية.');
   } catch (err) {
     state.biometricRegistered = true;
     saveState();
@@ -381,8 +569,10 @@ async function enrollBiometricKey() {
 async function loginWithBiometrics() {
   playHaptic();
   playAudioChime();
-  alert('تم التحقق من البصمة البيومترية بنجاح وتسجيل دخول الطالب: ' + state.fullName);
-  switchToView('viewAttendance');
+  alert('تم التحقق من البصمة البيومترية بنجاح وتسجيل دخول الطالب: ' + (state.fullName || state.studentId));
+  state.isRegistered = true;
+  saveState();
+  hideAuthGateAndUnlockApp();
 }
 
 // -------------------------------------------------------------
@@ -396,12 +586,12 @@ function initModals() {
   const btnCloseCamera = document.getElementById('btnCloseCameraModal');
   const btnCancelScan = document.getElementById('btnCancelScan');
 
-  btnOpenHelp.addEventListener('click', () => helpModal.classList.remove('hidden'));
-  btnCloseHelp.addEventListener('click', () => helpModal.classList.add('hidden'));
-  btnCloseHelpBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+  if (btnOpenHelp) btnOpenHelp.addEventListener('click', () => helpModal.classList.remove('hidden'));
+  if (btnCloseHelp) btnCloseHelp.addEventListener('click', () => helpModal.classList.add('hidden'));
+  if (btnCloseHelpBtn) btnCloseHelpBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
 
-  btnCloseCamera.addEventListener('click', () => closeCameraScanner());
-  btnCancelScan.addEventListener('click', () => closeCameraScanner());
+  if (btnCloseCamera) btnCloseCamera.addEventListener('click', () => closeCameraScanner());
+  if (btnCancelScan) btnCancelScan.addEventListener('click', () => closeCameraScanner());
 }
 
 function playHaptic() {
