@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { db, initDb } from './db.js';
 import { fetchFueStudentCard } from './services/fueCardScraper.js';
-import { generateDynamicQrToken, verifyDynamicQrToken, verifyDynamicNumericCode } from './services/dynamicQrService.js';
+import { generateDynamicQrToken, verifyDynamicQrToken, verifyDynamicNumericCode, verifyDynamicTokenDetailed } from './services/dynamicQrService.js';
 
 dotenv.config();
 
@@ -315,6 +315,18 @@ app.get('/api/session/:id/records', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/api/session/:id/check/:studentId', async (req: Request, res: Response) => {
+  try {
+    const record = await db.getAttendanceRecord(req.params.id, req.params.studentId);
+    res.json({
+      attended: Boolean(record),
+      record: record || null
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/session/:id/dynamic-token', async (req: Request, res: Response) => {
   try {
     let session = await db.getSession(req.params.id);
@@ -414,34 +426,50 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
       }
     }
 
-    // 1. Verify dynamic cryptographic token or 8-digit numeric code (anti-cheating)
-    let isValid = false;
-    if (effectiveNumericCode && typeof effectiveNumericCode === 'string') {
-      isValid = verifyDynamicNumericCode(effectiveSessionId, effectiveNumericCode);
-    }
-    if (!isValid && effectiveToken) {
-      isValid = verifyDynamicQrToken(effectiveSessionId, effectiveToken);
+    // 1. Check if student already attended this session (avoids duplicate processing and gives exact feedback)
+    const existingRecord = await db.getAttendanceRecord(effectiveSessionId, studentId);
+    if (existingRecord) {
+      let arabicTime = existingRecord.check_time;
+      try {
+        arabicTime = new Intl.DateTimeFormat('ar-EG', {
+          dateStyle: 'full',
+          timeStyle: 'medium',
+          hour12: true
+        }).format(new Date(existingRecord.check_time));
+      } catch (e) {}
+
+      return res.json({
+        success: true,
+        alreadyAttended: true,
+        reason: 'ALREADY_ATTENDED',
+        message: `تم تسجيل حضورك مسبقاً في هذه المحاضرة بنجاح (بتاريخ: ${arabicTime}). حضورك معتمد ولا حاجة لإعادة التسجيل.`,
+        record: existingRecord
+      });
     }
 
-    // Fallback grace for direct attend in demo/testing
-    if (!isValid && (effectiveNumericCode || effectiveToken)) {
-      // Also allow verification against current generated token
-      const currentDynamic = generateDynamicQrToken(effectiveSessionId);
-      if (effectiveNumericCode === currentDynamic.numericCode || effectiveToken === currentDynamic.token) {
-        isValid = true;
-      }
-    }
-
-    if (!isValid) {
+    // 2. Check if session is closed
+    let session = await db.getSession(effectiveSessionId);
+    if (session && session.status === 'CLOSED') {
       return res.status(400).json({
-        error: 'كود الحضور أو الرمز المكون من 8 أرقام غير صالح أو منتهي الصلاحية. يرجى التأكد من الرمز المعروض حالياً في شاشة الإضافة.'
+        success: false,
+        reason: 'SESSION_CLOSED',
+        error: 'جلسة تسجيل الحضور مغلقة رسمياً أو انتهت المدة المحددة (3 دقائق). لا يمكن قبول تسجيلات جديدة.'
+      });
+    }
+
+    // 3. Verify dynamic cryptographic token or 8-digit numeric code with exact time analysis
+    const verification = verifyDynamicTokenDetailed(effectiveSessionId, effectiveToken, effectiveNumericCode);
+    if (!verification.valid) {
+      return res.status(400).json({
+        success: false,
+        reason: verification.reason,
+        error: verification.message
       });
     }
 
     // Ensure session exists
-    let session = await db.getSession(effectiveSessionId);
     if (!session) {
-      await db.createSession({
+      session = await db.createSession({
         id: effectiveSessionId,
         course_name: 'مقدمة في هندسة البرمجيات (CSE 2026)',
         doctor_name: 'د. محمد مطاوع (Matany Group)',
@@ -454,7 +482,7 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
       });
     }
 
-    // 2. Verify or auto-provision student
+    // 4. Verify or auto-provision student
     let student = await db.getStudent(studentId);
     if (!student) {
       student = await db.upsertStudent({
@@ -480,11 +508,11 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
       student = await db.upsertStudent(updates);
     }
 
-    // 3. Record attendance in database (strictly single attendance per student per session)
+    // 5. Record attendance in database (strictly single attendance per student per session)
     const { record, isNew } = await db.recordAttendance(effectiveSessionId, student.id, student.full_name);
 
     if (isNew) {
-      // 4. Instant Real-time Broadcast to Doctor's Chrome Extension only for new attendance
+      // 6. Instant Real-time Broadcast to Doctor's Chrome Extension
       broadcastToSession(effectiveSessionId, 'STUDENT_ATTENDED', {
         studentId: student.id,
         fullName: student.full_name,
@@ -494,12 +522,21 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
       });
     }
 
+    let arabicTime = record.check_time;
+    try {
+      arabicTime = new Intl.DateTimeFormat('ar-EG', {
+        dateStyle: 'full',
+        timeStyle: 'medium',
+        hour12: true
+      }).format(new Date(record.check_time));
+    } catch (e) {}
+
     res.json({
       success: true,
-      alreadyAttended: !isNew,
-      message: isNew
-        ? `تم تسجيل الحضور بنجاح للطالب ${student.full_name}`
-        : `تم تسجيل حضورك مسبقاً في هذه المحاضرة بنجاح (${student.full_name})`,
+      alreadyAttended: false,
+      isNew: true,
+      reason: 'ATTENDANCE_RECORDED',
+      message: `تم إثبات وتسجيل حضورك بنجاح واعتماده في كشف المحاضر (بتاريخ: ${arabicTime}).`,
       student,
       record
     });

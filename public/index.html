@@ -51,15 +51,13 @@
             <img src="assets/avqr-logo.svg" alt="AVQR Logo" class="auth-matany-img">
           </div>
           <span class="auth-badge-fue">جامعة المستقبل في مصر • FUE</span>
-          <h2 class="auth-title">بوابة تسجيل وتوثيق الطالب</h2>
-          <p class="auth-desc">يرجى تسجيل الدخول لربط هذا الجهاز رسمياً بحسابك الجامعي الحصري</p>
+          <h2 class="auth-title">بوابة توثيق الطالب</h2>
+          <p class="auth-desc">يرجى تسجيل الدخول لربط هذا الجهاز بحسابك الجامعي</p>
         </div>
 
         <div class="device-lock-banner">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           <div class="device-lock-text">
-            <strong>نظام النزاهة الأكاديمية (Device Lock):</strong>
-            <span>سيتم قفل هذا الجهاز حصرياً برقمك الجامعي، ويستحيل الدخول بأي حساب آخر من نفس الجهاز.</span>
+            <strong>نظام النزاهة الأكاديمية:</strong> يتم قفل هذا الجهاز حصرياً برقمك الجامعي لمنع تداول الروابط.
           </div>
         </div>
 
@@ -70,18 +68,13 @@
           </div>
 
           <div class="form-group-neo">
-            <label class="neo-label">الاسم الرباعي الرسمي:</label>
+            <label class="neo-label">الاسم الرسمي:</label>
             <input type="text" id="authFullNameInput" class="neo-input" placeholder="Mohamed Ahmed Mohamed Matany Ahmed" value="Mohamed Ahmed Mohamed Matany Ahmed">
-          </div>
-
-          <div class="form-group-neo">
-            <label class="neo-label">كلمة المرور (اختيارية للطوارئ):</label>
-            <input type="password" id="authPasswordInput" class="neo-input" placeholder="كلمة سر للاستعادة">
           </div>
 
           <div class="btn-stack mt-2">
             <button id="btnAuthSubmit" class="neo-btn btn-primary-red btn-full btn-large">
-              تسجيل وتوثيق الجهاز الجامعي
+              توثيق الجهاز والدخول
             </button>
             <button id="btnAuthBiometric" class="neo-btn btn-emerald btn-full">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.71c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"></path></svg>
@@ -105,18 +98,20 @@
         </div>
         <h2 class="lecture-hero-title">هندسة البرمجيات المتقدمة (CSE 2026)</h2>
         <div class="lecture-hero-details">
-          <div class="detail-pill">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span>د. محمد مطاوع</span>
-          </div>
-          <div class="detail-pill">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            <span>مدرج الهندسة A</span>
-          </div>
-          <div class="detail-pill">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span>10:00 صباحاً</span>
-          </div>
+          <span>د. محمد مطاوع</span>
+          <span>•</span>
+          <span>مدرج الهندسة A</span>
+        </div>
+      </div>
+
+      <!-- DYNAMIC STATUS FEEDBACK BANNER (Directly states exact outcome/reason) -->
+      <div id="attendanceStatusBanner" class="status-banner hidden">
+        <div class="banner-icon-wrap" id="bannerIcon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div>
+        <div class="banner-body">
+          <strong class="banner-title" id="bannerTitle">حالة الحضور</strong>
+          <p class="banner-desc" id="bannerDesc">جاري فحص حالة الحضور...</p>
         </div>
       </div>
 
@@ -127,19 +122,15 @@
           <span id="attendanceBadge" class="status-pill pill-yellow">بانتظار التسجيل</span>
         </div>
 
-        <!-- 8-Digit Manual Entry with Clean Academic Wording -->
+        <!-- 8-Digit Manual Entry -->
         <div class="code-entry-box">
-          <div class="code-head-wrap">
-            <label class="input-label">الرمز المباشر المكون من 8 أرقام:</label>
-            <span class="time-limit-badge">تحديث تلقائي</span>
-          </div>
+          <label class="input-label">الرمز المباشر المكون من 8 أرقام:</label>
           <div class="code-input-row">
             <input type="text" id="manualCodeInput" class="neo-input code-digit-input" maxlength="9" placeholder="8492-3105" autocomplete="off">
             <button id="btnSubmitManualCode" class="neo-btn btn-primary-red">
               تأكيد الحضور
             </button>
           </div>
-          <p class="input-hint">الرمز يتجدد تلقائياً لضمان رصد الحضور اللحظي بالقاعة</p>
         </div>
 
         <div class="divider-or">
@@ -153,21 +144,21 @@
         </button>
       </div>
 
-      <!-- SUCCESS CONFIRMATION BOX (Hidden until attended) -->
+      <!-- SUCCESS CONFIRMATION BOX -->
       <div id="attendanceSuccessBox" class="attendance-success-card hidden">
         <div class="success-icon-wrap">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         <div class="success-content">
-          <h3 class="success-heading">تم إثبات الحضور بنجاح</h3>
+          <h3 class="success-heading" id="successHeading">تم إثبات الحضور بنجاح</h3>
           <div class="success-student" id="successStudentName">Mohamed Ahmed Mohamed Matany Ahmed</div>
           <div class="success-meta-row">
             <span>الرقم الجامعي: <strong id="successStudentId">20264712</strong></span>
             <span>•</span>
             <span id="successTimeText">الساعة 10:00 صباحاً</span>
           </div>
-          <div class="success-portal-notice">
-            تم تفعيل علامة الصح تلقائياً في كشف الدكتور بنسبة دقة 100%
+          <div class="success-portal-notice" id="successNotice">
+            تم اعتماد الحضور رسمياً في كشف المحاضر بالسحابة الأكاديمية بنسبة دقة 100%.
           </div>
         </div>
       </div>
@@ -177,10 +168,10 @@
     <section id="viewCard" class="app-view">
       <div class="view-header">
         <h2 class="view-title">كارنيه جامعة المستقبل الرقمي</h2>
-        <p class="view-desc">الهوية الجامعية الرسمية المعتمدة لجامعة FUE ومجموعة Matany</p>
+        <p class="view-desc">الهوية الجامعية الرسمية المعتمدة لجامعة FUE</p>
       </div>
 
-      <!-- FUE DIGITAL STUDENT ID CARD (NEUBRUTALISM CRIMSON & WHITE) -->
+      <!-- FUE DIGITAL STUDENT ID CARD -->
       <div class="fue-card-wrapper">
         <div class="fue-id-card">
           <div class="id-card-topbar">
@@ -197,7 +188,7 @@
           <div class="id-card-body">
             <div class="id-photo-area">
               <div class="student-avatar-frame">
-                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               </div>
               <span class="status-pill pill-green font-xs mt-1">طالب منتظم</span>
             </div>
@@ -224,14 +215,13 @@
                 </div>
                 <div class="id-field">
                   <label>الجنسية:</label>
-                  <div class="id-val">مصري (Egyptian)</div>
+                  <div class="id-val">مصري</div>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="id-card-footer">
-            <div class="id-barcode-mock">||| | |||| | ||| |||| | ||| ||||</div>
             <div class="id-verified-seal">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
               <span>FUE VERIFIED 2026</span>
@@ -240,19 +230,11 @@
         </div>
       </div>
 
-      <!-- Card Management Card -->
+      <!-- Card Action -->
       <div class="neo-card mt-3">
-        <h3 class="card-section-title">إدارة الهوية الجامعية الرسمية</h3>
-        <p class="card-desc">تم توثيق بيانات الكارنيه والاسم الرباعي من الرابط الرسمي لجامعة المستقبل.</p>
-        <div class="btn-row">
-          <button id="btnFetchCardQr" class="neo-btn btn-primary-red" style="flex: 1.2;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line><line x1="9" y1="15" x2="15"></line></svg>
-            جلب كود QR الكارنيه
-          </button>
-          <button id="btnSyncCardCloud" class="neo-btn btn-subtle-dark" style="flex: 1;">
-            مزامنة الهوية السحابية
-          </button>
-        </div>
+        <button id="btnFetchCardQr" class="neo-btn btn-primary-red btn-full">
+          عرض كود QR الجامعي الرسمي
+        </button>
       </div>
     </section>
 
@@ -260,64 +242,30 @@
     <section id="viewHistory" class="app-view">
       <div class="view-header">
         <h2 class="view-title">سجل الحضور الأكاديمي</h2>
-        <p class="view-desc">رصد شامل لكافة المحاضرات ونسب الالتزام الجامعي</p>
+        <p class="view-desc">رصد شامل للمحاضرات المسجلة</p>
       </div>
 
-      <!-- Stats Grid -->
-      <div class="stats-metric-grid">
-        <div class="metric-card bg-neo-crimson">
-          <span class="metric-label">نسبة الحضور</span>
-          <strong class="metric-num">100%</strong>
-          <span class="metric-sub">ممتاز • التزام كامل</span>
+      <!-- Stats Summary Bar -->
+      <div class="history-summary-bar">
+        <div class="summary-stat">
+          <span class="stat-lbl">نسبة الالتزام</span>
+          <strong class="stat-val text-emerald">100%</strong>
         </div>
-        <div class="metric-card bg-neo-white">
-          <span class="metric-label">المحاضرات المسجلة</span>
-          <strong class="metric-num text-crimson">12 / 12</strong>
-          <span class="metric-sub">رصد مؤكد بنسبة 100%</span>
+        <div class="summary-stat">
+          <span class="stat-lbl">المحاضرات</span>
+          <strong class="stat-val" id="statLectureCount">12</strong>
         </div>
-        <div class="metric-card bg-neo-white">
-          <span class="metric-label">مرات الغياب</span>
-          <strong class="metric-num">0</strong>
-          <span class="metric-sub">0.0% نسبة غياب</span>
+        <div class="summary-stat">
+          <span class="stat-lbl">الغياب</span>
+          <strong class="stat-val">0</strong>
         </div>
       </div>
 
       <!-- Recent Attendance List -->
       <div class="neo-card mt-3">
-        <h3 class="card-section-title">المحاضرات الأخيرة المرصودة:</h3>
+        <h3 class="card-section-title">المحاضرات المسجلة:</h3>
         <div class="timeline-list" id="timelineHistoryList">
-          <div class="timeline-item">
-            <div class="timeline-badge-check">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <div class="timeline-content">
-              <strong>هندسة البرمجيات المتقدمة (CSE 2026)</strong>
-              <span>اليوم • مدرج الهندسة A • د. محمد مطاوع</span>
-            </div>
-            <span class="status-pill pill-green font-xs">حاضر (AVQR)</span>
-          </div>
-
-          <div class="timeline-item">
-            <div class="timeline-badge-check">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <div class="timeline-content">
-              <strong>بنية البيانات والخوارزميات (CSE 2025)</strong>
-              <span>الأربعاء 14 أكتوبر • معمل الحاسب 2</span>
-            </div>
-            <span class="status-pill pill-green font-xs">حاضر (AVQR)</span>
-          </div>
-
-          <div class="timeline-item">
-            <div class="timeline-badge-check">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <div class="timeline-content">
-              <strong>تفاضل وتكامل متقدم (MATH 201)</strong>
-              <span>الإثنين 12 أكتوبر • قاعة المحاضرات المركزية</span>
-            </div>
-            <span class="status-pill pill-green font-xs">حاضر (AVQR)</span>
-          </div>
+          <!-- Populated by JS -->
         </div>
       </div>
     </section>
@@ -326,57 +274,35 @@
     <section id="viewSecurity" class="app-view">
       <div class="view-header">
         <h2 class="view-title">الأمان والبصمة البيومترية</h2>
-        <p class="view-desc">حماية الحساب بالبصمة البيومترية وقفل الجهاز الأكاديمي</p>
+        <p class="view-desc">حماية الحساب بالبصمة وقفل الجهاز الجامعي</p>
       </div>
 
       <!-- Biometric Card -->
       <div class="neo-card">
         <div class="card-head-row">
-          <div class="card-head-title-wrap">
-            <h3 class="card-section-title">بصمة الإصبع و Face ID</h3>
-            <p class="card-desc">تسجيل دخول فوري بالمصادقة البيومترية الحقيقية (Touch ID / Face ID / Windows Hello)</p>
-          </div>
+          <h3 class="card-section-title">بصمة الإصبع و Face ID</h3>
           <span id="bioStatusPill" class="status-pill pill-green">البصمة مفعلة</span>
         </div>
 
-        <div class="bio-visual-box">
-          <div class="bio-icon-large">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.71c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"></path>
-            </svg>
-          </div>
-          <div class="bio-visual-info">
-            <strong id="bioVisualTitle">المصادقة البيومترية المعتمدة</strong>
-            <span id="bioVisualSub">اضغط على تسجيل البصمة لمطالبة جهازك بمسح بصمة الإصبع أو بصمة الوجه</span>
-          </div>
-        </div>
+        <p class="card-desc mt-1">تسجيل دخول مباشر ومصادقة فورية عبر مستشعر البصمة البيومترية بجهازك.</p>
 
-        <div class="btn-row mt-3">
-          <button id="btnBiometricLogin" class="neo-btn btn-emerald" style="flex: 1.2;">
-            دخول ببصمة الإصبع / Face ID
-          </button>
-          <button id="btnEnrollBiometric" class="neo-btn btn-primary-red" style="flex: 1;">
-            تسجيل بصمة جديدة
+        <div class="btn-stack mt-2">
+          <button id="btnBiometricLogin" class="neo-btn btn-emerald btn-full">
+            المصادقة ببصمة الإصبع / Face ID
           </button>
         </div>
       </div>
 
-      <!-- Device Lock Status Card -->
+      <!-- Device Lock Card -->
       <div class="neo-card mt-3">
         <h3 class="card-section-title">حالة اقتران الجهاز (Device Lock)</h3>
-        <div class="device-binding-info-box">
-          <div class="device-bind-row">
-            <span class="bind-lbl">حالة القفل:</span>
-            <span class="status-pill pill-green font-xs">مقترن حصرياً</span>
-          </div>
-          <div class="device-bind-row">
-            <span class="bind-lbl">الرقم الجامعي المقترن:</span>
-            <strong id="secBoundStudentId">20264712</strong>
-          </div>
-          <p class="bind-warning-txt">
-            يستحيل تسجيل الدخول بأي رقم جامعي آخر من هذا الجهاز حفاظاً على النزاهة الأكاديمية لجامعة المستقبل.
-          </p>
+        <div class="device-bind-row mt-1">
+          <span class="bind-lbl">الرقم الجامعي المقترن:</span>
+          <strong id="secBoundStudentId">20264712</strong>
         </div>
+        <p class="bind-warning-txt mt-1">
+          هذا الجهاز مقترن رسمياً بحسابك الأكاديمي، ويستحيل استخدامه لتسجيل أي طالب آخر.
+        </p>
       </div>
     </section>
   </main>

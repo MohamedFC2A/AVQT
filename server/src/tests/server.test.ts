@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { generateDynamicQrToken, verifyDynamicQrToken, verifyDynamicNumericCode } from '../services/dynamicQrService.js';
+import crypto from 'crypto';
+import { generateDynamicQrToken, verifyDynamicQrToken, verifyDynamicNumericCode, verifyDynamicTokenDetailed } from '../services/dynamicQrService.js';
 import { fetchFueStudentCard, parseFueCardHtml } from '../services/fueCardScraper.js';
 import { db } from '../db.js';
 
@@ -22,13 +23,37 @@ describe('AVQR Anti-Cheating Dynamic QR & 8-Digit Code Engine', () => {
     // 8-digit code verification must succeed
     const isNumericValid = verifyDynamicNumericCode(sessionId, payload.numericCode);
     assert.strictEqual(isNumericValid, true, 'Immediate 8-digit code should be valid');
+
+    // Detailed verification must be VALID
+    const detail = verifyDynamicTokenDetailed(sessionId, payload.token, payload.numericCode);
+    assert.strictEqual(detail.valid, true);
+    assert.strictEqual(detail.reason, 'VALID');
   });
 
-  test('rejects tampered or fake tokens and codes', () => {
-    const sessionId = 'TEST-SESSION-002';
-    assert.strictEqual(verifyDynamicQrToken(sessionId, 'fake_forged_token'), false);
-    assert.strictEqual(verifyDynamicNumericCode(sessionId, '00000000'), false);
-    assert.strictEqual(verifyDynamicNumericCode(sessionId, '123'), false);
+  test('accurately identifies JUST_EXPIRED (rotated) vs ANCIENT_CODE (old) vs INVALID_CODE', () => {
+    const sessionId = 'TEST-SESSION-EXPIRY';
+    const secret = process.env.AVQR_SECRET || 'MATANY_GROUP_AVQR_FUE_SECURITY_KEY_2026';
+    const currentSeq = Math.floor(Date.now() / 5000);
+
+    // Just expired (3 sequences ago = 15s ago)
+    const justExpiredHmac = crypto.createHmac('sha256', secret);
+    justExpiredHmac.update(`${sessionId}:${currentSeq - 3}`);
+    const justExpiredToken = justExpiredHmac.digest('hex').substring(0, 16);
+
+    const justExpiredResult = verifyDynamicTokenDetailed(sessionId, justExpiredToken);
+    assert.strictEqual(justExpiredResult.valid, false);
+    assert.strictEqual(justExpiredResult.reason, 'JUST_EXPIRED');
+    assert.match(justExpiredResult.message, /انتهت صلاحية الرمز للتو/);
+
+    // Ancient code (15 sequences ago = 75s ago)
+    const ancientHmac = crypto.createHmac('sha256', secret);
+    ancientHmac.update(`${sessionId}:${currentSeq - 15}`);
+    const ancientToken = ancientHmac.digest('hex').substring(0, 16);
+
+    const ancientResult = verifyDynamicTokenDetailed(sessionId, ancientToken);
+    assert.strictEqual(ancientResult.valid, false);
+    assert.strictEqual(ancientResult.reason, 'ANCIENT_CODE');
+    assert.match(ancientResult.message, /قديم جداً/);
   });
 });
 

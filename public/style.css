@@ -1228,3 +1228,128 @@ body {
 .hidden {
   display: none !important;
 }
+
+/* NEUBRUTALISM DYNAMIC STATUS FEEDBACK BANNER */
+.status-banner {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 2.5px solid var(--neo-black);
+  border-radius: var(--radius-sm);
+  box-shadow: 3px 3px 0px var(--neo-black);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  animation: bannerPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bannerPop {
+  0% { transform: scale(0.97); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.status-banner.banner-success {
+  background: #F0FDF4;
+  border-color: #059669;
+  box-shadow: 3px 3px 0px #059669;
+  color: #065F46;
+}
+
+.status-banner.banner-already {
+  background: #EFF6FF;
+  border-color: #2563EB;
+  box-shadow: 3px 3px 0px #2563EB;
+  color: #1E40AF;
+}
+
+.status-banner.banner-expired {
+  background: #FEF2F2;
+  border-color: #DC2626;
+  box-shadow: 3px 3px 0px #DC2626;
+  color: #991B1B;
+}
+
+.status-banner.banner-ancient {
+  background: #FFF1F2;
+  border-color: #9F1239;
+  box-shadow: 3px 3px 0px #9F1239;
+  color: #881337;
+}
+
+.status-banner.banner-warning {
+  background: #FFFBEB;
+  border-color: #D97706;
+  box-shadow: 3px 3px 0px #D97706;
+  color: #92400E;
+}
+
+.status-banner.banner-error {
+  background: #FEF2F2;
+  border-color: var(--neo-black);
+  box-shadow: 3px 3px 0px var(--neo-black);
+  color: #991B1B;
+}
+
+.banner-icon-wrap {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.banner-body {
+  flex: 1;
+}
+
+.banner-title {
+  display: block;
+  font-size: 0.94rem;
+  font-weight: 900;
+  margin-bottom: 2px;
+}
+
+.banner-desc {
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* HISTORY SUMMARY BAR */
+.history-summary-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.summary-stat {
+  flex: 1;
+  background: var(--neo-white);
+  border: var(--border-main);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.stat-lbl {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-gray);
+}
+
+.stat-val {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--neo-black);
+  margin-top: 2px;
+}
+
+.text-emerald {
+  color: #059669 !important;
+}
+

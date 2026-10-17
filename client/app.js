@@ -150,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBiometrics();
   initModals();
   renderHistoryTimeline();
+  checkLiveSessionStatus();
   checkUrlParamsForAutoAttendance();
 });
 
@@ -400,7 +401,7 @@ function initAttendanceFlow() {
     });
   }
 
-  // Card Management Buttons
+  // Card QR Button
   const btnFetchCardQr = document.getElementById('btnFetchCardQr');
   if (btnFetchCardQr) {
     btnFetchCardQr.addEventListener('click', () => {
@@ -409,26 +410,27 @@ function initAttendanceFlow() {
       alert(`كود QR الكارنيه الرقمي لجامعة المستقبل (FUE):\n${cardQrUrl}\n\nالاسم الموثق: ${state.fullName}\nالرقم الجامعي: ${state.studentId}`);
     });
   }
+}
 
-  const btnSyncCardCloud = document.getElementById('btnSyncCardCloud');
-  if (btnSyncCardCloud) {
-    btnSyncCardCloud.addEventListener('click', async () => {
-      try {
-        await fetch(`${SERVER_URL}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: state.studentId,
-            fullName: state.fullName,
-            deviceUuid: state.deviceUuid
-          })
-        });
-        playHaptic();
-        alert('تمت مزامنة الهوية مع السحابة الأكاديمية بنجاح بنسبة دقة 100%');
-      } catch (e) {
-        alert('الهوية متزامنة مسبقاً في السحابة الأكاديمية.');
+async function checkLiveSessionStatus() {
+  if (!state.studentId) return;
+  try {
+    const res = await fetch(`${SERVER_URL}/api/session/${state.activeSessionId}/check/${state.studentId}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.attended && data.record) {
+        markSessionAsAttended(state.activeSessionId);
+        updateAttendanceBadge(true);
+        displayAttendanceSuccessCard(data.record);
+        showStatusBanner(
+          'already',
+          'أنت مسجل بالفعل في هذه المحاضرة',
+          `تم اعتماد حضورك مسبقاً في كشف المحاضر بتاريخ: ${formatArabicDate(data.record.check_time)} - ${formatArabicTime(data.record.check_time)}. لا حاجة لإعادة التسجيل.`
+        );
       }
-    });
+    }
+  } catch (e) {
+    // Silent check on initial load
   }
 }
 
@@ -456,14 +458,12 @@ async function checkUrlParamsForAutoAttendance() {
 
 async function performAttendanceSubmission(payload) {
   const sid = payload.sessionId || state.activeSessionId;
+  const btn = document.getElementById('btnSubmitManualCode');
+  const originalText = btn ? btn.textContent : 'تأكيد الحضور';
 
-  // Single attendance per student check
-  if (isSessionAlreadyAttended(sid)) {
-    displayAttendanceSuccess({
-      alreadyAttended: true,
-      message: 'تم تسجيل حضورك مسبقاً في هذه المحاضرة بنجاح.'
-    });
-    return;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'جاري التحقق...';
   }
 
   try {
@@ -481,61 +481,163 @@ async function performAttendanceSubmission(payload) {
     });
 
     const data = await res.json();
+
     if (res.ok && data.success) {
       markSessionAsAttended(sid);
-      displayAttendanceSuccess(data);
+      updateAttendanceBadge(true);
+      displayAttendanceSuccessCard(data.record);
+
+      if (data.alreadyAttended) {
+        showStatusBanner(
+          'already',
+          'أنت مسجل بالفعل في هذه المحاضرة',
+          data.message || 'تم تسجيل حضورك مسبقاً في هذه المحاضرة بنجاح. حضورك معتمد ولا حاجة لإعادة التسجيل.'
+        );
+      } else {
+        showStatusBanner(
+          'success',
+          'تم إثبات الحضور بنجاح',
+          data.message || 'تم تسجيل حضورك واعتماده في كشف المحاضر بالسحابة الأكاديمية بنسبة دقة 100%.'
+        );
+
+        saveHistoryRecord({
+          courseName: 'هندسة البرمجيات المتقدمة (CSE 2026)',
+          dateText: formatArabicDate(data.record?.check_time || new Date()),
+          timeText: formatArabicTime(data.record?.check_time || new Date()),
+          doctor: 'د. محمد مطاوع',
+          hall: 'مدرج الهندسة A',
+          status: 'حاضر (AVQR)'
+        });
+      }
     } else {
-      alert(data.error || 'الرمز المدخل غير صالح أو انتهت صلاحيته. يرجى استخدام الرمز المعروض حالياً.');
+      // Precise diagnostic reasoning based on server analysis
+      const reason = data.reason || 'INVALID_CODE';
+      const msg = data.error || 'الرمز غير صالح أو منتهي الصلاحية.';
+
+      if (reason === 'JUST_EXPIRED') {
+        showStatusBanner(
+          'expired',
+          'انتهت صلاحية الرمز للتو (تغير الكود)',
+          msg
+        );
+      } else if (reason === 'ANCIENT_CODE') {
+        showStatusBanner(
+          'ancient',
+          'رمز QR قديم جداً أو غير صالح كلياً',
+          msg
+        );
+      } else if (reason === 'SESSION_CLOSED') {
+        showStatusBanner(
+          'warning',
+          'جلسة تسجيل الحضور مغلقة',
+          msg
+        );
+      } else if (reason === 'DEVICE_LOCKED') {
+        showStatusBanner(
+          'error',
+          'غير مصرح: قفل الجهاز (Device Lock)',
+          msg
+        );
+      } else {
+        showStatusBanner(
+          'warning',
+          'رمز غير صحيح أو غير صالح',
+          msg
+        );
+      }
     }
   } catch (err) {
-    markSessionAsAttended(sid);
-    displayAttendanceSuccess({
-      success: true,
-      student: { id: state.studentId, full_name: state.fullName }
-    });
+    // Zero fake success: accurately report connection failure
+    showStatusBanner(
+      'error',
+      'تعذر الاتصال بالسيرفر',
+      'يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً. لم يتم تسجيل الحضور بعد.'
+    );
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   }
 }
 
-function displayAttendanceSuccess(data) {
+function showStatusBanner(type, title, desc) {
+  const banner = document.getElementById('attendanceStatusBanner');
+  const bannerIcon = document.getElementById('bannerIcon');
+  const bannerTitle = document.getElementById('bannerTitle');
+  const bannerDesc = document.getElementById('bannerDesc');
+  if (!banner) return;
+
+  banner.className = 'status-banner banner-' + type;
+
+  let iconSvg = '';
+  if (type === 'success') {
+    iconSvg = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  } else if (type === 'already') {
+    iconSvg = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+  } else if (type === 'expired') {
+    iconSvg = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+  } else if (type === 'ancient') {
+    iconSvg = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9F1239" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+  } else {
+    iconSvg = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+  }
+
+  if (bannerIcon) bannerIcon.innerHTML = iconSvg;
+  if (bannerTitle) bannerTitle.textContent = title;
+  if (bannerDesc) bannerDesc.textContent = desc;
+
+  banner.classList.remove('hidden');
+  banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  playHaptic();
+}
+
+function displayAttendanceSuccessCard(record) {
   playHaptic();
   playAudioChime();
 
   const successBox = document.getElementById('attendanceSuccessBox');
-  const badge = document.getElementById('attendanceBadge');
   const nameEl = document.getElementById('successStudentName');
   const idEl = document.getElementById('successStudentId');
   const timeEl = document.getElementById('successTimeText');
 
-  // Exact timestamp formatting
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const checkDate = record?.check_time ? new Date(record.check_time) : new Date();
+  const dateStr = formatArabicDate(checkDate);
+  const timeStr = formatArabicTime(checkDate);
 
   if (nameEl) nameEl.textContent = state.fullName || 'Mohamed Ahmed Mohamed Matany Ahmed';
   if (idEl) idEl.textContent = state.studentId || '20264712';
   if (timeEl) timeEl.textContent = `${dateStr} • ${timeStr} • مدرج الهندسة A`;
 
-  if (badge) {
-    badge.textContent = data.alreadyAttended ? 'تم تسجيل الحضور مسبقاً' : 'تم تسجيل الحضور';
-    badge.className = 'status-pill pill-green';
-  }
-
   if (successBox) {
     successBox.classList.remove('hidden');
-    switchToView('viewAttendance');
-    successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
+}
 
-  // Save to history list with exact verified date & time
-  if (!data.alreadyAttended) {
-    saveHistoryRecord({
-      courseName: 'هندسة البرمجيات المتقدمة (CSE 2026)',
-      dateText: dateStr,
-      timeText: timeStr,
-      doctor: 'د. محمد مطاوع',
-      hall: 'مدرج الهندسة A',
-      status: 'حاضر (AVQR)'
-    });
+function updateAttendanceBadge(attended) {
+  const badge = document.getElementById('attendanceBadge');
+  if (badge) {
+    badge.textContent = attended ? 'تم تسجيل الحضور' : 'بانتظار التسجيل';
+    badge.className = 'status-pill ' + (attended ? 'pill-green' : 'pill-yellow');
+  }
+}
+
+function formatArabicDate(dateInput) {
+  try {
+    const d = new Date(dateInput);
+    return d.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  } catch (e) {
+    return 'السبت، 17 أكتوبر 2026';
+  }
+}
+
+function formatArabicTime(dateInput) {
+  try {
+    const d = new Date(dateInput);
+    return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch (e) {
+    return '10:00:00 ص';
   }
 }
 
@@ -634,7 +736,11 @@ function initBiometrics() {
 
   if (btnBioLogin) {
     btnBioLogin.addEventListener('click', async () => {
-      await loginWithBiometrics();
+      if (!state.biometricRegistered) {
+        await enrollBiometricKey();
+      } else {
+        await loginWithBiometrics();
+      }
     });
   }
 }
