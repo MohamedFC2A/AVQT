@@ -3,8 +3,12 @@
 
 ![Neubrutalism](https://img.shields.io/badge/Design-Neubrutalism-FFE600?style=for-the-badge&logoColor=121212)
 ![Database](https://img.shields.io/badge/Database-Neon.tech%20Serverless-00F090?style=for-the-badge)
-![Extension](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-FF3366?style=for-the-badge)
+![Vercel Live](https://img.shields.io/badge/Vercel-LIVE%20PRODUCTION-000000?style=for-the-badge&logo=vercel)
+![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-FF3366?style=for-the-badge)
 ![FUE University](https://img.shields.io/badge/University-Future%20University%20in%20Egypt%20(FUE)-B31B1B?style=for-the-badge)
+
+🌐 **الرابط المباشر للإنتاج (Live Production):** [https://avqr-matany-fue.vercel.app](https://avqr-matany-fue.vercel.app)  
+📑 **بوابة كشف حضور FUE التجريبية:** [https://avqr-matany-fue.vercel.app/portal/](https://avqr-matany-fue.vercel.app/portal/)
 
 نظام الحضور الذكي المتكامل للجامعات والمحاضرات الضخمة، مصمم خصيصاً للقضاء على تسجيل الغياب اليدوي وإلغاء الحاجة لضغط الدكتور على مربعات الاختيار (Checkboxes) لكل طالب على حدة، بنسبة خطأ **0.0%**.
 
