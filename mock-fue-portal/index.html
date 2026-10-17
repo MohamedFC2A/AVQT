@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام رصد الغياب والحضور - جامعة المستقبل FUE</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="fue-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <div class="fue-badge">FUE</div>
+        <div>
+          <h1>جامعة المستقبل في مصر - Future University in Egypt</h1>
+          <p>بوابة الخدمات الأكاديمية وهيئة التدريس • رصد الحضور الإلكتروني</p>
+        </div>
+      </div>
+      <div class="doc-info">
+        <span class="doc-tag">عضو هيئة التدريس: د. محمد مطاوع</span>
+        <span class="semester-tag">الفصل الدراسي الأول 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="lecture-meta-card">
+      <div class="meta-item">
+        <label>المقرر الدراسي:</label>
+        <strong>هندسة البرمجيات المتقدمة (CSE 2026)</strong>
+      </div>
+      <div class="meta-item">
+        <label>الكلية / الشعبة:</label>
+        <span>كلية الهندسة والتكنولوجيا - قسم الحاسبات</span>
+      </div>
+      <div class="meta-item">
+        <label>القاعة / المدرج:</label>
+        <span>مدرج A - مبنى الهندسة</span>
+      </div>
+      <div class="meta-item">
+        <label>تاريخ وتوقيت المحاضرة:</label>
+        <span id="currentDateStr">السبت 17 أكتوبر 2026 - 10:00 صباحاً</span>
+      </div>
+    </div>
+
+    <!-- Live Attendance Table Form -->
+    <form id="attendanceForm" class="attendance-table-card">
+      <div class="table-header-controls">
+        <div>
+          <h2>قائمة الطلاب المسجلين بالمقرر (العدد: 7 طلاب)</h2>
+          <p class="subtitle">يتم رصد الحضور إلكترونياً تلقائياً عبر إضافة <strong>AVQR Extension</strong></p>
+        </div>
+        <div class="counter-badge">
+          <span>الحاضرين: </span>
+          <span id="presentCount" class="count-number">0</span> / 7
+        </div>
+      </div>
+
+      <table class="students-table" id="studentsAttendanceTable">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th style="width: 140px;">الرقم الجامعي (ID)</th>
+            <th>اسم الطالب بالكامل</th>
+            <th style="width: 130px;">الكلية</th>
+            <th style="width: 100px;">الفرقة</th>
+            <th style="width: 140px; text-align: center;">تسجيل الحضور</th>
+            <th style="width: 160px; text-align: center;">حالة الرصد</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Row 1: The official student card code 20264712 -->
+          <tr id="row-20264712" class="student-row" data-student-id="20264712">
+            <td>1</td>
+            <td class="id-cell"><strong>20264712</strong></td>
+            <td class="name-cell">Mohamed Ahmed Mohamed Matany Ahmed</td>
+            <td>Engineering</td>
+            <td>1-First</td>
+            <td class="check-cell" style="text-align: center;">
+              <input type="checkbox" id="chk-20264712" name="attendance_20264712" value="present" class="attendance-checkbox">
+            </td>
+            <td class="status-cell" id="status-20264712">
+              <span class="badge-absent">غائب</span>
+            </td>
+          </tr>
+
+          <!-- Row 2 -->
+          <tr id="row-20264713" class="student-row" data-student-id="20264713">
+            <td>2</td>
+            <td class="id-cell"><strong>20264713</strong></td>
+            <td class="name-cell">Ahmed Mahmoud Hassan Ibrahim</td>
+            <td>Engineering</td>
+            <td>1-First</td>
+            <td class="check-cell" style="text-align: center;">
+              <input type="checkbox" id="chk-20264713" name="attendance_20264713" value="present" class="attendance-checkbox">
+            </td>
+            <td class="status-cell" id="status-20264713">
+              <span class="badge-absent">غائب</span>
+            </td>
+          </tr>
+
+          <!-- Row 3 -->
+          <tr id="row-20264714" class="student-row" data-student-id="20264714">
+            <td>3</td>
+            <td class="id-cell"><strong>20264714</strong></td>
+            <td class="name-cell">Sarah Tarek Mostafa El-Sayed</td>
+            <td>Engineering</td>
+            <td>1-First</td>
+            <td class="check-cell" style="text-align: center;">
+              <input type="checkbox" id="chk-20264714" name="attendance_20264714" value="present" class="attendance-checkbox">
+            </td>
+            <td class="status-cell" id="status-20264714">
+              <span class="badge-absent">غائب</span>
+            </td>
+          </tr>
+
+          <!-- Row 4 -->
+          <tr id="row-20264715" class="student-row" data-student-id="20264715">
+            <td>4</td>
+            <td class="id-cell"><strong>20264715</strong></td>
+            <td class="name-cell">Mostafa Youssef Ali Mansour</td>
+            <td>Engineering</td>
+            <td>1-First</td>
+            <td class="check-cell" style="text-align: center;">
+              <input type="checkbox" id="chk-20264715" name="attendance_20264715" value="present" class="attendance-checkbox">
+            </td>
+            <td class="status-cell" id="status-20264715">
+              <span class="badge-absent">غائب</span>
+            </td>
+          </tr>
+
+          <!-- Row 5 -->
+          <tr id="row-20264716" class="student-row" data-student-id="20264716">
+            <td>5</td>
+            <td class="id-cell"><strong>20264716</strong></td>
+            <td class="name-cell">Nourhan Khaled Mahmoud El-Naggar</td>
+            <td>Engineering</td>
+            <td>1-First</td>
+            <td class="check-cell" style="text-align: center;">
+              <input type="checkbox" id="chk-20264716" name="attendance_20264716" value="present" class="attendance-checkbox">
+            </td>
+            <td class="status-cell" id="status-20264716">
+              <span class="badge-absent">غائب</span>
+            </td>
+          </tr>
+
+          <!-- Row 6 -->
+          <tr id="row-20264717" class="student-row" data-student-id="20264717">
+            <td>6</td>
+            <td class="id-cell"><strong>20264717</strong></td>
+            <td class="name-cell">Omar Farouk Abdel-Rahman Hegazy</td>
+            <td>Engineering</td>
+            <td>1-First</td>
+            <td class="check-cell" style="text-align: center;">
+              <input type="checkbox" id="chk-20264717" name="attendance_20264717" value="present" class="attendance-checkbox">
+            </td>
+            <td class="status-cell" id="status-20264717">
+              <span class="badge-absent">غائب</span>
+            </td>
+          </tr>
+
+          <!-- Row 7 -->
+          <tr id="row-20264718" class="student-row" data-student-id="20264718">
+            <td>7</td>
+            <td class="id-cell"><strong>20264718</strong></td>
+            <td class="name-cell">Yasmin Hisham Adel Zaki</td>
+            <td>Engineering</td>
+            <td>1-First</td>
+            <td class="check-cell" style="text-align: center;">
+              <input type="checkbox" id="chk-20264718" name="attendance_20264718" value="present" class="attendance-checkbox">
+            </td>
+            <td class="status-cell" id="status-20264718">
+              <span class="badge-absent">غائب</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Bottom Save Action Bar -->
+      <div class="table-footer-actions">
+        <div class="note-box">
+          ℹ️ تذكير: إضافة AVQR تقوم برصد الـ Checkbox تلقائياً ثم تنفيذ الحفظ الآلي (Auto Save) بعد 3 دقائق.
+        </div>
+        <button type="submit" id="btnSaveAttendance" class="btn-save-attendance">
+          💾 حفظ كشف الغياب النهائي (Save Attendance)
+        </button>
+      </div>
+    </form>
+
+    <!-- Save Alert Banner -->
+    <div id="saveToast" class="save-toast hidden">
+      <div class="toast-content">
+        <h3>🎉 تم حفظ وتثبيت كشف غياب المحاضرة بنجاح!</h3>
+        <p id="toastMessage">تم تسجيل حضور الطلاب وإرسال الكشف لقاعدة بيانات جامعة المستقبل FUE بنسبة خطأ 0%.</p>
+        <span class="toast-time" id="toastTimestamp"></span>
+      </div>
+    </div>
+  </main>
+
+  <footer class="fue-footer">
+    <p>نظام رصد الغياب الذكي AVQR • تصميم وشراكة استراتيجية بين <strong>Matany Group</strong> و <strong>جامعة المستقبل في مصر (FUE)</strong></p>
+  </footer>
+
+  <script>
+    // Checkbox state tracking
+    const form = document.getElementById('attendanceForm');
+    const checkboxes = document.querySelectorAll('.attendance-checkbox');
+    const presentCountSpan = document.getElementById('presentCount');
+    const saveToast = document.getElementById('saveToast');
+    const toastTimestamp = document.getElementById('toastTimestamp');
+
+    function updateCount() {
+      let count = 0;
+      checkboxes.forEach(cb => {
+        const studentId = cb.id.replace('chk-', '');
+        const statusEl = document.getElementById('status-' + studentId);
+        const rowEl = document.getElementById('row-' + studentId);
+
+        if (cb.checked) {
+          count++;
+          if (statusEl) statusEl.innerHTML = '<span class="badge-present">حاضر ✅</span>';
+          if (rowEl) rowEl.classList.add('row-attended');
+        } else {
+          if (statusEl) statusEl.innerHTML = '<span class="badge-absent">غائب</span>';
+          if (rowEl) rowEl.classList.remove('row-attended');
+        }
+      });
+      presentCountSpan.textContent = count;
+    }
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', updateCount);
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      updateCount();
+      const count = document.querySelectorAll('.attendance-checkbox:checked').length;
+      saveToast.classList.remove('hidden');
+      toastTimestamp.textContent = new Date().toLocaleTimeString('ar-EG');
+      console.log('✅ Form Submitted & Attendance Saved. Total present:', count);
+
+      // Auto hide after 8s
+      setTimeout(() => {
+        saveToast.classList.add('hidden');
+      }, 8000);
+    });
+
+    // Initial count
+    updateCount();
+  </script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f4f6f9;
+  color: #1f2937;
+  direction: rtl;
+  min-height: 100vh;
+}
+
+.fue-header {
+  background: linear-gradient(135deg, #b31b1b 0%, #800000 100%);
+  color: #ffffff;
+  padding: 18px 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fue-badge {
+  background: #ffffff;
+  color: #b31b1b;
+  font-weight: 900;
+  font-size: 24px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.fue-header h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.fue-header p {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.doc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.doc-tag, .semester-tag {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.main-content {
+  max-width: 1200px;
+  margin: 28px auto;
+  padding: 0 20px;
+}
+
+.lecture-meta-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+  border-right: 5px solid #b31b1b;
+}
+
+.meta-item label {
+  display: block;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.meta-item strong, .meta-item span {
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.attendance-table-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.table-header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.table-header-controls h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.counter-badge {
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  padding: 8px 18px;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.count-number {
+  color: #10b981;
+  font-size: 1.2rem;
+}
+
+.students-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.students-table th {
+  background: #f9fafb;
+  color: #374151;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-bottom: 2px solid #e5e7eb;
+  text-align: right;
+}
+
+.students-table td {
+  padding: 14px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+}
+
+.student-row:hover {
+  background-color: #fbfbfb;
+}
+
+.student-row.row-attended {
+  background-color: #ecfdf5 !important;
+  transition: background 0.3s ease;
+}
+
+.id-cell strong {
+  font-family: monospace;
+  font-size: 1.05rem;
+  color: #b31b1b;
+}
+
+.attendance-checkbox {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: #10b981;
+}
+
+.badge-present {
+  background: #d1fae5;
+  color: #065f46;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
+.badge-absent {
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
+.table-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #f3f4f6;
+}
+
+.note-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.btn-save-attendance {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 800;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-save-attendance:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-save-attendance:active {
+  transform: translateY(1px);
+}
+
+.save-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  right: 30px;
+  max-width: 500px;
+  margin: 0 auto;
+  background: #111827;
+  color: #ffffff;
+  padding: 18px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 99999;
+  border: 2px solid #10b981;
+  animation: slideUp 0.3s ease;
+}
+
+.save-toast.hidden {
+  display: none;
+}
+
+.save-toast h3 {
+  color: #10b981;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.save-toast p {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.toast-time {
+  display: block;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.fue-footer {
+  text-align: center;
+  padding: 24px;
+  color: #6b7280;
+  font-size: 0.85rem;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 40px;
+}

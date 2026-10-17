@@ -1,0 +1,29 @@
+{
+  "name": "avqr-attendance-system",
+  "version": "1.0.0",
+  "description": "ATT Vision QR Tool (AVQR) - Smart Neubrutalism University Attendance System by Matany Group x FUE",
+  "author": "Matany Group & Mohamed Matany",
+  "license": "MIT",
+  "scripts": {
+    "server:install": "cd server && npm install",
+    "client:install": "cd client && npm install",
+    "install:all": "npm run server:install && npm run client:install",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && npm run dev",
+    "server:build": "cd server && npm run build",
+    "client:build": "cd client && npm run build",
+    "test": "cd server && npm test"
+  },
+  "keywords": [
+    "avqr",
+    "attendance",
+    "neubrutalism",
+    "upstore-one",
+    "matany-group",
+    "fue",
+    "chrome-extension",
+    "webauthn",
+    "neon-tech",
+    "dynamic-qr"
+  ]
+}
