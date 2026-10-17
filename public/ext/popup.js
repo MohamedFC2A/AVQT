@@ -257,12 +257,19 @@ async function notifyCurrentTabToSync(sessionId) {
     if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
       const tabs = await chrome.tabs.query({});
       for (const tab of tabs) {
-        if (tab && tab.id) {
+        if (tab && tab.id && tab.url && !tab.url.startsWith('chrome://')) {
           chrome.tabs.sendMessage(tab.id, {
             action: 'ACTIVATE_AUTOSYNC',
             sessionId,
             serverUrl: activeServerUrl
-          }).catch(() => {});
+          }).catch(() => {
+            if (chrome.scripting && chrome.scripting.executeScript) {
+              chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ['content.js']
+              }).catch(() => {});
+            }
+          });
         }
       }
     }
