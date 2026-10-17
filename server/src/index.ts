@@ -544,7 +544,7 @@ app.post('/api/support/contact', (req: Request, res: Response) => {
 });
 
 // Automated Health check
-app.get('/health', (req: Request, res: Response) => {
+app.get(['/health', '/api/health'], (req: Request, res: Response) => {
   res.json({
     status: 'ONLINE',
     service: 'AVQR Server - Matany Group x FUE',

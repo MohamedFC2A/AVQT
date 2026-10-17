@@ -490,7 +490,7 @@ app.post('/api/support/contact', (req, res) => {
     });
 });
 // Automated Health check
-app.get('/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
     res.json({
         status: 'ONLINE',
         service: 'AVQR Server - Matany Group x FUE',
