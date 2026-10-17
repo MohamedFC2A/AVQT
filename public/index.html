@@ -4,169 +4,411 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFE600">
-  <title>AVQR - بوابة تسجيل حضور الطلاب | Matany Group x FUE</title>
+  <title>AVQR - بوابة الطالب الذكية | Matany Group x FUE</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="app-wrapper">
-    <!-- Brand Header -->
-    <header class="brand-header">
-      <div class="brand-title-wrap">
-        <div class="brand-logo-pill">AVQR</div>
-        <div>
-          <h1>بوابة تسجيل الحضور الذكية</h1>
-          <p>Matany Group x Future University in Egypt</p>
+  <!-- SMART TOPBAR -->
+  <header class="smart-topbar">
+    <div class="topbar-container">
+      <div class="topbar-brand">
+        <div class="brand-badge-square">AVQR</div>
+        <div class="brand-text">
+          <span class="brand-title">بوابة الحضور الذكية</span>
+          <span class="brand-sub">Matany Group x FUE</span>
         </div>
       </div>
-      <div class="fue-pill">FUE 2026</div>
-    </header>
 
-    <!-- Student Verified Profile Card -->
-    <section id="studentProfileCard" class="student-profile-card">
-      <div class="profile-header-row">
-        <span class="verified-tag" id="profileVerifiedStatus">موثق رسمياً</span>
-        <span class="id-tag" id="profileIdTag">20264712</span>
+      <div class="topbar-right">
+        <div class="student-chip" id="topbarStudentChip">
+          <span class="chip-dot"></span>
+          <span id="topbarStudentId">20264712</span>
+        </div>
+        <button id="btnOpenHelp" class="topbar-icon-btn" title="المساعدة والدعم">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </button>
       </div>
-      <div class="student-name-display" id="profileNameDisplay">
-        Mohamed Ahmed Mohamed Matany Ahmed
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="app-main">
+    <!-- PAGE 1: ATTENDANCE (DEFAULT) -->
+    <section id="viewAttendance" class="app-view active">
+      <!-- Live Lecture Banner -->
+      <div class="lecture-hero-card">
+        <div class="lecture-hero-header">
+          <span class="live-tag">
+            <span class="live-dot"></span>
+            محاضرة جارية الآن
+          </span>
+          <span class="session-id-pill" id="heroSessionId">AVQR-2026</span>
+        </div>
+        <h2 class="lecture-hero-title">هندسة البرمجيات المتقدمة (CSE 2026)</h2>
+        <div class="lecture-hero-details">
+          <div class="detail-pill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>د. محمد مطاوع</span>
+          </div>
+          <div class="detail-pill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>مدرج الهندسة A</span>
+          </div>
+          <div class="detail-pill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>10:00 صباحاً</span>
+          </div>
+        </div>
       </div>
-      <div class="student-meta-row">
-        <span>الكلية: <strong id="profileFaculty">Engineering</strong></span>
-        <span>الفرقة: <span id="profileLevel">1-First</span></span>
-        <span>الجنسية: مصري</span>
+
+      <!-- Attendance Actions Card -->
+      <div class="brutal-card action-card">
+        <div class="card-head-row">
+          <h3 class="card-section-title">تسجيل الحضور في المحاضرة</h3>
+          <span id="attendanceBadge" class="status-pill pill-yellow">بانتظار التسجيل</span>
+        </div>
+
+        <!-- 8-Digit Manual Entry -->
+        <div class="code-entry-box">
+          <label class="input-label">الرمز المباشر المكون من 8 أرقام المعروض بالشاشة:</label>
+          <div class="code-input-row">
+            <input type="text" id="manualCodeInput" class="brutal-input code-digit-input" maxlength="9" placeholder="8492-3105" autocomplete="off">
+            <button id="btnSubmitManualCode" class="brutal-btn btn-yellow">
+              تأكيد الحضور
+            </button>
+          </div>
+          <p class="input-hint">الرمز يتجدد تلقائياً كل 8 ثوانٍ لمنع الغش ومتاح أسفل كود QR</p>
+        </div>
+
+        <div class="divider-or">
+          <span>أو</span>
+        </div>
+
+        <!-- Camera Scanner Button -->
+        <button id="btnOpenScanner" class="brutal-btn btn-green btn-full btn-large">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          مسح كود QR بالكاميرا
+        </button>
+
+        <!-- Quick One-Click Attendance Demo -->
+        <button id="btnQuickDemoPass" class="brutal-btn btn-secondary btn-full mt-2">
+          تسجيل فوري مباشر (Demo Pass 20264712)
+        </button>
+      </div>
+
+      <!-- SUCCESS CONFIRMATION BOX (Hidden until attended) -->
+      <div id="attendanceSuccessBox" class="attendance-success-card hidden">
+        <div class="success-icon-wrap">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+        <div class="success-content">
+          <h3 class="success-heading">تم إثبات الحضور بنجاح</h3>
+          <div class="success-student" id="successStudentName">Mohamed Ahmed Mohamed Matany Ahmed</div>
+          <div class="success-meta-row">
+            <span>الرقم الجامعي: <strong id="successStudentId">20264712</strong></span>
+            <span>•</span>
+            <span id="successTimeText">الساعة 10:00 صباحاً</span>
+          </div>
+          <div class="success-portal-notice">
+            تم تفعيل علامة الصح تلقائياً في كشف الحضور بنسبة خطأ 0.0%
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- STEP 1: Registration / Login & Biometrics -->
-    <div id="step1Card" class="step-card completed">
-      <div class="step-header">
-        <span class="step-num-badge">خطوة 1</span>
-        <h2>تسجيل الدخول والتحقق السريع</h2>
-        <span id="step1Checkmark" class="status-pill text-green">مكتمل</span>
+    <!-- PAGE 2: FUE DIGITAL ID CARD -->
+    <section id="viewCard" class="app-view">
+      <div class="view-header">
+        <h2 class="view-title">كارنيه جامعة المستقبل الرقمي</h2>
+        <p class="view-desc">الهوية الجامعية المعتمدة رسميـاً والمربوطة بالسحابة</p>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">الرقم الجامعي (ID):</label>
-        <input type="text" id="studentIdInput" class="brutal-input" value="20264712" placeholder="20264712">
+      <!-- FUE DIGITAL STUDENT ID CARD (Photorealistic Neubrutalism) -->
+      <div class="fue-card-wrapper">
+        <div class="fue-id-card">
+          <div class="id-card-topbar">
+            <div class="id-card-logo">
+              <span class="id-badge-fue">FUE</span>
+              <div class="id-uni-titles">
+                <strong>جامعة المستقبل في مصر</strong>
+                <span>Future University in Egypt</span>
+              </div>
+            </div>
+            <div class="id-year-badge">2025/2026</div>
+          </div>
+
+          <div class="id-card-body">
+            <div class="id-photo-area">
+              <div class="student-avatar-frame">
+                <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
+              <span class="status-pill pill-green font-xs mt-1">طالب منتظم</span>
+            </div>
+
+            <div class="id-info-col">
+              <div class="id-field">
+                <label>اسم الطالب:</label>
+                <div class="id-val-bold" id="cardFullName">Mohamed Ahmed Mohamed Matany Ahmed</div>
+              </div>
+              <div class="id-field-grid">
+                <div class="id-field">
+                  <label>الرقم الجامعي:</label>
+                  <div class="id-val-highlight" id="cardStudentId">20264712</div>
+                </div>
+                <div class="id-field">
+                  <label>الكلية:</label>
+                  <div class="id-val" id="cardFaculty">Engineering</div>
+                </div>
+              </div>
+              <div class="id-field-grid">
+                <div class="id-field">
+                  <label>الفرقة الدراسية:</label>
+                  <div class="id-val" id="cardLevel">1-First</div>
+                </div>
+                <div class="id-field">
+                  <label>الجنسية:</label>
+                  <div class="id-val">مصري (Egyptian)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="id-card-footer">
+            <div class="id-barcode-mock">||| | |||| | ||| |||| | ||| ||||</div>
+            <div class="id-verified-seal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00A86B" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>FUE VERIFIED 2026</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">كلمة المرور (اختيارية):</label>
-        <input type="password" id="studentPasswordInput" class="brutal-input" placeholder="اختيارية للاستعادة">
-      </div>
-
-      <div class="btn-row">
-        <button id="btnLogin" class="brutal-btn btn-yellow" style="flex: 1;">
-          دخول وحفظ الحساب
-        </button>
-        <button id="btnBiometricLogin" class="brutal-btn btn-green" style="flex: 1.2;">
-          تسجيل الدخول بالبصمة
-        </button>
-      </div>
-    </div>
-
-    <!-- STEP 2: Physical University ID Card QR Scan (Once Only) -->
-    <div id="step2Card" class="step-card completed">
-      <div class="step-header">
-        <span class="step-num-badge">خطوة 2</span>
-        <h2>توثيق كارنيه الجامعة الرسمي (FUE ID)</h2>
-        <span id="step2Checkmark" class="status-pill text-green">موثق</span>
-      </div>
-
-      <div id="step2ActionArea" class="hidden">
-        <button id="btnScanCardQr" class="brutal-btn btn-blue btn-full">
-          مسح كود الكارنيه بالكاميرا
-        </button>
-        <button id="btnTestVerifyMatany" class="brutal-btn btn-secondary btn-full mt-2">
-          توثيق فوري بكارنيه محمد مطاوع (20264712)
-        </button>
-      </div>
-
-      <div id="step2SuccessBanner" class="success-banner">
-        <span>تم توثيق الكارنيه الرسمي وحفظ الاسم في قاعدة البيانات بشكل دائم</span>
-      </div>
-    </div>
-
-    <!-- STEP 3: In-Lecture Attendance Scan or 8-Digit Code -->
-    <div id="step3Card" class="step-card active-step">
-      <div class="step-header">
-        <span class="step-num-badge">خطوة 3</span>
-        <h2>تسجيل الحضور في المحاضرة</h2>
-        <span id="step3StatusTag" class="status-pill tag-yellow">مطلوب</span>
-      </div>
-
-      <!-- Option A: Scan QR -->
-      <button id="btnOpenLectureScanner" class="brutal-btn btn-green btn-full btn-large">
-        مسح كود QR من شاشة الإضافة
-      </button>
-
-      <!-- Camera Scanner Viewport -->
-      <div id="cameraScannerBox" class="scanner-viewport-box hidden">
-        <video id="scannerVideo" class="scanner-video" playsinline></video>
-        <div class="scanner-crosshair"></div>
-        <button id="btnCloseScanner" class="brutal-btn btn-red close-scanner-btn">إغلاق</button>
-      </div>
-
-      <!-- Option B: 8-Digit Manual Fallback Code -->
-      <div class="manual-code-card">
-        <div class="manual-head">أو اكتب الرمز المكون من 8 أرقام:</div>
-        <div class="manual-input-row">
-          <input type="text" id="manualCodeInput" class="brutal-input code-input" maxlength="9" placeholder="8492-3105">
-          <button id="btnSubmitManualCode" class="brutal-btn btn-yellow">
-            تأكيد الحضور
+      <!-- Card Management Card -->
+      <div class="brutal-card mt-3">
+        <h3 class="card-section-title">إدارة الهوية الجامعية الرسمية</h3>
+        <p class="card-desc">تم توثيق بيانات الكارنيه والاسم الرباعي من الرابط الرسمي لجامعة المستقبل ولا يحتاج لإعادة توثيق.</p>
+        <div class="btn-row">
+          <button id="btnRescanCard" class="brutal-btn btn-yellow" style="flex: 1;">
+            إعادة مسح كارنيه FUE
+          </button>
+          <button id="btnSyncCardNeon" class="brutal-btn btn-green" style="flex: 1;">
+            مزامنة مع Neon.tech
           </button>
         </div>
-        <div class="code-subtext">الرمز معروض بوضوح أسفل كود QR في شاشة الدكتور</div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: HISTORY & ANALYTICS -->
+    <section id="viewHistory" class="app-view">
+      <div class="view-header">
+        <h2 class="view-title">سجل الحضور الأكاديمي</h2>
+        <p class="view-desc">رصد كامل لجميع المحاضرات ونسب الحضور المعتمدة</p>
       </div>
 
-      <!-- Quick Demo Attend Button -->
-      <button id="btnQuickAttendDemo" class="brutal-btn btn-secondary btn-full">
-        تسجيل الحضور التجريبي المباشر
-      </button>
-
-      <!-- Attendance Success Alert Box -->
-      <div id="attendanceSuccessAlert" class="attendance-success-box hidden">
-        <div class="success-title">تم تسجيل حضورك بنجاح</div>
-        <div class="success-details">
-          <div id="successStudentName">Mohamed Ahmed Mohamed Matany Ahmed</div>
-          <div id="successTimestamp">الساعة 10:00 صباحاً • مدرج A</div>
-          <div class="success-foot">تم وضع علامة الصح في كشف الدكتور بنسبة خطأ 0%</div>
+      <!-- Stats Grid -->
+      <div class="stats-metric-grid">
+        <div class="metric-card bg-yellow">
+          <span class="metric-label">نسبة الحضور</span>
+          <strong class="metric-num">100%</strong>
+          <span class="metric-sub">ممتاز • التزام كامل</span>
+        </div>
+        <div class="metric-card bg-green">
+          <span class="metric-label">المحاضرات المسجلة</span>
+          <strong class="metric-num">12 / 12</strong>
+          <span class="metric-sub">رصد مؤكد بنسبة خطأ 0%</span>
+        </div>
+        <div class="metric-card bg-white">
+          <span class="metric-label">عدد مرات الغياب</span>
+          <strong class="metric-num">0</strong>
+          <span class="metric-sub">0.0% نسبة غياب</span>
         </div>
       </div>
-    </div>
 
-    <!-- Support Section -->
-    <footer class="support-section">
-      <button id="btnOpenSupport" class="support-link-btn">
-        مركز مساعدة ودعم الطلاب وإدارة الجامعة
+      <!-- Recent Attendance List -->
+      <div class="brutal-card mt-3">
+        <h3 class="card-section-title">المحاضرات الأخيرة المرصودة:</h3>
+        <div class="timeline-list">
+          <div class="timeline-item">
+            <div class="timeline-badge-check">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div class="timeline-content">
+              <strong>هندسة البرمجيات المتقدمة (CSE 2026)</strong>
+              <span>اليوم • مدرج الهندسة A • د. محمد مطاوع</span>
+            </div>
+            <span class="status-pill pill-green font-xs">حاضر (AVQR)</span>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-badge-check">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div class="timeline-content">
+              <strong>بنية البيانات والخوارزميات (CSE 2025)</strong>
+              <span>الأربعاء 14 أكتوبر • معمل الحاسب 2</span>
+            </div>
+            <span class="status-pill pill-green font-xs">حاضر (AVQR)</span>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-badge-check">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div class="timeline-content">
+              <strong>تفاضل وتكامل متقدم (MATH 201)</strong>
+              <span>الإثنين 12 أكتوبر • قاعة المحاضرات المركزية</span>
+            </div>
+            <span class="status-pill pill-green font-xs">حاضر (AVQR)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 4: SECURITY & BIOMETRICS -->
+    <section id="viewSecurity" class="app-view">
+      <div class="view-header">
+        <h2 class="view-title">الأمان والبصمة البيومترية</h2>
+        <p class="view-desc">حماية الحساب بالبصمة البيومترية ومفتاح الأمان السحابي</p>
+      </div>
+
+      <!-- Biometric Card -->
+      <div class="brutal-card">
+        <div class="card-head-row">
+          <div class="card-head-title-wrap">
+            <h3 class="card-section-title">بصمة الإصبع و WebAuthn</h3>
+            <p class="card-desc">تسجيل دخول فوري بالبصمة حتى بعد تهيئة أو تغيير الهاتف</p>
+          </div>
+          <span id="bioStatusPill" class="status-pill pill-green">البصمة مفعلة</span>
+        </div>
+
+        <div class="bio-visual-box">
+          <div class="bio-icon-large">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.71c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"></path>
+            </svg>
+          </div>
+          <div class="bio-visual-info">
+            <strong>البصمة مفعلة ومحفوظة بالسحابة</strong>
+            <span>تشفير FIDO2 معتمد ومتصل بقاعدة بيانات Neon.tech</span>
+          </div>
+        </div>
+
+        <div class="btn-row mt-3">
+          <button id="btnBiometricLogin" class="brutal-btn btn-green" style="flex: 1.2;">
+            تسجيل الدخول بالبصمة
+          </button>
+          <button id="btnEnrollBiometric" class="brutal-btn btn-yellow" style="flex: 1;">
+            تحديث البصمة
+          </button>
+        </div>
+      </div>
+
+      <!-- Account Credentials Card -->
+      <div class="brutal-card mt-3">
+        <h3 class="card-section-title">بيانات الحساب الجامعي</h3>
+        <div class="form-group">
+          <label class="input-label">الرقم الجامعي (ID):</label>
+          <input type="text" id="secStudentId" class="brutal-input" value="20264712">
+        </div>
+        <div class="form-group">
+          <label class="input-label">كلمة المرور (اختيارية لاستعادة الحساب):</label>
+          <input type="password" id="secPassword" class="brutal-input" placeholder="كلمة سر اختيارية للطوارئ">
+        </div>
+        <button id="btnUpdateAccount" class="brutal-btn btn-secondary btn-full">
+          حفظ وتحديث بيانات الحساب
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- SMART BOTTOM DOCK BAR -->
+  <nav class="smart-bottom-dock">
+    <div class="dock-container">
+      <button class="dock-item active" data-view="viewAttendance">
+        <div class="dock-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+        </div>
+        <span class="dock-label">الحضور</span>
       </button>
-      <p class="copyright-txt">
-        ATT Vision QR Tool • Matany Group
-      </p>
-    </footer>
+
+      <button class="dock-item" data-view="viewCard">
+        <div class="dock-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><line x1="15" y1="8" x2="17" y2="8"></line><line x1="15" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>
+        </div>
+        <span class="dock-label">الكارنيه</span>
+      </button>
+
+      <button class="dock-item" data-view="viewHistory">
+        <div class="dock-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        </div>
+        <span class="dock-label">السجل</span>
+      </button>
+
+      <button class="dock-item" data-view="viewSecurity">
+        <div class="dock-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        </div>
+        <span class="dock-label">الأمان</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- CAMERA SCANNER MODAL -->
+  <div id="cameraModal" class="camera-modal-overlay hidden">
+    <div class="camera-modal-card">
+      <div class="camera-modal-header">
+        <strong>مسح كود الحضور بالكاميرا</strong>
+        <button id="btnCloseCameraModal" class="btn-icon-close">X</button>
+      </div>
+      <div class="camera-viewport-frame">
+        <video id="scannerVideo" class="scanner-video" playsinline></video>
+        <div class="camera-laser-scan"></div>
+        <div class="camera-crosshairs"></div>
+      </div>
+      <p class="camera-modal-hint">وجه الكاميرا نحو كود QR المعروض في شاشة الدكتور</p>
+      <button id="btnCancelScan" class="brutal-btn btn-red btn-full mt-2">إلغاء المسح</button>
+    </div>
   </div>
 
-  <!-- Support Modal -->
-  <div id="supportModal" class="modal-overlay hidden">
-    <div class="brutal-modal-card">
+  <!-- HELP & UNIVERSITY SUPPORT MODAL -->
+  <div id="helpModal" class="modal-overlay hidden">
+    <div class="modal-card">
       <div class="modal-header">
-        <h3>مركز المساعدة والدعم الفني</h3>
-        <button id="btnCloseSupport" class="modal-close">إغلاق</button>
+        <h3>مركز دعم الطلاب وإدارة الجامعة</h3>
+        <button id="btnCloseHelp" class="btn-icon-close">X</button>
       </div>
-      <p class="modal-desc">
-        في حال تعذر الدخول أو فورمات الهاتف، يمكنك استعادة الحساب بالرقم الجامعي أو التواصل مع الدعم الفني:
-      </p>
-      <div class="modal-btns">
-        <a href="https://wa.me/201000000000" target="_blank" class="brutal-btn btn-green">
-          محادثة واتساب مع الدعم الفني
-        </a>
-        <a href="mailto:support@matany.group" class="brutal-btn btn-yellow">
-          البريد الإلكتروني: support@matany.group
-        </a>
-        <a href="https://services.fue.edu.eg" target="_blank" class="brutal-btn btn-blue">
-          بوابة شؤون طلاب جامعة المستقبل FUE
-        </a>
+      <div class="modal-body">
+        <div class="support-partner-card">
+          <span class="partner-badge">تطوير ودعم فني معتمد</span>
+          <h4>مجموعة مطاوع للبرمجيات • Matany Group</h4>
+          <p>نظام ATT Vision QR Tool مصمم بأعلى معايير الأمان والمرونة لجامعة المستقبل في مصر (FUE).</p>
+        </div>
+
+        <div class="contact-entry">
+          <span class="lbl">البريد الإلكتروني للعمليات:</span>
+          <strong>support@matany.group</strong>
+        </div>
+        <div class="contact-entry">
+          <span class="lbl">شؤون الطلاب جامعة المستقبل (FUE):</span>
+          <strong>registrar@fue.edu.eg</strong>
+        </div>
+        <div class="contact-entry">
+          <span class="lbl">المنصة الرسمية:</span>
+          <strong>https://upstore.one</strong>
+        </div>
+        <div class="contact-entry">
+          <span class="lbl">حالة الخوادم السحابية:</span>
+          <span class="status-pill pill-green font-xs">Neon.tech 100% نشط</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btnCloseHelpBtn" class="brutal-btn btn-yellow btn-full">إغلاق</button>
       </div>
     </div>
   </div>

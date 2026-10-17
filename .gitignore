@@ -14,3 +14,4 @@ coverage/
 .idea/
 
 .vercel
+*avqr_db_state.json

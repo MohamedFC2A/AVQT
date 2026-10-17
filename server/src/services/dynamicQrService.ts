@@ -33,6 +33,9 @@ export function generateDynamicQrToken(sessionId: string): DynamicQrPayload {
   const token = hmac.digest('hex').substring(0, 16);
   const numericCode = tokenTo8DigitCode(token);
 
+  const baseUrl = process.env.APP_URL || 'https://avqr-matany-fue.vercel.app';
+  const actionUrl = `${baseUrl}/?attend=1&sid=${encodeURIComponent(sessionId)}&code=${numericCode}&token=${token}`;
+
   const payload: DynamicQrPayload = {
     type: 'AVQR_LECTURE',
     sessionId,
@@ -41,7 +44,7 @@ export function generateDynamicQrToken(sessionId: string): DynamicQrPayload {
     windowSeq,
     expiresInMs,
     expiresAt: nextWindowTime,
-    qrString: `AVQR:${sessionId}:${token}:${numericCode}:${windowSeq}`
+    qrString: actionUrl
   };
 
   return payload;

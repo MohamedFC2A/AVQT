@@ -51,7 +51,12 @@ export interface BiometricCredential {
   created_at: string;
 }
 
-// In-Memory store as zero-failure fallback
+import fs from 'fs';
+import path from 'path';
+
+const PERSIST_FILE = process.env.VERCEL ? '/tmp/avqr_db_state.json' : path.resolve(process.cwd(), 'avqr_db_state.json');
+
+// In-Memory store as zero-failure fallback with disk persistence
 class MemoryStore {
   students: Map<string, Student> = new Map();
   credentials: Map<string, BiometricCredential> = new Map();
@@ -60,17 +65,48 @@ class MemoryStore {
   recordIdSeq = 1;
 
   constructor() {
-    // Seed with official verified sample for Mohamed Matany from FUE card
-    this.students.set('20264712', {
-      id: '20264712',
-      full_name: 'Mohamed Ahmed Mohamed Matany Ahmed',
-      faculty: 'Engineering',
-      level: '1-First',
-      card_verified: true,
-      card_ss_uuid: 'cc011cc7-ceb7-4867-973a-79d0a44e5214',
-      card_verified_at: new Date().toISOString(),
-      created_at: new Date().toISOString()
-    });
+    this.load();
+    // Ensure default verified student for Mohamed Matany always exists
+    if (!this.students.has('20264712')) {
+      this.students.set('20264712', {
+        id: '20264712',
+        full_name: 'Mohamed Ahmed Mohamed Matany Ahmed',
+        faculty: 'Engineering',
+        level: '1-First',
+        card_verified: true,
+        card_ss_uuid: 'cc011cc7-ceb7-4867-973a-79d0a44e5214',
+        card_verified_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      });
+      this.save();
+    }
+  }
+
+  save() {
+    try {
+      const data = {
+        students: Array.from(this.students.entries()),
+        credentials: Array.from(this.credentials.entries()),
+        sessions: Array.from(this.sessions.entries()),
+        records: this.records,
+        recordIdSeq: this.recordIdSeq
+      };
+      fs.writeFileSync(PERSIST_FILE, JSON.stringify(data), 'utf-8');
+    } catch (e) {}
+  }
+
+  load() {
+    try {
+      if (fs.existsSync(PERSIST_FILE)) {
+        const raw = fs.readFileSync(PERSIST_FILE, 'utf-8');
+        const parsed = JSON.parse(raw);
+        if (parsed.students) this.students = new Map(parsed.students);
+        if (parsed.credentials) this.credentials = new Map(parsed.credentials);
+        if (parsed.sessions) this.sessions = new Map(parsed.sessions);
+        if (parsed.records) this.records = parsed.records;
+        if (parsed.recordIdSeq) this.recordIdSeq = parsed.recordIdSeq;
+      }
+    } catch (e) {}
   }
 }
 
@@ -83,13 +119,13 @@ if (DATABASE_URL && DATABASE_URL.startsWith('postgres')) {
       connectionString: DATABASE_URL,
       ssl: { rejectUnauthorized: false }
     });
-    console.log('⚡ Connected to Neon.tech PostgreSQL Serverless cluster');
+    console.log('[Neon.tech] Connected to PostgreSQL Serverless cluster');
   } catch (err) {
-    console.warn('⚠️ Neon DB connection init failed, using MemoryStore fallback:', err);
+    console.warn('[Neon.tech] Connection init failed, using MemoryStore fallback:', err);
     pool = null;
   }
 } else {
-  console.log('ℹ️ Running in MemoryStore mode (Deep resilience & zero downtime)');
+  console.log('[Database] Running in MemoryStore mode (Deep resilience & zero downtime)');
 }
 
 export async function initDb() {
@@ -140,7 +176,7 @@ export async function initDb() {
         CONSTRAINT unique_student_session UNIQUE (session_id, student_id)
       );
     `);
-    console.log('✅ Neon DB Schema verified and ready');
+    console.log('[Neon.tech] Schema verified and ready');
   } catch (error) {
     console.error('Database migration check failed:', error);
   }
@@ -220,6 +256,7 @@ export const db = {
       created_at: existing?.created_at || new Date().toISOString()
     };
     memoryStore.students.set(student.id, updated);
+    memoryStore.save();
     return updated;
   },
 
@@ -234,6 +271,7 @@ export const db = {
       return;
     }
     memoryStore.credentials.set(cred.id, cred);
+    memoryStore.save();
   },
 
   async getCredentialsByStudent(studentId: string): Promise<BiometricCredential[]> {
@@ -262,6 +300,7 @@ export const db = {
       return session;
     }
     memoryStore.sessions.set(session.id, session);
+    memoryStore.save();
     return session;
   },
 
@@ -282,6 +321,7 @@ export const db = {
     if (session) {
       session.current_token = token;
       session.token_rotated_at = new Date().toISOString();
+      memoryStore.save();
     }
   },
 
@@ -293,6 +333,7 @@ export const db = {
     const session = memoryStore.sessions.get(id);
     if (session) {
       session.status = 'AUTO_SAVED';
+      memoryStore.save();
     }
   },
 
@@ -310,6 +351,7 @@ export const db = {
     const existing = memoryStore.records.find(r => r.session_id === sessionId && r.student_id === studentId);
     if (existing) {
       existing.check_time = new Date().toISOString();
+      memoryStore.save();
       return existing;
     }
     const record: AttendanceRecord = {
@@ -322,6 +364,7 @@ export const db = {
       check_time: new Date().toISOString()
     };
     memoryStore.records.push(record);
+    memoryStore.save();
     return record;
   },
 

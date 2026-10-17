@@ -1,13 +1,19 @@
-const SERVER_URL = 'http://localhost:3001';
+// AVQR Chrome Extension Popup Engine
+// Designed by Matany Group for Future University in Egypt (FUE)
+
+const SERVER_URL = 'https://avqr-matany-fue.vercel.app';
+const LOCAL_FALLBACK_URL = 'http://localhost:3001';
 
 let currentSessionId = 'AVQR-2026';
 let sseSource = null;
 let rotationInterval = null;
 let autoSaveInterval = null;
+let pollRecordsInterval = null;
 let rotationSeconds = 8;
 let autoSaveSeconds = 180;
 const TOTAL_AUTOSAVE_SECONDS = 180;
 let isSessionActive = false;
+let activeServerUrl = SERVER_URL;
 
 document.addEventListener('DOMContentLoaded', () => {
   const idleSection = document.getElementById('idleSection');
@@ -19,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const serverStatusText = document.getElementById('serverStatusText');
 
   // Check saved state in storage
-  if (chrome.storage && chrome.storage.local) {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(['avqr_session_id', 'avqr_is_active'], (res) => {
       if (res.avqr_session_id) {
         currentSessionId = res.avqr_session_id;
@@ -31,22 +37,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Health check
-  fetch(`${SERVER_URL}/health`)
+  // Health check: test primary cloud server, fallback to local if offline
+  fetch(`${activeServerUrl}/health`)
     .then(r => r.json())
     .then(() => {
-      serverStatusText.textContent = 'متصل بالخادم';
+      serverStatusText.textContent = 'متصل بالسحابة (Neon)';
     })
     .catch(() => {
-      serverStatusText.textContent = 'تشغيل محلي';
+      // Test local server
+      fetch(`${LOCAL_FALLBACK_URL}/health`)
+        .then(r => r.json())
+        .then(() => {
+          activeServerUrl = LOCAL_FALLBACK_URL;
+          serverStatusText.textContent = 'متصل بالخادم المحلي';
+        })
+        .catch(() => {
+          serverStatusText.textContent = 'وضع عدم الاتصال';
+        });
     });
 
   // Start Session Button
   btnStartSession.addEventListener('click', async () => {
     const sid = sessionIdInput.value.trim() || 'AVQR-2026';
     currentSessionId = sid;
-    if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ avqr_session_id: sid, avqr_is_active: true });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ avqr_session_id: sid, avqr_is_active: true, avqr_server_url: activeServerUrl });
     }
     await startActiveSession(sid);
   });
@@ -90,17 +105,18 @@ async function startActiveSession(sessionId) {
   // Start 3-minute auto-save timer
   startAutoSaveTimer();
 
-  // Connect SSE for live student feed
-  connectSse(sessionId);
+  // Connect Real-time SSE + Dual Active Polling
+  connectDualSync(sessionId);
 }
 
 function stopActiveSession() {
   isSessionActive = false;
   clearInterval(rotationInterval);
   clearInterval(autoSaveInterval);
+  clearInterval(pollRecordsInterval);
   if (sseSource) sseSource.close();
 
-  if (chrome.storage && chrome.storage.local) {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.set({ avqr_is_active: false });
   }
 
@@ -110,7 +126,7 @@ function stopActiveSession() {
 
 async function refreshDynamicQrAndCode(sessionId) {
   try {
-    const res = await fetch(`${SERVER_URL}/api/session/${sessionId}/dynamic-token`);
+    const res = await fetch(`${activeServerUrl}/api/session/${sessionId}/dynamic-token`);
     if (res.ok) {
       const data = await res.json();
       const qrPayload = data.dynamicQr;
@@ -143,8 +159,8 @@ function renderStandardQr(text) {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, 220, 220);
     ctx.fillStyle = '#121212';
-    ctx.font = 'bold 14px monospace';
-    ctx.fillText(text.substring(0, 20), 10, 110);
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText('QR Code Ready', 60, 110);
   }
 }
 
@@ -154,14 +170,14 @@ function renderNumericCode(code) {
     el.textContent = '--------';
     return;
   }
-  // Format as 8 digits with space: e.g. "8492 3105"
+  // Format as 8 digits with space: e.g. "8492 - 3105"
   const formatted = code.length === 8 ? `${code.slice(0, 4)} - ${code.slice(4)}` : code;
   el.textContent = formatted;
 }
 
 function fallbackRender(sessionId) {
   const mockCode = (Math.floor(Date.now() / 8000) % 90000000 + 10000000).toString();
-  const mockQr = `AVQR:${sessionId}:FALLBACK_TOKEN:${mockCode}:${Math.floor(Date.now() / 8000)}`;
+  const mockQr = `https://avqr-matany-fue.vercel.app/?attend=1&sid=${sessionId}&code=${mockCode}&token=FALLBACK`;
   renderStandardQr(mockQr);
   renderNumericCode(mockCode);
 }
@@ -209,11 +225,13 @@ function updateAutoSaveDisplay() {
 
 async function triggerAutoSave() {
   try {
-    await fetch(`${SERVER_URL}/api/session/${currentSessionId}/auto-save`, { method: 'POST' });
+    await fetch(`${activeServerUrl}/api/session/${currentSessionId}/auto-save`, { method: 'POST' });
     // Trigger in tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab && tab.id) {
-      chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTO_SAVE' });
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab && tab.id) {
+        chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTO_SAVE' });
+      }
     }
     alert('تم إتمام الحفظ التلقائي لكشف الحضور بنسبة خطأ 0%');
   } catch (err) {
@@ -223,37 +241,50 @@ async function triggerAutoSave() {
 
 async function notifyCurrentTabToSync(sessionId) {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab && tab.id) {
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'ACTIVATE_AUTOSYNC',
-        sessionId,
-        serverUrl: SERVER_URL
-      });
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+      const tabs = await chrome.tabs.query({});
+      for (const tab of tabs) {
+        if (tab && tab.id) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: 'ACTIVATE_AUTOSYNC',
+            sessionId,
+            serverUrl: activeServerUrl
+          }).catch(() => {});
+        }
+      }
     }
   } catch (e) {}
 }
 
-function connectSse(sessionId) {
+function connectDualSync(sessionId) {
   if (sseSource) sseSource.close();
 
-  const livePresentCount = document.getElementById('livePresentCount');
-  const studentsLiveList = document.getElementById('studentsLiveList');
+  // Engine 1: SSE
+  try {
+    sseSource = new EventSource(`${activeServerUrl}/api/session/${sessionId}/stream`);
+    sseSource.addEventListener('STUDENT_ATTENDED', (e) => {
+      try {
+        const student = JSON.parse(e.data);
+        addStudentToUI(student);
+      } catch (err) {}
+    });
+  } catch (e) {}
 
-  sseSource = new EventSource(`${SERVER_URL}/api/session/${sessionId}/stream`);
+  // Engine 2: Periodic Records Polling (every 1.5s)
+  clearInterval(pollRecordsInterval);
+  pollRecordsInterval = setInterval(() => {
+    refreshSessionRecords(sessionId);
+  }, 1500);
+  refreshSessionRecords(sessionId);
+}
 
-  sseSource.addEventListener('STUDENT_ATTENDED', (e) => {
-    const student = JSON.parse(e.data);
-    addStudentToUI(student);
-  });
-
-  // Initial load of existing records
-  fetch(`${SERVER_URL}/api/session/${sessionId}/records`)
+function refreshSessionRecords(sessionId) {
+  fetch(`${activeServerUrl}/api/session/${sessionId}/records`)
     .then(r => r.json())
     .then(records => {
       if (Array.isArray(records)) {
-        livePresentCount.textContent = records.length;
-        if (records.length > 0) studentsLiveList.innerHTML = '';
+        const livePresentCount = document.getElementById('livePresentCount');
+        if (livePresentCount) livePresentCount.textContent = records.length;
         records.forEach(r => addStudentToUI({ studentId: r.student_id, fullName: r.student_name }));
       }
     })
