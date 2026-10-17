@@ -1,5 +1,4 @@
 node_modules/
-dist/
 build/
 .env
 .env.local
@@ -12,6 +11,5 @@ Thumbs.db
 coverage/
 .vscode/
 .idea/
-
 .vercel
 *avqr_db_state.json
