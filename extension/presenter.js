@@ -1,219 +1,184 @@
-const SERVER_URL = 'http://localhost:3001';
+// AVQR Presenter Engine - 3-Minute AutoSave & Full-Page Dynamic QR
+// Designed by Matany Group for Future University in Egypt (FUE)
+
+const SERVER_URL = 'https://avqr-matany-fue.vercel.app';
+const LOCAL_FALLBACK_URL = 'http://localhost:3001';
 
 const urlParams = new URLSearchParams(window.location.search);
-const sessionId = urlParams.get('sessionId') || 'AVQR-DEMO01';
+const sessionId = urlParams.get('sid') || urlParams.get('sessionId') || 'AVQR-2026';
 
-let rotationSeconds = 8;
+let activeServerUrl = SERVER_URL;
+let rotationSeconds = 5;
+const ROTATION_TOTAL = 5;
 let rotationInterval = null;
-let autoSaveSeconds = 180;
-const TOTAL_AUTOSAVE_SECONDS = 180;
+
+let autoSaveSeconds = 180; // 3 Minutes countdown
 let autoSaveInterval = null;
-let currentQrString = `AVQR:${sessionId}:INITIAL_TOKEN:0`;
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('sessionTag').textContent = sessionId;
+document.addEventListener('DOMContentLoaded', async () => {
+  const sessionTag = document.getElementById('sessionTag');
+  if (sessionTag) sessionTag.textContent = sessionId;
 
-  // Initial token fetch and QR render
-  fetchNewDynamicToken();
+  // Resolve active server
+  try {
+    const res = await fetch(`${SERVER_URL}/health`);
+    if (!res.ok) throw new Error();
+  } catch (e) {
+    try {
+      const resLocal = await fetch(`${LOCAL_FALLBACK_URL}/health`);
+      if (resLocal.ok) activeServerUrl = LOCAL_FALLBACK_URL;
+    } catch (e2) {}
+  }
 
-  // Rotation Interval every 1 second to update countdown and refresh at 0
+  // Initial fetch and render
+  await fetchDynamicQrAndCode();
+
+  // Start 5-second rotation
   rotationInterval = setInterval(() => {
     if (rotationSeconds > 1) {
       rotationSeconds--;
-      document.getElementById('rotationSecs').textContent = rotationSeconds;
+      updateRotationSecsDisplay();
     } else {
-      rotationSeconds = 8;
-      document.getElementById('rotationSecs').textContent = rotationSeconds;
-      fetchNewDynamicToken();
+      rotationSeconds = ROTATION_TOTAL;
+      updateRotationSecsDisplay();
+      fetchDynamicQrAndCode();
     }
   }, 1000);
 
-  // Auto-Save 3-Minute Timer
-  startAutoSaveTimer();
+  // Start 3-minute Countdown with Auto-Close & Auto-Save
+  start3MinuteCountdown();
 
-  // Connect SSE
-  connectPresenterSse();
+  // Button actions
+  const btnSaveClose = document.getElementById('btnPresenterSaveAndClose');
+  if (btnSaveClose) {
+    btnSaveClose.addEventListener('click', async () => {
+      btnSaveClose.disabled = true;
+      btnSaveClose.textContent = 'جاري الحفظ والإغلاق...';
+      await triggerAutoSaveAndClose();
+    });
+  }
 
-  // Force Save Button
-  document.getElementById('btnPresenterForceSave').addEventListener('click', () => {
-    triggerAutoSave();
-  });
+  const btnClose = document.getElementById('btnPresenterCloseOnly');
+  if (btnClose) {
+    btnClose.addEventListener('click', () => {
+      window.close();
+    });
+  }
 });
 
-async function fetchNewDynamicToken() {
+function updateRotationSecsDisplay() {
+  const el = document.getElementById('rotationSecs');
+  if (el) el.textContent = `${rotationSeconds} ثوانٍ`;
+}
+
+async function fetchDynamicQrAndCode() {
   try {
-    const res = await fetch(`${SERVER_URL}/api/session/${sessionId}/dynamic-token`);
+    const res = await fetch(`${activeServerUrl}/api/session/${sessionId}/dynamic-token`);
     if (res.ok) {
       const data = await res.json();
-      currentQrString = data.dynamicQr.qrString;
-      drawQrToCanvas(currentQrString);
+      const qrPayload = data.dynamicQr;
+      renderLargeQr(qrPayload.qrString);
+      renderNumericCode(qrPayload.numericCode);
     } else {
-      fallbackDrawQr(currentQrString);
+      fallbackRender();
     }
-  } catch (err) {
-    fallbackDrawQr(currentQrString);
+  } catch (e) {
+    fallbackRender();
   }
 }
 
-// Draw QR Code on Canvas using an SVG or custom procedural matrix
-function drawQrToCanvas(text) {
-  const canvas = document.getElementById('qrCanvas');
-  const ctx = canvas.getContext('2d');
-  const size = canvas.width;
+function renderLargeQr(text) {
+  const canvas = document.getElementById('presenterQrCanvas');
+  if (!canvas) return;
 
-  // Clear
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, size, size);
-
-  // Generate QR pattern procedurally or fallback
-  // Create high-contrast brutalist QR representation
-  renderProceduralQr(ctx, text, size);
-}
-
-function fallbackDrawQr(text) {
-  const canvas = document.getElementById('qrCanvas');
-  const ctx = canvas.getContext('2d');
-  renderProceduralQr(ctx, text, canvas.width);
-}
-
-// Robust Canvas QR Matrix Renderer
-function renderProceduralQr(ctx, text, size) {
-  // Deterministic hash-based 25x25 matrix with standard QR finder patterns
-  const modules = 25;
-  const cellSize = Math.floor(size / modules);
-  const padding = (size - (modules * cellSize)) / 2;
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, size, size);
-
-  // Simple hash for seed
-  let hash = 0;
-  for (let i = 0; i < text.length; i++) {
-    hash = ((hash << 5) - hash) + text.charCodeAt(i);
-    hash |= 0;
+  if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+    window.QRCode.toCanvas(canvas, text, {
+      width: 320,
+      margin: 1,
+      color: {
+        dark: '#121212',
+        light: '#FFFFFF'
+      }
+    }, (err) => {
+      if (err) console.error('QR draw error:', err);
+    });
+  } else {
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 320, 320);
+    ctx.fillStyle = '#121212';
+    ctx.font = 'bold 16px monospace';
+    ctx.fillText('QR Live Ready', 80, 160);
   }
-
-  const isFinder = (r, c) => {
-    // Top-left finder
-    if (r < 7 && c < 7) return true;
-    // Top-right finder
-    if (r < 7 && c >= modules - 7) return true;
-    // Bottom-left finder
-    if (r >= modules - 7 && c < 7) return true;
-    return false;
-  };
-
-  const drawFinder = (startR, startC) => {
-    for (let r = 0; r < 7; r++) {
-      for (let c = 0; c < 7; c++) {
-        const isBorder = (r === 0 || r === 6 || c === 0 || c === 6);
-        const isCenter = (r >= 2 && r <= 4 && c >= 2 && c <= 4);
-        if (isBorder || isCenter) {
-          ctx.fillStyle = '#121212';
-        } else {
-          ctx.fillStyle = '#FFFFFF';
-        }
-        ctx.fillRect(padding + (startC + c) * cellSize, padding + (startR + r) * cellSize, cellSize, cellSize);
-      }
-    }
-  };
-
-  // Draw data modules
-  ctx.fillStyle = '#121212';
-  for (let r = 0; r < modules; r++) {
-    for (let c = 0; c < modules; c++) {
-      if (isFinder(r, c)) continue;
-      // Timing patterns
-      if (r === 6 || c === 6) {
-        if ((r + c) % 2 === 0) {
-          ctx.fillRect(padding + c * cellSize, padding + r * cellSize, cellSize, cellSize);
-        }
-        continue;
-      }
-
-      // Pseudo-random data based on string hash and position
-      const pseudoVal = Math.sin((r * modules + c) + hash) * 10000;
-      if (pseudoVal - Math.floor(pseudoVal) > 0.45) {
-        ctx.fillRect(padding + c * cellSize, padding + r * cellSize, cellSize, cellSize);
-      }
-    }
-  }
-
-  // Draw 3 Finders
-  drawFinder(0, 0);
-  drawFinder(0, modules - 7);
-  drawFinder(modules - 7, 0);
 }
 
-function startAutoSaveTimer() {
-  updateAutoSaveDisplay();
-  autoSaveInterval = setInterval(() => {
+function renderNumericCode(code) {
+  const el = document.getElementById('numericCodeDisplay');
+  if (!el) return;
+  if (!code) {
+    el.textContent = '--------';
+    return;
+  }
+  const formatted = code.length === 8 ? `${code.slice(0, 4)} - ${code.slice(4)}` : code;
+  el.textContent = formatted;
+}
+
+function fallbackRender() {
+  const mockCode = (Math.floor(Date.now() / 5000) % 90000000 + 10000000).toString();
+  const mockQr = `https://avqr-matany-fue.vercel.app/?attend=1&sid=${sessionId}&code=${mockCode}&token=FALLBACK&t=${Date.now()}`;
+  renderLargeQr(mockQr);
+  renderNumericCode(mockCode);
+}
+
+// 3-Minute Countdown: Closes presenter and auto-saves when expired
+function start3MinuteCountdown() {
+  updateTimerDisplay();
+
+  autoSaveInterval = setInterval(async () => {
     if (autoSaveSeconds > 0) {
       autoSaveSeconds--;
-      updateAutoSaveDisplay();
+      updateTimerDisplay();
     } else {
       clearInterval(autoSaveInterval);
-      triggerAutoSave();
+      clearInterval(rotationInterval);
+      await triggerAutoSaveAndClose();
     }
   }, 1000);
 }
 
-function updateAutoSaveDisplay() {
-  const bigTimerCountdown = document.getElementById('bigTimerCountdown');
-  const bigProgressBar = document.getElementById('bigProgressBar');
-
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  if (!el) return;
   const m = Math.floor(autoSaveSeconds / 60);
   const s = autoSaveSeconds % 60;
-  bigTimerCountdown.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-
-  const pct = (autoSaveSeconds / TOTAL_AUTOSAVE_SECONDS) * 100;
-  bigProgressBar.style.width = `${pct}%`;
-
-  if (autoSaveSeconds < 30) {
-    bigProgressBar.style.background = '#FF3366';
-  } else if (autoSaveSeconds < 90) {
-    bigProgressBar.style.background = '#FFE600';
-  } else {
-    bigProgressBar.style.background = '#00F090';
-  }
+  el.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-async function triggerAutoSave() {
+async function triggerAutoSaveAndClose() {
   try {
-    const res = await fetch(`${SERVER_URL}/api/session/${sessionId}/auto-save`, { method: 'POST' });
-    const data = await res.json();
-    alert(`🎉 تم إتمام الحفظ التلقائي بنجاح! إجمالي الحاضرين: ${data.totalPresent}`);
-  } catch (err) {
-    console.error('Auto save error:', err);
-  }
-}
+    // 1. Inform server to mark session auto-saved
+    await fetch(`${activeServerUrl}/api/session/${sessionId}/auto-save`, { method: 'POST' });
 
-function connectPresenterSse() {
-  const liveFeedList = document.getElementById('liveFeedList');
-  const bigPresentCount = document.getElementById('bigPresentCount');
-  const tickerText = document.getElementById('tickerText');
-
-  const sse = new EventSource(`${SERVER_URL}/api/session/${sessionId}/stream`);
-
-  sse.addEventListener('STUDENT_ATTENDED', (e) => {
-    const student = JSON.parse(e.data);
-    const count = parseInt(bigPresentCount.textContent, 10) || 0;
-    bigPresentCount.textContent = count + 1;
-
-    tickerText.textContent = `🎉 تم تسجيل حضور الطالب: ${student.fullName} (${student.studentId}) بنسبة خطأ 0%!`;
-
-    // Add feed item
-    const emptyNotice = liveFeedList.querySelector('div');
-    if (emptyNotice && emptyNotice.textContent.includes('بانتظار')) {
-      emptyNotice.remove();
+    // 2. Notify portal tabs to submit and lock attendance
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+      const tabs = await chrome.tabs.query({});
+      for (const tab of tabs) {
+        if (tab && tab.id) {
+          chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTO_SAVE' }).catch(() => {});
+        }
+      }
     }
 
-    const item = document.createElement('div');
-    item.className = 'feed-item';
-    item.innerHTML = `
-      <span><strong>${student.studentId}</strong>: ${student.fullName}</span>
-      <span style="color: #059669;">حاضر ✅</span>
-    `;
-    liveFeedList.prepend(item);
-  });
+    // 3. Mark session inactive in storage
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ avqr_is_active: false });
+    }
+  } catch (err) {
+    console.error('Auto save error:', err);
+  } finally {
+    // 4. Close the presenter window cleanly
+    setTimeout(() => {
+      window.close();
+    }, 600);
+  }
 }

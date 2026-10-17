@@ -87,8 +87,9 @@ describe('AVQR Database & Attendance Lifecycle', () => {
     assert.strictEqual(verified?.card_verified, true);
     assert.strictEqual(verified?.full_name, 'Verified Student Name');
 
+    const sessionId = 'SESSION-LIFECYCLE-' + Date.now();
     const session = await db.createSession({
-      id: 'SESSION-LIFECYCLE-1',
+      id: sessionId,
       course_name: 'Algorithms',
       doctor_name: 'Dr. Matany',
       room_hall: 'Hall B',
@@ -99,10 +100,16 @@ describe('AVQR Database & Attendance Lifecycle', () => {
       created_at: new Date().toISOString()
     });
 
-    const record = await db.recordAttendance(session.id, studentId, verified.full_name);
+    const { record, isNew } = await db.recordAttendance(sessionId, studentId, verified.full_name);
+    assert.strictEqual(isNew, true);
     assert.strictEqual(record.student_id, studentId);
     assert.strictEqual(record.student_name, 'Verified Student Name');
     assert.strictEqual(record.synced_to_portal, true);
+
+    // Second call should return existing with isNew = false
+    const secondCall = await db.recordAttendance(sessionId, studentId, verified.full_name);
+    assert.strictEqual(secondCall.isNew, false);
+    assert.strictEqual(secondCall.record.id, record.id);
   });
 
   test('correctly binds and verifies student device lock', async () => {

@@ -3,272 +3,338 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>شاشة عرض كود الحضور الذكي - AVQR Presenter Mode</title>
-  <link rel="stylesheet" href="popup.css">
+  <title>AVQR - شاشة عرض كود الحضور | Matany Group x FUE</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    body {
-      width: 100vw;
-      min-height: 100vh;
+    :root {
+      --primary-red: #B91C1C;
+      --neo-black: #121212;
+      --neo-white: #FFFFFF;
+      --neo-bg: #F8FAFC;
+      --emerald: #059669;
+      --border-main: 2.5px solid var(--neo-black);
+      --shadow-main: 4px 4px 0px var(--neo-black);
+      --shadow-lg: 6px 6px 0px var(--neo-black);
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
-      padding: 30px;
-      background-color: #F4F0EA;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--neo-bg);
+      color: var(--neo-black);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: space-between;
+      padding: 20px 24px;
+      direction: rtl;
     }
 
-    .presenter-container {
-      width: 100%;
-      max-width: 1100px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
+    /* TOP HEADER */
     .presenter-header {
-      background: #FFE600;
-      border: 4px solid #121212;
-      box-shadow: 6px 6px 0px #121212;
-      padding: 16px 24px;
+      background: var(--neo-white);
+      border: var(--border-main);
+      box-shadow: var(--shadow-main);
       border-radius: 12px;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
     }
 
-    .presenter-header h1 {
-      font-size: 1.6rem;
-      font-weight: 900;
-    }
-
-    .grid-layout {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 24px;
-    }
-
-    /* Big QR Card */
-    .qr-hero-card {
-      background: #FFFFFF;
-      border: 4px solid #121212;
-      box-shadow: 8px 8px 0px #121212;
-      border-radius: 12px;
-      padding: 28px;
+    .brand-wrap {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      text-align: center;
-      position: relative;
+      gap: 12px;
     }
 
-    .qr-canvas-box {
-      background: #FFFFFF;
-      border: 3px solid #121212;
-      padding: 14px;
+    .logo-box {
+      width: 44px;
+      height: 44px;
+      background: var(--neo-white);
+      border: 2px solid var(--neo-black);
       border-radius: 8px;
-      margin: 16px 0;
-      box-shadow: 4px 4px 0px #121212;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 280px;
-      min-height: 280px;
+      padding: 3px;
+      box-shadow: 2px 2px 0px var(--neo-black);
     }
 
-    .qr-anti-cheat-badge {
-      background: #FF3366;
-      color: #FFFFFF;
-      border: 2px solid #121212;
-      box-shadow: 3px 3px 0px #121212;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+    .logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
-    .rotation-ring-info {
+    .titles-col h1 {
+      font-size: 1.15rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .titles-col span {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .session-badge {
+      background: var(--neo-black);
+      color: var(--neo-white);
+      font-family: monospace;
       font-size: 0.95rem;
-      font-weight: 800;
-      color: #333;
-      margin-top: 8px;
+      font-weight: 900;
+      padding: 6px 14px;
+      border-radius: 6px;
     }
 
-    /* Meta & Live Feed Card */
-    .meta-side-card {
+    /* MAIN STAGE */
+    .presenter-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .stage-card {
+      background: var(--neo-white);
+      border: var(--border-main);
+      box-shadow: var(--shadow-lg);
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 840px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    /* QR BOX */
+    .qr-large-frame {
+      width: 340px;
+      height: 340px;
+      background: var(--neo-white);
+      border: var(--border-main);
+      box-shadow: var(--shadow-main);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      margin: 0 auto;
+    }
+
+    #presenterQrCanvas {
+      width: 320px !important;
+      height: 320px !important;
+    }
+
+    /* DETAILS COL */
+    .details-col {
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
 
-    .hero-stat-card {
-      background: #00F090;
-      border: 4px solid #121212;
-      box-shadow: 6px 6px 0px #121212;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
+    .info-block {
+      background: #F8FAFC;
+      border: 2px solid var(--neo-black);
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow-main);
     }
 
-    .hero-stat-title {
-      font-size: 1rem;
+    .info-lbl {
+      display: block;
+      font-size: 0.76rem;
       font-weight: 800;
+      color: #475569;
+      margin-bottom: 4px;
     }
 
-    .hero-stat-val {
-      font-size: 3.5rem;
+    .digits-huge {
+      font-family: monospace;
+      font-size: 2.2rem;
       font-weight: 900;
+      letter-spacing: 4px;
+      color: var(--primary-red);
       line-height: 1.1;
     }
 
-    .timer-card {
-      background: #FFFBEB;
-      border: 4px solid #121212;
-      box-shadow: 6px 6px 0px #121212;
-      border-radius: 12px;
-      padding: 20px;
+    .timer-hero-box {
+      background: #FEF2F2;
+      border: 2px solid var(--primary-red);
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: 3px 3px 0px var(--primary-red);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .timer-title {
-      font-size: 1rem;
-      font-weight: 800;
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .live-feed-card {
-      background: #FFFFFF;
-      border: 4px solid #121212;
-      box-shadow: 6px 6px 0px #121212;
-      border-radius: 12px;
-      padding: 16px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      max-height: 250px;
-      overflow-y: auto;
-    }
-
-    .live-feed-title {
-      font-size: 0.9rem;
-      font-weight: 800;
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom: 2px solid #121212;
-    }
-
-    .feed-item {
-      background: #F3F4F6;
-      border: 2px solid #121212;
-      border-radius: 6px;
-      padding: 8px 12px;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
       font-size: 0.85rem;
-      font-weight: 700;
-      animation: feedPop 0.3s ease;
-    }
-
-    @keyframes feedPop {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    .ticker-bar {
-      width: 100%;
-      background: #121212;
-      color: #00F090;
-      border: 3px solid #121212;
-      box-shadow: 4px 4px 0px #121212;
-      border-radius: 8px;
-      padding: 10px 18px;
       font-weight: 800;
-      font-size: 1rem;
+      color: #7F1D1D;
+    }
+
+    .timer-digits {
+      font-family: monospace;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--primary-red);
+    }
+
+    .rotation-strip {
       display: flex;
+      justify-content: space-between;
       align-items: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #475569;
+      background: #FFFFFF;
+      border: 1.5px solid var(--neo-black);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+
+    .rotation-strip strong {
+      color: var(--primary-red);
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .presenter-actions {
+      display: flex;
       gap: 12px;
+      margin-top: 6px;
+    }
+
+    .neo-btn {
+      flex: 1;
+      padding: 12px 18px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 800;
+      border-radius: 8px;
+      border: var(--border-main);
+      box-shadow: var(--shadow-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.08s ease;
+      user-select: none;
+    }
+
+    .neo-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px var(--neo-black);
+    }
+
+    .btn-save {
+      background: var(--primary-red);
+      color: var(--neo-white);
+    }
+
+    .btn-close {
+      background: #E2E8F0;
+      color: var(--neo-black);
+    }
+
+    /* FOOTER */
+    .presenter-footer {
+      text-align: center;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #64748B;
+    }
+
+    @media (max-width: 820px) {
+      .stage-card {
+        grid-template-columns: 1fr;
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="presenter-container">
-    <header class="presenter-header">
-      <div>
-        <div class="brand-badge" style="display: inline-block; margin-bottom: 6px;">AVQR PRESENTATION</div>
-        <h1>كود أخذ الحضور الذكي المتغير • Matany Group x FUE</h1>
+  <!-- HEADER -->
+  <header class="presenter-header">
+    <div class="brand-wrap">
+      <div class="logo-box">
+        <img src="avqr-logo.svg" alt="AVQR Logo">
       </div>
-      <div style="text-align: left;">
-        <span class="status-pill" style="font-size: 0.9rem; padding: 6px 14px;">
-          <span class="dot pulse"></span>
-          <span id="sessionTag">AVQR-DEMO01</span>
-        </span>
+      <div class="titles-col">
+        <h1>AVQR • شاشة بث كود الحضور الذكي</h1>
+        <span>Matany Group • جامعة المستقبل في مصر (FUE)</span>
       </div>
-    </header>
+    </div>
+    <div class="session-badge" id="sessionTag">AVQR-2026</div>
+  </header>
 
-    <div class="grid-layout">
-      <!-- QR Big Box -->
-      <div class="qr-hero-card">
-        <div class="qr-anti-cheat-badge">
-          🛡️ حماية مشفرة ضد الغش • الكود يتغير كل 8 ثوانٍ تلقائياً
-        </div>
-
-        <div class="qr-canvas-box" id="qrCanvasBox">
-          <canvas id="qrCanvas" width="280" height="280"></canvas>
-        </div>
-
-        <div class="rotation-ring-info">
-          <span>يتم تدوير الكود بعد: </span>
-          <strong id="rotationSecs" style="color: #FF3366; font-size: 1.3rem;">8</strong> ثوانٍ
-        </div>
-        <p style="font-size: 0.85rem; color: #555; margin-top: 6px;">
-          قم بفتح تطبيق الحضور على جوالك ومسح الكود مباشرة من الشاشة ليتم تسجيلك فوراً ✅
-        </p>
+  <!-- MAIN STAGE -->
+  <main class="presenter-main">
+    <div class="stage-card">
+      <!-- QR Big Frame -->
+      <div class="qr-large-frame">
+        <canvas id="presenterQrCanvas" width="320" height="320"></canvas>
       </div>
 
-      <!-- Side Stats & Timer -->
-      <div class="meta-side-card">
-        <div class="hero-stat-card">
-          <span class="hero-stat-title">الطلاب الحاضرين في القاعة:</span>
-          <div class="hero-stat-val" id="bigPresentCount">0</div>
+      <!-- Details -->
+      <div class="details-col">
+        <!-- 8-Digit Code -->
+        <div class="info-block">
+          <span class="info-lbl">رمز الحضور اليدوي المؤقت:</span>
+          <div class="digits-huge" id="numericCodeDisplay">--------</div>
         </div>
 
-        <div class="timer-card">
+        <!-- 3-Minute Countdown -->
+        <div class="timer-hero-box">
           <div class="timer-title">
-            <span>⏱️ الحفظ التلقائي للغياب:</span>
-            <span id="bigTimerCountdown" style="color: #FF3366; font-size: 1.4rem;">03:00</span>
+            <span>المهلة المتبقية للجلسة:</span>
+            <small style="display:block; font-size:0.7rem; color:#991B1B;">إغلاق الشاشة وحفظ الكشف تلقائياً عند انتهاء الوقت</small>
           </div>
-          <div class="progress-bar-container" style="height: 16px;">
-            <div id="bigProgressBar" class="progress-bar" style="width: 100%;"></div>
-          </div>
-          <button id="btnPresenterForceSave" class="brutal-btn btn-red btn-full mt-2" style="font-size: 1rem; padding: 12px;">
-            💾 تنفيذ الحفظ النهائي الآن (Auto Save)
+          <div class="timer-digits" id="timerDisplay">03:00</div>
+        </div>
+
+        <!-- 5-Second Rotation -->
+        <div class="rotation-strip">
+          <span>تحديث كود الحضور:</span>
+          <strong id="rotationSecs">5 ثوانٍ</strong>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="presenter-actions">
+          <button id="btnPresenterSaveAndClose" class="neo-btn btn-save">
+            حفظ الكشف وإغلاق الشاشة
+          </button>
+          <button id="btnPresenterCloseOnly" class="neo-btn btn-close">
+            إغلاق
           </button>
         </div>
-
-        <div class="live-feed-card">
-          <div class="live-feed-title">
-            <span>⚡ رصد الحضور اللحظي (0% خطأ):</span>
-          </div>
-          <div id="liveFeedList">
-            <div style="text-align: center; color: #777; padding-top: 20px;">بانتظار وصول الطلاب...</div>
-          </div>
-        </div>
       </div>
     </div>
+  </main>
 
-    <!-- Bottom Ticker -->
-    <div class="ticker-bar">
-      <span>📢 تنبيه:</span>
-      <span id="tickerText">يرجى من جميع طلاب كلية الهندسة مسح الكود لتسجيل الحضور، سيتم قفل الكشف وحفظه تلقائياً بعد انتهاء المؤقت.</span>
-    </div>
-  </div>
+  <!-- FOOTER -->
+  <footer class="presenter-footer">
+    <span>نظام رصد الحضور الذكي AVQR • تطوير مجموعة مطاوع بالتعاون مع جامعة المستقبل في مصر</span>
+  </footer>
 
+  <script src="qrcode.min.js"></script>
   <script src="presenter.js"></script>
 </body>
 </html>

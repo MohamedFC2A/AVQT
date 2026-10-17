@@ -431,19 +431,24 @@ app.post('/api/session/attend', async (req, res) => {
             }
             student = await db.upsertStudent(updates);
         }
-        // 3. Record attendance in database
-        const record = await db.recordAttendance(effectiveSessionId, student.id, student.full_name);
-        // 4. Instant Real-time Broadcast to Doctor's Chrome Extension
-        broadcastToSession(effectiveSessionId, 'STUDENT_ATTENDED', {
-            studentId: student.id,
-            fullName: student.full_name,
-            faculty: student.faculty,
-            checkTime: record.check_time,
-            recordId: record.id
-        });
+        // 3. Record attendance in database (strictly single attendance per student per session)
+        const { record, isNew } = await db.recordAttendance(effectiveSessionId, student.id, student.full_name);
+        if (isNew) {
+            // 4. Instant Real-time Broadcast to Doctor's Chrome Extension only for new attendance
+            broadcastToSession(effectiveSessionId, 'STUDENT_ATTENDED', {
+                studentId: student.id,
+                fullName: student.full_name,
+                faculty: student.faculty,
+                checkTime: record.check_time,
+                recordId: record.id
+            });
+        }
         res.json({
             success: true,
-            message: `تم تسجيل الحضور بنجاح للطالب ${student.full_name}`,
+            alreadyAttended: !isNew,
+            message: isNew
+                ? `تم تسجيل الحضور بنجاح للطالب ${student.full_name}`
+                : `تم تسجيل حضورك مسبقاً في هذه المحاضرة بنجاح (${student.full_name})`,
             student,
             record
         });

@@ -75,6 +75,21 @@ document.addEventListener('DOMContentLoaded', () => {
   btnStopSession.addEventListener('click', () => {
     stopActiveSession();
   });
+
+  // Open Full-Page Presenter Mode on QR Click
+  const btnOpenPresenter = document.getElementById('btnOpenPresenterMode');
+  if (btnOpenPresenter) {
+    btnOpenPresenter.addEventListener('click', () => {
+      const url = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
+        ? chrome.runtime.getURL(`presenter.html?sid=${currentSessionId}`)
+        : `presenter.html?sid=${currentSessionId}`;
+      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+        chrome.tabs.create({ url });
+      } else {
+        window.open(url, '_blank');
+      }
+    });
+  }
 });
 
 async function startActiveSession(sessionId) {

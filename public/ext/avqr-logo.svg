@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- AVQR Official Extension Identity Emblem -->
+  <rect x="4" y="4" width="120" height="120" rx="18" fill="#B91C1C" stroke="#121212" stroke-width="6"/>
+  <!-- Inner White Canvas -->
+  <rect x="16" y="16" width="96" height="96" rx="10" fill="#FFFFFF" stroke="#121212" stroke-width="4"/>
+  
+  <!-- QR Finder Patterns (Top-Left, Top-Right, Bottom-Left) -->
+  <!-- Top-Left Finder -->
+  <rect x="24" y="24" width="28" height="28" rx="4" fill="none" stroke="#121212" stroke-width="4"/>
+  <rect x="32" y="32" width="12" height="12" rx="2" fill="#B91C1C"/>
+
+  <!-- Top-Right Finder -->
+  <rect x="76" y="24" width="28" height="28" rx="4" fill="none" stroke="#121212" stroke-width="4"/>
+  <rect x="84" y="32" width="12" height="12" rx="2" fill="#B91C1C"/>
+
+  <!-- Bottom-Left Finder -->
+  <rect x="24" y="76" width="28" height="28" rx="4" fill="none" stroke="#121212" stroke-width="4"/>
+  <rect x="32" y="84" width="12" height="12" rx="2" fill="#B91C1C"/>
+
+  <!-- Central Optical Vision Aperture & Target (ATT Vision) -->
+  <circle cx="88" cy="88" r="14" fill="#121212"/>
+  <circle cx="88" cy="88" r="7" fill="#059669"/>
+  <circle cx="88" cy="88" r="3" fill="#FFFFFF"/>
+
+  <!-- Central AVQR Badge -->
+  <rect x="40" y="54" width="48" height="20" rx="4" fill="#121212"/>
+  <text x="64" y="68" fill="#FFFFFF" font-family="'Cairo', -apple-system, sans-serif" font-weight="900" font-size="12" text-anchor="middle" letter-spacing="1">AVQR</text>
+</svg>

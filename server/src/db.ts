@@ -355,22 +355,36 @@ export const db = {
     }
   },
 
-  async recordAttendance(sessionId: string, studentId: string, studentName: string): Promise<AttendanceRecord> {
+  async getAttendanceRecord(sessionId: string, studentId: string): Promise<AttendanceRecord | null> {
+    if (pool) {
+      try {
+        const res = await pool.query('SELECT * FROM attendance_records WHERE session_id = $1 AND student_id = $2', [sessionId, studentId]);
+        return res.rows[0] || null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return memoryStore.records.find(r => r.session_id === sessionId && r.student_id === studentId) || null;
+  },
+
+  async recordAttendance(sessionId: string, studentId: string, studentName: string): Promise<{ record: AttendanceRecord; isNew: boolean }> {
+    const existing = await this.getAttendanceRecord(sessionId, studentId);
+    if (existing) {
+      return { record: existing, isNew: false };
+    }
     if (pool) {
       const res = await pool.query(
         `INSERT INTO attendance_records (session_id, student_id, student_name, verified_method, synced_to_portal)
          VALUES ($1, $2, $3, 'AVQR_DYNAMIC_PASS', TRUE)
-         ON CONFLICT (session_id, student_id) DO UPDATE SET check_time = CURRENT_TIMESTAMP
+         ON CONFLICT (session_id, student_id) DO NOTHING
          RETURNING *`,
         [sessionId, studentId, studentName]
       );
-      return res.rows[0];
-    }
-    const existing = memoryStore.records.find(r => r.session_id === sessionId && r.student_id === studentId);
-    if (existing) {
-      existing.check_time = new Date().toISOString();
-      memoryStore.save();
-      return existing;
+      if (res.rows[0]) {
+        return { record: res.rows[0], isNew: true };
+      }
+      const existingConflict = await this.getAttendanceRecord(sessionId, studentId);
+      return { record: existingConflict!, isNew: false };
     }
     const record: AttendanceRecord = {
       id: memoryStore.recordIdSeq++,
@@ -383,7 +397,7 @@ export const db = {
     };
     memoryStore.records.push(record);
     memoryStore.save();
-    return record;
+    return { record, isNew: true };
   },
 
   async getSessionRecords(sessionId: string): Promise<AttendanceRecord[]> {

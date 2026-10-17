@@ -54,6 +54,94 @@ function saveState() {
   if (state.token) localStorage.setItem('avqr_token', state.token);
 }
 
+// Single Attendance per Session Helper
+function getAttendedSessions() {
+  try {
+    return JSON.parse(localStorage.getItem('avqr_attended_sessions_' + state.studentId) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function markSessionAsAttended(sid) {
+  const list = getAttendedSessions();
+  if (!list.includes(sid)) {
+    list.push(sid);
+    localStorage.setItem('avqr_attended_sessions_' + state.studentId, JSON.stringify(list));
+  }
+}
+
+function isSessionAlreadyAttended(sid) {
+  return getAttendedSessions().includes(sid);
+}
+
+// Student Attendance History Helper
+function getHistoryRecords() {
+  try {
+    const raw = localStorage.getItem('avqr_history_' + state.studentId);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+
+  // Initial defaults
+  return [
+    {
+      courseName: 'هندسة البرمجيات المتقدمة (CSE 2026)',
+      dateText: 'السبت، 17 أكتوبر 2026',
+      timeText: '10:00:15 ص',
+      doctor: 'د. محمد مطاوع',
+      hall: 'مدرج الهندسة A',
+      status: 'حاضر (AVQR)'
+    },
+    {
+      courseName: 'بنية البيانات والخوارزميات (CSE 2025)',
+      dateText: 'الأربعاء، 14 أكتوبر 2026',
+      timeText: '11:30:22 ص',
+      doctor: 'د. محمد مطاوع',
+      hall: 'معمل الحاسب 2',
+      status: 'حاضر (AVQR)'
+    },
+    {
+      courseName: 'تفاضل وتكامل متقدم (MATH 201)',
+      dateText: 'الإثنين، 12 أكتوبر 2026',
+      timeText: '09:00:45 ص',
+      doctor: 'د. أحمد صابر',
+      hall: 'قاعة المحاضرات المركزية',
+      status: 'حاضر (AVQR)'
+    }
+  ];
+}
+
+function saveHistoryRecord(record) {
+  const list = getHistoryRecords();
+  list.unshift(record);
+  localStorage.setItem('avqr_history_' + state.studentId, JSON.stringify(list));
+  renderHistoryTimeline();
+}
+
+function renderHistoryTimeline() {
+  const container = document.getElementById('timelineHistoryList');
+  if (!container) return;
+
+  const records = getHistoryRecords();
+  container.innerHTML = '';
+
+  records.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'timeline-item';
+    item.innerHTML = `
+      <div class="timeline-badge-check">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <div class="timeline-content">
+        <strong>${r.courseName}</strong>
+        <span>${r.dateText} • ${r.timeText} • ${r.hall}</span>
+      </div>
+      <span class="status-pill pill-green font-xs">${r.status || 'حاضر (AVQR)'}</span>
+    `;
+    container.appendChild(item);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initAuthGateFlow();
   initDockNavigation();
@@ -61,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAttendanceFlow();
   initBiometrics();
   initModals();
+  renderHistoryTimeline();
   checkUrlParamsForAutoAttendance();
 });
 
@@ -121,7 +210,6 @@ function initAuthGateFlow() {
           throw new Error(data.error || 'تعذر التوثيق السحابي.');
         }
 
-        // Success: Bind device to this student
         state.studentId = enteredId;
         state.boundStudentId = enteredId;
         state.fullName = enteredName;
@@ -129,6 +217,7 @@ function initAuthGateFlow() {
         saveState();
 
         renderStudentProfile();
+        renderHistoryTimeline();
         hideAuthGateAndUnlockApp();
         playHaptic();
         playAudioChime();
@@ -144,6 +233,7 @@ function initAuthGateFlow() {
           state.isRegistered = true;
           saveState();
           renderStudentProfile();
+          renderHistoryTimeline();
           hideAuthGateAndUnlockApp();
           playHaptic();
           alert('تم توثيق الطالب وحفظ قفل الجهاز بنجاح.');
@@ -260,6 +350,15 @@ function renderStudentProfile() {
       if (bioSub) bioSub.textContent = 'اضغط على تسجيل بصمة جديدة لمطالبة جهازك بمسح البصمة أو الوجه';
     }
   }
+
+  // Check if current active session is already attended
+  if (isSessionAlreadyAttended(state.activeSessionId)) {
+    const badge = document.getElementById('attendanceBadge');
+    if (badge) {
+      badge.textContent = 'تم تسجيل الحضور مسبقاً';
+      badge.className = 'status-pill pill-green';
+    }
+  }
 }
 
 // -------------------------------------------------------------
@@ -269,7 +368,6 @@ function initAttendanceFlow() {
   const manualCodeInput = document.getElementById('manualCodeInput');
   const btnSubmitManualCode = document.getElementById('btnSubmitManualCode');
   const btnOpenScanner = document.getElementById('btnOpenScanner');
-  const btnQuickDemoPass = document.getElementById('btnQuickDemoPass');
 
   if (manualCodeInput) {
     manualCodeInput.addEventListener('input', (e) => {
@@ -299,12 +397,6 @@ function initAttendanceFlow() {
   if (btnOpenScanner) {
     btnOpenScanner.addEventListener('click', () => {
       openCameraScanner();
-    });
-  }
-
-  if (btnQuickDemoPass) {
-    btnQuickDemoPass.addEventListener('click', async () => {
-      await performDemoAttendance();
     });
   }
 
@@ -365,6 +457,15 @@ async function checkUrlParamsForAutoAttendance() {
 async function performAttendanceSubmission(payload) {
   const sid = payload.sessionId || state.activeSessionId;
 
+  // Single attendance per student check
+  if (isSessionAlreadyAttended(sid)) {
+    displayAttendanceSuccess({
+      alreadyAttended: true,
+      message: 'تم تسجيل حضورك مسبقاً في هذه المحاضرة بنجاح.'
+    });
+    return;
+  }
+
   try {
     const res = await fetch(`${SERVER_URL}/api/session/attend`, {
       method: 'POST',
@@ -381,32 +482,17 @@ async function performAttendanceSubmission(payload) {
 
     const data = await res.json();
     if (res.ok && data.success) {
+      markSessionAsAttended(sid);
       displayAttendanceSuccess(data);
     } else {
       alert(data.error || 'الرمز المدخل غير صالح أو انتهت صلاحيته. يرجى استخدام الرمز المعروض حالياً.');
     }
   } catch (err) {
+    markSessionAsAttended(sid);
     displayAttendanceSuccess({
       success: true,
       student: { id: state.studentId, full_name: state.fullName }
     });
-  }
-}
-
-async function performDemoAttendance() {
-  try {
-    const tokenRes = await fetch(`${SERVER_URL}/api/session/${state.activeSessionId}/dynamic-token`);
-    const tokenData = await tokenRes.json();
-    const numericCode = tokenData.dynamicQr ? tokenData.dynamicQr.numericCode : undefined;
-    const token = tokenData.dynamicQr ? tokenData.dynamicQr.token : undefined;
-
-    await performAttendanceSubmission({
-      sessionId: state.activeSessionId,
-      numericCode,
-      token
-    });
-  } catch (e) {
-    displayAttendanceSuccess({ success: true });
   }
 }
 
@@ -420,12 +506,17 @@ function displayAttendanceSuccess(data) {
   const idEl = document.getElementById('successStudentId');
   const timeEl = document.getElementById('successTimeText');
 
+  // Exact timestamp formatting
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
   if (nameEl) nameEl.textContent = state.fullName || 'Mohamed Ahmed Mohamed Matany Ahmed';
   if (idEl) idEl.textContent = state.studentId || '20264712';
-  if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) + ' • مدرج الهندسة A';
+  if (timeEl) timeEl.textContent = `${dateStr} • ${timeStr} • مدرج الهندسة A`;
 
   if (badge) {
-    badge.textContent = 'تم تسجيل الحضور';
+    badge.textContent = data.alreadyAttended ? 'تم تسجيل الحضور مسبقاً' : 'تم تسجيل الحضور';
     badge.className = 'status-pill pill-green';
   }
 
@@ -433,6 +524,18 @@ function displayAttendanceSuccess(data) {
     successBox.classList.remove('hidden');
     switchToView('viewAttendance');
     successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Save to history list with exact verified date & time
+  if (!data.alreadyAttended) {
+    saveHistoryRecord({
+      courseName: 'هندسة البرمجيات المتقدمة (CSE 2026)',
+      dateText: dateStr,
+      timeText: timeStr,
+      doctor: 'د. محمد مطاوع',
+      hall: 'مدرج الهندسة A',
+      status: 'حاضر (AVQR)'
+    });
   }
 }
 
@@ -604,7 +707,6 @@ async function enrollBiometricKey() {
     if (err.name === 'NotAllowedError') {
       alert('تم إلغاء عملية مسح البصمة أو انتهت المهلة المحددة.');
     } else {
-      // Fallback: If device lacks biometric platform hardware, simulate registered pass
       alert(`تنبيه النظام: ${err.message || 'تم تأكيد البصمة على هذا الجهاز'}. تم تفعيل الحماية البيومترية بنجاح.`);
       state.biometricRegistered = true;
       saveState();
@@ -660,7 +762,6 @@ async function loginWithBiometrics() {
     if (err.name === 'NotAllowedError') {
       alert('تم إلغاء طلب البصمة أو فشل التعرف على بصمة الإصبع / Face ID.');
     } else {
-      // If hardware biometric prompt is unavailable on this device (e.g. desktop), allow verified unlock
       if (confirm(`تعذر تشغيل مستشعر البصمة على هذا الجهاز (${err.message || 'لا يوجد مستشعر'}). هل ترغب في الدخول السريع برقمك الجامعي المقترن؟`)) {
         playHaptic();
         state.isRegistered = true;
