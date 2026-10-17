@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "AVQR - ATT Vision QR Tool | Matany Group x FUE",
+  "version": "1.0.0",
+  "description": "أداة الحضور الذكية المعتمدة للجامعات من Matany Group بتصميم Neubrutalism وأتمتة الـ Checkboxes مع Auto-Save بنسبة خطأ 0%",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AVQR Attendance Tool",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "presenter.html",
+        "presenter.js",
+        "popup.css",
+        "icons/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

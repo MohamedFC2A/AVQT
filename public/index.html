@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FFE600">
+  <title>AVQR - بوابة تسجيل حضور الطلاب | Matany Group x FUE</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Brand Header -->
+    <header class="brand-header">
+      <div class="brand-title-wrap">
+        <div class="brand-logo-pill">AVQR</div>
+        <div>
+          <h1>بوابة تسجيل الحضور الذكية</h1>
+          <p>By Matany Group • upstore.one</p>
+        </div>
+      </div>
+      <div class="fue-pill">FUE 2026</div>
+    </header>
+
+    <!-- Student Verified Profile Card (Always visible once verified) -->
+    <section id="studentProfileCard" class="student-profile-card">
+      <div class="profile-header-row">
+        <span class="verified-tag" id="profileVerifiedStatus">⏳ بانتظار إتمام الخطوات</span>
+        <span style="font-family: monospace; font-weight: 900; font-size: 0.95rem;" id="profileIdTag">20264712</span>
+      </div>
+      <div class="student-name-display" id="profileNameDisplay">
+        Mohamed Ahmed Mohamed Matany Ahmed
+      </div>
+      <div class="student-meta-row">
+        <span>🏛️ <strong id="profileFaculty">Engineering</strong></span>
+        <span>🎓 <span id="profileLevel">1-First</span></span>
+        <span>🇪🇬 مصري</span>
+      </div>
+    </section>
+
+    <!-- 3-STEP JOURNEY -->
+
+    <!-- STEP 1: Registration / Login & Biometrics (Once) -->
+    <div id="step1Card" class="step-card completed">
+      <div class="step-header">
+        <span class="step-num-badge">خطوة 1</span>
+        <h2>تسجيل الدخول وبصمة الإصبع السريعة 👆</h2>
+        <span id="step1Checkmark" style="font-size: 1.2rem;">✅</span>
+      </div>
+      <p class="step-desc">
+        سجل برقمك الجامعي لتفعيل بصمة الإصبع (WebAuthn). حتى لو غيرت جوالك أو قمت بعمل فورمات، يمكنك الدخول مجدداً بسهولة.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">الرقم الجامعي (ID):</label>
+        <input type="text" id="studentIdInput" class="brutal-input" value="20264712" placeholder="مثال: 20264712">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">كلمة المرور (اختيارية):</label>
+        <input type="password" id="studentPasswordInput" class="brutal-input" placeholder="اختيارية للاستعادة">
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button id="btnLogin" class="brutal-btn btn-yellow" style="flex: 1;">
+          دخول / حفظ الحساب 💾
+        </button>
+        <button id="btnBiometricLogin" class="brutal-btn btn-green" style="flex: 1.2;">
+          ⚡ بصمة الإصبع (FaceID)
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Physical University ID Card QR Scan (Once Only - Never asked again!) -->
+    <div id="step2Card" class="step-card completed">
+      <div class="step-header">
+        <span class="step-num-badge">خطوة 2</span>
+        <h2>توثيق كارنيه الجامعة الرسمي (FUE ID) 🪪</h2>
+        <span id="step2Checkmark" style="font-size: 1.2rem;">✅</span>
+      </div>
+      <p class="step-desc">
+        قم بتصوير كود QR الموجود على كارنيه الجامعة <strong>(مرة واحدة فقط في العمر)</strong> لربط اسمك الرباعي الرسمي للأبد وبنسبة خطأ 0%!
+      </p>
+
+      <!-- FUE Card Reference & Preview -->
+      <div class="card-preview-box">
+        <img src="fue_card_sample.jpg" alt="FUE ID QR Sample" class="card-sample-img">
+        <div class="card-preview-text">
+          <strong>كود الكارنيه الرسمي:</strong>
+          <p>كود الـ QR الموجود أسفل كارنيه FUE يحمل بياناتك الرسمية المسجلة بالجامعة.</p>
+        </div>
+      </div>
+
+      <div id="step2ActionArea">
+        <button id="btnScanCardQr" class="brutal-btn btn-blue" style="width: 100%;">
+          📷 فتح الكاميرا وتصوير كود الكارنيه
+        </button>
+        <button id="btnTestVerifyMatany" class="brutal-btn btn-secondary mt-2" style="width: 100%; margin-top: 8px;">
+          ⚡ توثيق تجريبي فوري بكارنيه محمد مطاوع (20264712)
+        </button>
+      </div>
+
+      <div id="step2SuccessBanner" class="attendance-success-box" style="padding: 12px;">
+        <span style="font-size: 0.9rem; font-weight: 900;">🎉 تم التحقق من الكارنيه وحفظ الاسم الرسمي للأبد!</span>
+      </div>
+    </div>
+
+    <!-- STEP 3: In-Lecture Dynamic Attendance Scan (Every Lecture) -->
+    <div id="step3Card" class="step-card">
+      <div class="step-header">
+        <span class="step-num-badge">خطوة 3</span>
+        <h2>أخذ حضور المحاضرة الحالي (Dynamic QR) 📽️</h2>
+        <span id="step3StatusTag" style="font-size: 0.8rem; font-weight: 800; background: #FFE600; padding: 2px 8px; border: 1.5px solid #000; border-radius: 4px;">مطلوب الآن</span>
+      </div>
+      <p class="step-desc">
+        امسح كود الـ QR المتغير المعروض على شاشة الدكتور أو البروجيكتور ليتم وضع علامة الصح فوراً في جدول الحضور.
+      </p>
+
+      <!-- Lecture Scanner Area -->
+      <button id="btnOpenLectureScanner" class="brutal-btn btn-green" style="width: 100%; font-size: 1.05rem;">
+        📷 مسح كود البروجيكتور وأخذ الحضور الآن
+      </button>
+
+      <!-- Direct Quick Attend Test Button -->
+      <button id="btnQuickAttendDemo" class="brutal-btn btn-yellow" style="width: 100%; margin-top: 6px;">
+        ⚡ تسجيل الحضور الفوري في الجلسة الحالية (Demo)
+      </button>
+
+      <!-- Camera Scanner Viewport (Hidden until camera opened) -->
+      <div id="cameraScannerBox" class="scanner-viewport-box hidden">
+        <video id="scannerVideo" class="scanner-video" playsinline></video>
+        <div class="scanner-crosshair"></div>
+        <button id="btnCloseScanner" class="brutal-btn btn-red" style="position: absolute; top: 10px; right: 10px; padding: 4px 10px; font-size: 0.75rem;">إغلاق ✕</button>
+      </div>
+
+      <!-- Attendance Success Box -->
+      <div id="attendanceSuccessAlert" class="attendance-success-box hidden">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">تم تسجيل حضورك بنجاح!</div>
+        <div class="success-details">
+          <div id="successStudentName">Mohamed Ahmed Mohamed Matany Ahmed</div>
+          <div id="successTimestamp">الساعة 10:05 صباحاً • مدرج A</div>
+          <div style="color: #065F46; margin-top: 4px;">✅ تم وضع علامة الصح في كشف الدكتور بنسبة خطأ 0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Support Section -->
+    <footer class="support-section">
+      <button id="btnOpenSupport" class="support-link-btn">
+        مشكلة في تسجيل الدخول؟ تواصل مع دعم Matany Group أو إدارة الجامعة
+      </button>
+      <p style="font-size: 0.7rem; color: #777; margin-top: 6px;">
+        ATT Vision QR Tool • Upstore.one Neubrutalism UI
+      </p>
+    </footer>
+  </div>
+
+  <!-- Support Modal -->
+  <div id="supportModal" class="modal-overlay hidden">
+    <div class="brutal-modal-card">
+      <div class="modal-header">
+        <h3 style="font-weight: 900;">مركز المساعدة والدعم الفني 🛡️</h3>
+        <button id="btnCloseSupport" class="modal-close">✕</button>
+      </div>
+      <p style="font-size: 0.85rem; color: #444; line-height: 1.4;">
+        إذا قمت بفورمات جوالك أو ضياعه، أو واجهت أي صعوبة في قراءة كود كارنيه FUE، فريق الدعم الفني لشركة Matany Group وإدارة جامعة Future جاهزون لمساعدتك فوراً:
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <a href="https://wa.me/201000000000?text=طلب+دعم+تطبيق+AVQR+جامعة+FUE" target="_blank" class="brutal-btn btn-green">
+          💬 محادثة واتساب فورية مع الدعم الفني
+        </a>
+        <a href="mailto:support@matany.group" class="brutal-btn btn-yellow">
+          ✉️ البريد الإلكتروني: support@matany.group
+        </a>
+        <a href="https://services.fue.edu.eg" target="_blank" class="brutal-btn btn-blue">
+          🏛️ بوابة شؤون الطلاب بجامعة المستقبل FUE
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

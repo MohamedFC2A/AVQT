@@ -431,11 +431,16 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // Start Server & Auto DB Init
-initDb().then(() => {
-  server.listen(PORT, () => {
-    console.log(`🚀 AVQR Server running on http://localhost:${PORT}`);
-    console.log(`🏛️ Matany Group x Future University in Egypt (FUE)`);
+if (!process.env.VERCEL) {
+  initDb().then(() => {
+    server.listen(PORT, () => {
+      console.log(`🚀 AVQR Server running on http://localhost:${PORT}`);
+      console.log(`🏛️ Matany Group x Future University in Egypt (FUE)`);
+    });
   });
-});
+} else {
+  initDb();
+}
 
 export { app, server };
+export default app;

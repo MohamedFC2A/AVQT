@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>AVQR - Matany Group</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="avqr-popup-container">
+    <!-- Header Brand Banner -->
+    <header class="brutal-header">
+      <div class="brand-row">
+        <div class="brand-badge">AVQR</div>
+        <div class="brand-meta">
+          <h1>ATT Vision QR Tool</h1>
+          <span class="sub-brand">By Matany Group • FUE Edition</span>
+        </div>
+      </div>
+      <div class="status-pill" id="serverStatusPill">
+        <span class="dot pulse"></span>
+        <span id="serverStatusText">Neon.tech متصل</span>
+      </div>
+    </header>
+
+    <!-- Main Controls Card -->
+    <main class="brutal-main">
+      <div class="session-box">
+        <label class="brutal-label">معرف الجلسة الحالية (Session ID):</label>
+        <div class="session-input-row">
+          <input type="text" id="sessionIdInput" class="brutal-input" placeholder="AVQR-XXXXXX" value="AVQR-DEMO01">
+          <button id="btnNewSession" class="brutal-btn btn-yellow" title="توليد جلسة جديدة">جديدة 🔄</button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="actions-grid">
+        <button id="btnOpenPresenter" class="brutal-btn btn-green btn-full">
+          📽️ فتح شاشة البروجيكتور (Dynamic QR)
+        </button>
+
+        <button id="btnStartAutoSync" class="brutal-btn btn-purple btn-full">
+          ⚡ تفعيل الرصد التلقائي في الصفحة
+        </button>
+      </div>
+
+      <!-- Live Attendance Counter Box -->
+      <div class="live-stats-card">
+        <div class="stat-item">
+          <span class="stat-title">الحاضرين الآن:</span>
+          <span id="livePresentCount" class="stat-val count-highlight">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-title">نسبة الخطأ:</span>
+          <span class="stat-val text-green">0.0%</span>
+        </div>
+      </div>
+
+      <!-- Auto Save 3-Minute Engine -->
+      <div class="auto-save-card">
+        <div class="timer-header">
+          <span>⏱️ الحفظ التلقائي (Auto Save):</span>
+          <strong id="timerCountdown">03:00</strong>
+        </div>
+        <div class="progress-bar-container">
+          <div id="progressBar" class="progress-bar" style="width: 100%;"></div>
+        </div>
+        <button id="btnForceSave" class="brutal-btn btn-red btn-full mt-2">
+          💾 حفظ كشف الغياب فوراً (Force Save)
+        </button>
+      </div>
+
+      <!-- Live Stream Students List -->
+      <div class="recent-students-card">
+        <div class="card-head">
+          <span>سجل الطلاب الواصلين فورياً:</span>
+          <span id="syncIndicator" class="sync-tag">مباشر ⚡</span>
+        </div>
+        <ul id="studentsLiveList" class="students-list">
+          <li class="empty-notice">بانتظار مسح الطلاب للـ QR...</li>
+        </ul>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="brutal-footer">
+      <span>تصميم <strong>upstore.one</strong> • تطوير <strong>Matany Group</strong></span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
