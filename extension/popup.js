@@ -1,152 +1,206 @@
 const SERVER_URL = 'http://localhost:3001';
 
-let currentSessionId = 'AVQR-DEMO01';
+let currentSessionId = 'AVQR-2026';
 let sseSource = null;
-let timerInterval = null;
-let remainingSeconds = 180; // 3 minutes default
-const TOTAL_SECONDS = 180;
+let rotationInterval = null;
+let autoSaveInterval = null;
+let rotationSeconds = 8;
+let autoSaveSeconds = 180;
+const TOTAL_AUTOSAVE_SECONDS = 180;
+let isSessionActive = false;
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  const idleSection = document.getElementById('idleSection');
+  const activeSection = document.getElementById('activeSection');
   const sessionIdInput = document.getElementById('sessionIdInput');
-  const btnNewSession = document.getElementById('btnNewSession');
-  const btnOpenPresenter = document.getElementById('btnOpenPresenter');
-  const btnStartAutoSync = document.getElementById('btnStartAutoSync');
+  const btnStartSession = document.getElementById('btnStartSession');
   const btnForceSave = document.getElementById('btnForceSave');
+  const btnStopSession = document.getElementById('btnStopSession');
   const serverStatusText = document.getElementById('serverStatusText');
-  const livePresentCount = document.getElementById('livePresentCount');
-  const studentsLiveList = document.getElementById('studentsLiveList');
 
-  // Check saved session in storage
+  // Check saved state in storage
   if (chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(['avqr_session_id', 'avqr_remaining_seconds'], (res) => {
+    chrome.storage.local.get(['avqr_session_id', 'avqr_is_active'], (res) => {
       if (res.avqr_session_id) {
         currentSessionId = res.avqr_session_id;
         sessionIdInput.value = currentSessionId;
       }
-      if (res.avqr_remaining_seconds !== undefined) {
-        remainingSeconds = res.avqr_remaining_seconds;
+      if (res.avqr_is_active) {
+        startActiveSession(currentSessionId);
       }
-      startTimer();
-      connectSse(currentSessionId);
     });
-  } else {
-    startTimer();
-    connectSse(currentSessionId);
   }
 
-  // Check Server Health
-  try {
-    const res = await fetch(`${SERVER_URL}/health`);
-    if (res.ok) {
-      serverStatusText.textContent = 'سيرفر متصل 🟢';
-    }
-  } catch (err) {
-    serverStatusText.textContent = 'سيرفر محلي ⚠️';
-  }
-
-  // Generate New Session
-  btnNewSession.addEventListener('click', async () => {
-    try {
-      const res = await fetch(`${SERVER_URL}/api/session/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseName: 'هندسة البرمجيات (CSE 2026)',
-          doctorName: 'د. محمد مطاوع (Matany Group)',
-          roomHall: 'مدرج A - FUE',
-          autoSaveSeconds: 180
-        })
-      });
-      const data = await res.json();
-      if (data.session) {
-        currentSessionId = data.session.id;
-        sessionIdInput.value = currentSessionId;
-        remainingSeconds = 180;
-        if (chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ avqr_session_id: currentSessionId, avqr_remaining_seconds: 180 });
-        }
-        connectSse(currentSessionId);
-        startTimer();
-        alert(`تم توليد جلسة حضور جديدة بنجاح: ${currentSessionId}`);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('خطأ في توليد الجلسة، تأكد من تشغيل السيرفر');
-    }
-  });
-
-  // Open Fullscreen Presenter
-  btnOpenPresenter.addEventListener('click', () => {
-    const presenterUrl = chrome.runtime.getURL(`presenter.html?sessionId=${encodeURIComponent(sessionIdInput.value)}`);
-    chrome.windows.create({
-      url: presenterUrl,
-      type: 'popup',
-      width: 1024,
-      height: 768
+  // Health check
+  fetch(`${SERVER_URL}/health`)
+    .then(r => r.json())
+    .then(() => {
+      serverStatusText.textContent = 'متصل بالخادم';
+    })
+    .catch(() => {
+      serverStatusText.textContent = 'تشغيل محلي';
     });
-  });
 
-  // Start Auto Sync in Current Tab
-  btnStartAutoSync.addEventListener('click', async () => {
-    const activeSessionId = sessionIdInput.value.trim();
+  // Start Session Button
+  btnStartSession.addEventListener('click', async () => {
+    const sid = sessionIdInput.value.trim() || 'AVQR-2026';
+    currentSessionId = sid;
     if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ avqr_session_id: activeSessionId });
+      chrome.storage.local.set({ avqr_session_id: sid, avqr_is_active: true });
     }
-
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab && tab.id) {
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'ACTIVATE_AUTOSYNC',
-        sessionId: activeSessionId,
-        serverUrl: SERVER_URL
-      }, (response) => {
-        if (chrome.runtime.lastError) {
-          alert('يرجى فتح صفحة جدول الحضور أولاً أو إعادة تحميل الصفحة.');
-        } else {
-          alert('⚡ تم تفعيل الرصد التلقائي ومطابقة الـ Checkboxes بنجاح!');
-        }
-      });
-    }
+    await startActiveSession(sid);
   });
 
   // Force Save Button
   btnForceSave.addEventListener('click', async () => {
     await triggerAutoSave();
   });
+
+  // Stop Session Button
+  btnStopSession.addEventListener('click', () => {
+    stopActiveSession();
+  });
 });
 
-function startTimer() {
-  clearInterval(timerInterval);
-  updateTimerDisplay();
+async function startActiveSession(sessionId) {
+  isSessionActive = true;
+  document.getElementById('idleSection').classList.add('hidden');
+  document.getElementById('activeSection').classList.remove('hidden');
 
-  timerInterval = setInterval(() => {
-    if (remainingSeconds > 0) {
-      remainingSeconds--;
-      updateTimerDisplay();
-      if (chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ avqr_remaining_seconds: remainingSeconds });
-      }
+  // Activate content script in current tab to auto-tick checkboxes
+  notifyCurrentTabToSync(sessionId);
+
+  // Fetch initial token and render QR + 8-digit code immediately
+  await refreshDynamicQrAndCode(sessionId);
+
+  // Start 8-second rotation timer
+  rotationSeconds = 8;
+  clearInterval(rotationInterval);
+  rotationInterval = setInterval(() => {
+    if (rotationSeconds > 1) {
+      rotationSeconds--;
+      updateRotationDisplay();
     } else {
-      clearInterval(timerInterval);
+      rotationSeconds = 8;
+      updateRotationDisplay();
+      refreshDynamicQrAndCode(sessionId);
+    }
+  }, 1000);
+
+  // Start 3-minute auto-save timer
+  startAutoSaveTimer();
+
+  // Connect SSE for live student feed
+  connectSse(sessionId);
+}
+
+function stopActiveSession() {
+  isSessionActive = false;
+  clearInterval(rotationInterval);
+  clearInterval(autoSaveInterval);
+  if (sseSource) sseSource.close();
+
+  if (chrome.storage && chrome.storage.local) {
+    chrome.storage.local.set({ avqr_is_active: false });
+  }
+
+  document.getElementById('idleSection').classList.remove('hidden');
+  document.getElementById('activeSection').classList.add('hidden');
+}
+
+async function refreshDynamicQrAndCode(sessionId) {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/session/${sessionId}/dynamic-token`);
+    if (res.ok) {
+      const data = await res.json();
+      const qrPayload = data.dynamicQr;
+      renderStandardQr(qrPayload.qrString);
+      renderNumericCode(qrPayload.numericCode);
+    } else {
+      fallbackRender(sessionId);
+    }
+  } catch (err) {
+    fallbackRender(sessionId);
+  }
+}
+
+function renderStandardQr(text) {
+  const canvas = document.getElementById('qrCanvas');
+  if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+    window.QRCode.toCanvas(canvas, text, {
+      width: 220,
+      margin: 1,
+      color: {
+        dark: '#121212',
+        light: '#FFFFFF'
+      }
+    }, (err) => {
+      if (err) console.error('QR draw error:', err);
+    });
+  } else {
+    // Fallback direct draw
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 220, 220);
+    ctx.fillStyle = '#121212';
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText(text.substring(0, 20), 10, 110);
+  }
+}
+
+function renderNumericCode(code) {
+  const el = document.getElementById('numericCodeDisplay');
+  if (!code) {
+    el.textContent = '--------';
+    return;
+  }
+  // Format as 8 digits with space: e.g. "8492 3105"
+  const formatted = code.length === 8 ? `${code.slice(0, 4)} - ${code.slice(4)}` : code;
+  el.textContent = formatted;
+}
+
+function fallbackRender(sessionId) {
+  const mockCode = (Math.floor(Date.now() / 8000) % 90000000 + 10000000).toString();
+  const mockQr = `AVQR:${sessionId}:FALLBACK_TOKEN:${mockCode}:${Math.floor(Date.now() / 8000)}`;
+  renderStandardQr(mockQr);
+  renderNumericCode(mockCode);
+}
+
+function updateRotationDisplay() {
+  document.getElementById('rotationSecondsTxt').textContent = `${rotationSeconds} ثوانٍ`;
+  const pct = (rotationSeconds / 8) * 100;
+  document.getElementById('rotationProgressBar').style.width = `${pct}%`;
+}
+
+function startAutoSaveTimer() {
+  clearInterval(autoSaveInterval);
+  updateAutoSaveDisplay();
+
+  autoSaveInterval = setInterval(() => {
+    if (autoSaveSeconds > 0) {
+      autoSaveSeconds--;
+      updateAutoSaveDisplay();
+    } else {
+      clearInterval(autoSaveInterval);
       triggerAutoSave();
     }
   }, 1000);
 }
 
-function updateTimerDisplay() {
+function updateAutoSaveDisplay() {
   const timerCountdown = document.getElementById('timerCountdown');
-  const progressBar = document.getElementById('progressBar');
+  const progressBar = document.getElementById('autoSaveProgressBar');
 
-  const mins = Math.floor(remainingSeconds / 60);
-  const secs = remainingSeconds % 60;
-  timerCountdown.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const m = Math.floor(autoSaveSeconds / 60);
+  const s = autoSaveSeconds % 60;
+  timerCountdown.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
-  const pct = (remainingSeconds / TOTAL_SECONDS) * 100;
+  const pct = (autoSaveSeconds / TOTAL_AUTOSAVE_SECONDS) * 100;
   progressBar.style.width = `${pct}%`;
 
-  if (remainingSeconds < 30) {
+  if (autoSaveSeconds < 30) {
     progressBar.style.background = '#FF3366';
-  } else if (remainingSeconds < 90) {
+  } else if (autoSaveSeconds < 90) {
     progressBar.style.background = '#FFE600';
   } else {
     progressBar.style.background = '#00F090';
@@ -154,30 +208,34 @@ function updateTimerDisplay() {
 }
 
 async function triggerAutoSave() {
-  const sessionIdInput = document.getElementById('sessionIdInput');
-  const sid = sessionIdInput.value.trim() || currentSessionId;
-
   try {
-    const res = await fetch(`${SERVER_URL}/api/session/${sid}/auto-save`, { method: 'POST' });
-    const data = await res.json();
-    console.log('Auto save result:', data);
-
-    // Notify current tab content script to submit the form
+    await fetch(`${SERVER_URL}/api/session/${currentSessionId}/auto-save`, { method: 'POST' });
+    // Trigger in tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.id) {
       chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTO_SAVE' });
     }
-
-    alert('💾 تم تنفيذ الحفظ التلقائي بنسبة خطأ 0%!');
+    alert('تم إتمام الحفظ التلقائي لكشف الحضور بنسبة خطأ 0%');
   } catch (err) {
     console.error('Auto save error:', err);
   }
 }
 
+async function notifyCurrentTabToSync(sessionId) {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.id) {
+      chrome.tabs.sendMessage(tab.id, {
+        action: 'ACTIVATE_AUTOSYNC',
+        sessionId,
+        serverUrl: SERVER_URL
+      });
+    }
+  } catch (e) {}
+}
+
 function connectSse(sessionId) {
-  if (sseSource) {
-    sseSource.close();
-  }
+  if (sseSource) sseSource.close();
 
   const livePresentCount = document.getElementById('livePresentCount');
   const studentsLiveList = document.getElementById('studentsLiveList');
@@ -189,12 +247,7 @@ function connectSse(sessionId) {
     addStudentToUI(student);
   });
 
-  sseSource.addEventListener('AUTO_SAVED', (e) => {
-    const data = JSON.parse(e.data);
-    console.log('Session Auto Saved event received:', data);
-  });
-
-  // Also fetch initial list
+  // Initial load of existing records
   fetch(`${SERVER_URL}/api/session/${sessionId}/records`)
     .then(r => r.json())
     .then(records => {
@@ -211,10 +264,9 @@ function addStudentToUI(student) {
   const livePresentCount = document.getElementById('livePresentCount');
   const studentsLiveList = document.getElementById('studentsLiveList');
 
-  const emptyNotice = studentsLiveList.querySelector('.empty-notice');
+  const emptyNotice = studentsLiveList.querySelector('.empty-feed');
   if (emptyNotice) emptyNotice.remove();
 
-  // Avoid duplicates in list
   if (studentsLiveList.querySelector(`[data-sid="${student.studentId}"]`)) {
     return;
   }
@@ -223,7 +275,7 @@ function addStudentToUI(student) {
   li.setAttribute('data-sid', student.studentId);
   li.innerHTML = `
     <span><strong>${student.studentId}</strong>: ${student.fullName}</span>
-    <span style="color: #059669;">حاضر ✅</span>
+    <span style="color: #059669; font-weight: 800;">حاضر</span>
   `;
   studentsLiveList.prepend(li);
 

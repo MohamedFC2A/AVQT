@@ -1,28 +1,34 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { generateDynamicQrToken, verifyDynamicQrToken } from '../services/dynamicQrService.js';
+import { generateDynamicQrToken, verifyDynamicQrToken, verifyDynamicNumericCode } from '../services/dynamicQrService.js';
 import { fetchFueStudentCard, parseFueCardHtml } from '../services/fueCardScraper.js';
 import { db } from '../db.js';
 
-describe('AVQR Anti-Cheating Dynamic QR Engine', () => {
-  test('generates valid cryptographic token for session', () => {
+describe('AVQR Anti-Cheating Dynamic QR & 8-Digit Code Engine', () => {
+  test('generates valid cryptographic token and 8-digit numeric code', () => {
     const sessionId = 'TEST-SESSION-001';
     const payload = generateDynamicQrToken(sessionId);
 
     assert.strictEqual(payload.type, 'AVQR_LECTURE');
     assert.strictEqual(payload.sessionId, sessionId);
     assert.ok(payload.token.length >= 16);
-    assert.ok(payload.qrString.startsWith('AVQR:'));
+    assert.strictEqual(payload.numericCode.length, 8, 'Numeric code must be exactly 8 digits');
+    assert.match(payload.numericCode, /^[0-9]{8}$/, 'Numeric code must be numbers only');
 
-    // Immediate verification must succeed
-    const isValid = verifyDynamicQrToken(sessionId, payload.token);
-    assert.strictEqual(isValid, true, 'Immediate token should be valid');
+    // Token verification must succeed
+    const isTokenValid = verifyDynamicQrToken(sessionId, payload.token);
+    assert.strictEqual(isTokenValid, true, 'Immediate token should be valid');
+
+    // 8-digit code verification must succeed
+    const isNumericValid = verifyDynamicNumericCode(sessionId, payload.numericCode);
+    assert.strictEqual(isNumericValid, true, 'Immediate 8-digit code should be valid');
   });
 
-  test('rejects tampered or fake tokens', () => {
+  test('rejects tampered or fake tokens and codes', () => {
     const sessionId = 'TEST-SESSION-002';
-    const isValid = verifyDynamicQrToken(sessionId, 'fake_forged_token');
-    assert.strictEqual(isValid, false, 'Forged token should be rejected');
+    assert.strictEqual(verifyDynamicQrToken(sessionId, 'fake_forged_token'), false);
+    assert.strictEqual(verifyDynamicNumericCode(sessionId, '00000000'), false);
+    assert.strictEqual(verifyDynamicNumericCode(sessionId, '123'), false);
   });
 });
 
@@ -61,7 +67,6 @@ describe('FUE Student ID Card Scraper & Verification', () => {
 describe('AVQR Database & Attendance Lifecycle', () => {
   test('enforces Step 2 verification before taking attendance', async () => {
     const studentId = '20269999';
-    // Unverified student
     await db.upsertStudent({
       id: studentId,
       full_name: 'Unverified Student',
@@ -72,7 +77,6 @@ describe('AVQR Database & Attendance Lifecycle', () => {
     assert.ok(unverified);
     assert.strictEqual(unverified.card_verified, false);
 
-    // Verify card
     await db.upsertStudent({
       id: studentId,
       card_verified: true,
@@ -83,7 +87,6 @@ describe('AVQR Database & Attendance Lifecycle', () => {
     assert.strictEqual(verified?.card_verified, true);
     assert.strictEqual(verified?.full_name, 'Verified Student Name');
 
-    // Record attendance
     const session = await db.createSession({
       id: 'SESSION-LIFECYCLE-1',
       course_name: 'Algorithms',

@@ -8,86 +8,109 @@
 </head>
 <body>
   <div class="avqr-popup-container">
-    <!-- Header Brand Banner -->
+    <!-- Header Brand Bar -->
     <header class="brutal-header">
       <div class="brand-row">
         <div class="brand-badge">AVQR</div>
         <div class="brand-meta">
           <h1>ATT Vision QR Tool</h1>
-          <span class="sub-brand">By Matany Group • FUE Edition</span>
+          <span class="sub-brand">Matany Group x Future University in Egypt</span>
         </div>
       </div>
       <div class="status-pill" id="serverStatusPill">
         <span class="dot pulse"></span>
-        <span id="serverStatusText">Neon.tech متصل</span>
+        <span id="serverStatusText">متصل بالخادم</span>
       </div>
     </header>
 
-    <!-- Main Controls Card -->
-    <main class="brutal-main">
-      <div class="session-box">
-        <label class="brutal-label">معرف الجلسة الحالية (Session ID):</label>
-        <div class="session-input-row">
-          <input type="text" id="sessionIdInput" class="brutal-input" placeholder="AVQR-XXXXXX" value="AVQR-DEMO01">
-          <button id="btnNewSession" class="brutal-btn btn-yellow" title="توليد جلسة جديدة">جديدة 🔄</button>
+    <!-- STATE 1: IDLE / START CONTROLS (Shown when session is inactive) -->
+    <section id="idleSection" class="session-card">
+      <div class="form-group">
+        <label class="brutal-label">معرف جلسة الحضور:</label>
+        <input type="text" id="sessionIdInput" class="brutal-input" value="AVQR-2026" placeholder="AVQR-XXXX">
+      </div>
+      <button id="btnStartSession" class="brutal-btn btn-yellow btn-full btn-large">
+        بدء تسجيل الحضور
+      </button>
+      <p class="hint-text">
+        سيظهر كود QR والرمز المباشر هنا فوراً وسيبدأ رصد الطلاب تلقائياً في الصفحة المفتوحة.
+      </p>
+    </section>
+
+    <!-- STATE 2: ACTIVE SESSION DISPLAY (Appears immediately when starting) -->
+    <section id="activeSection" class="active-card hidden">
+      <!-- QR Code Canvas Display -->
+      <div class="qr-box">
+        <canvas id="qrCanvas" width="220" height="220"></canvas>
+      </div>
+
+      <!-- 8-Digit Fallback Code Box -->
+      <div class="code-box">
+        <div class="code-label">رمز الحضور اليدوي (8 أرقام)</div>
+        <div id="numericCodeDisplay" class="code-digits">--------</div>
+        <div class="code-note">يكتب الطالب هذا الرمز في التطبيق في حال تعذر مسح الكود</div>
+      </div>
+
+      <!-- Rotation Countdown Bar -->
+      <div class="rotation-bar-wrap">
+        <div class="rotation-label">
+          <span>تحديث الكود تلقائياً</span>
+          <span id="rotationSecondsTxt">8 ثوانٍ</span>
+        </div>
+        <div class="progress-track">
+          <div id="rotationProgressBar" class="progress-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Live Attendance Counter -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="stat-lbl">الطلاب الحاضرون</span>
+          <strong id="livePresentCount" class="stat-num text-green">0</strong>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">نسبة الخطأ</span>
+          <strong class="stat-num">0.0%</strong>
+        </div>
+      </div>
+
+      <!-- 3-Minute Auto-Save Countdown Bar -->
+      <div class="autosave-box">
+        <div class="timer-row">
+          <span>مؤقت الحفظ التلقائي:</span>
+          <strong id="timerCountdown">03:00</strong>
+        </div>
+        <div class="progress-track">
+          <div id="autoSaveProgressBar" class="progress-fill fill-green" style="width: 100%;"></div>
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="actions-grid">
-        <button id="btnOpenPresenter" class="brutal-btn btn-green btn-full">
-          📽️ فتح شاشة البروجيكتور (Dynamic QR)
+      <div class="btn-grid">
+        <button id="btnForceSave" class="brutal-btn btn-green">
+          حفظ الكشف الآن
         </button>
-
-        <button id="btnStartAutoSync" class="brutal-btn btn-purple btn-full">
-          ⚡ تفعيل الرصد التلقائي في الصفحة
-        </button>
-      </div>
-
-      <!-- Live Attendance Counter Box -->
-      <div class="live-stats-card">
-        <div class="stat-item">
-          <span class="stat-title">الحاضرين الآن:</span>
-          <span id="livePresentCount" class="stat-val count-highlight">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-title">نسبة الخطأ:</span>
-          <span class="stat-val text-green">0.0%</span>
-        </div>
-      </div>
-
-      <!-- Auto Save 3-Minute Engine -->
-      <div class="auto-save-card">
-        <div class="timer-header">
-          <span>⏱️ الحفظ التلقائي (Auto Save):</span>
-          <strong id="timerCountdown">03:00</strong>
-        </div>
-        <div class="progress-bar-container">
-          <div id="progressBar" class="progress-bar" style="width: 100%;"></div>
-        </div>
-        <button id="btnForceSave" class="brutal-btn btn-red btn-full mt-2">
-          💾 حفظ كشف الغياب فوراً (Force Save)
+        <button id="btnStopSession" class="brutal-btn btn-red">
+          إنهاء الجلسة
         </button>
       </div>
 
-      <!-- Live Stream Students List -->
-      <div class="recent-students-card">
-        <div class="card-head">
-          <span>سجل الطلاب الواصلين فورياً:</span>
-          <span id="syncIndicator" class="sync-tag">مباشر ⚡</span>
-        </div>
-        <ul id="studentsLiveList" class="students-list">
-          <li class="empty-notice">بانتظار مسح الطلاب للـ QR...</li>
+      <!-- Live Attended Students Feed -->
+      <div class="feed-box">
+        <div class="feed-head">سجل الحضور اللحظي:</div>
+        <ul id="studentsLiveList" class="feed-list">
+          <li class="empty-feed">بانتظار تسجيل الطلاب...</li>
         </ul>
       </div>
-    </main>
+    </section>
 
     <!-- Footer -->
     <footer class="brutal-footer">
-      <span>تصميم <strong>upstore.one</strong> • تطوير <strong>Matany Group</strong></span>
+      <span>نظام الحضور المعتمد لجامعة المستقبل • تطوير Matany Group</span>
     </footer>
   </div>
 
+  <script src="qrcode.min.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

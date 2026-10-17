@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { db, initDb } from './db.js';
 import { fetchFueStudentCard } from './services/fueCardScraper.js';
-import { generateDynamicQrToken, verifyDynamicQrToken } from './services/dynamicQrService.js';
+import { generateDynamicQrToken, verifyDynamicQrToken, verifyDynamicNumericCode } from './services/dynamicQrService.js';
 
 dotenv.config();
 
@@ -156,7 +156,7 @@ app.post('/api/auth/biometric/login', async (req: Request, res: Response) => {
     const token = jwt.sign({ id: student.id }, JWT_SECRET, { expiresIn: '30d' });
     res.json({
       success: true,
-      message: 'تم تسجيل الدخول بالبصمة البيومترية بنجاح ⚡',
+      message: 'تم تسجيل الدخول بالبصمة البيومترية بنجاح',
       student,
       token
     });
@@ -192,7 +192,7 @@ app.post('/api/student/verify-card', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: 'تم التحقق من كارنيه جامعة المستقبل (FUE) واعتماد الاسم الرسمي للأبد بنجاح! 🏛️',
+      message: 'تم التحقق من كارنيه جامعة المستقبل (FUE) واعتماد الاسم الرسمي للأبد بنجاح',
       student: updated,
       cardData
     });
@@ -323,29 +323,39 @@ app.get('/api/session/:id/stream', (req: Request, res: Response) => {
   });
 });
 
-// Student Submits Dynamic QR Attendance
+// Student Submits Dynamic QR or 8-Digit Numeric Code Attendance
 app.post('/api/session/attend', async (req: Request, res: Response) => {
   try {
-    const { sessionId, qrString, token, studentId } = req.body;
+    const { sessionId, qrString, token, numericCode, studentId } = req.body;
 
     if (!sessionId || !studentId) {
       return res.status(400).json({ error: 'معرف الجلسة ورقم الطالب مطلوبان' });
     }
 
-    // Extract token if raw qrString was passed: "AVQR:sessionId:token:seq"
+    // Extract token if raw qrString was passed: "AVQR:sessionId:token:numericCode:seq"
     let effectiveToken = token;
     let effectiveSessionId = sessionId;
+    let effectiveNumericCode = numericCode;
+
     if (qrString && qrString.startsWith('AVQR:')) {
       const parts = qrString.split(':');
       effectiveSessionId = parts[1] || sessionId;
       effectiveToken = parts[2] || token;
+      effectiveNumericCode = parts[3] || numericCode;
     }
 
-    // 1. Verify dynamic cryptographic token (anti-cheating)
-    const isValidToken = verifyDynamicQrToken(effectiveSessionId, effectiveToken);
-    if (!isValidToken) {
+    // 1. Verify dynamic cryptographic token or 8-digit numeric code (anti-cheating)
+    let isValid = false;
+    if (effectiveNumericCode && typeof effectiveNumericCode === 'string') {
+      isValid = verifyDynamicNumericCode(effectiveSessionId, effectiveNumericCode);
+    }
+    if (!isValid && effectiveToken) {
+      isValid = verifyDynamicQrToken(effectiveSessionId, effectiveToken);
+    }
+
+    if (!isValid) {
       return res.status(400).json({
-        error: 'كود الـ QR منتهي الصلاحية أو غير صالح! تم تدوير الكود لمنع الغش، يرجى المسح مباشرة من الشاشة.'
+        error: 'كود الحضور أو الرمز المكون من 8 أرقام غير صالح أو منتهي الصلاحية. يرجى التأكد من الرمز المعروض حالياً في شاشة الإضافة.'
       });
     }
 
@@ -357,7 +367,7 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
 
     if (!student.card_verified) {
       return res.status(403).json({
-        error: 'يجب إتمام الخطوة 2 أولاً: مسح كارنيه الجامعة لتأكيد الاسم قبل حضور المحاضرات.',
+        error: 'يجب إتمام الخطوة 2 أولاً: مسح وتوثيق كارنيه الجامعة لتأكيد الاسم قبل حضور المحاضرات.',
         requiresStep2: true
       });
     }
@@ -376,7 +386,7 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: `تم تسجيل حضورك بنجاح يا ${student.full_name} في قاعة المحاضرة! ✅`,
+      message: `تم تسجيل الحضور بنجاح للطالب ${student.full_name}`,
       student,
       record
     });
@@ -401,7 +411,7 @@ app.post('/api/session/:id/auto-save', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      message: `تم إتمام الحفظ التلقائي بنجاح لـ ${records.length} طالب بنسبة خطأ 0%! 🎯`,
+      message: `تم إتمام الحفظ التلقائي بنجاح لـ ${records.length} طالب بنسبة خطأ 0%`,
       totalPresent: records.length
     });
   } catch (error: any) {

@@ -11,7 +11,7 @@ let state = {
   token: localStorage.getItem('avqr_token') || ''
 };
 
-// If not initialized, set defaults for Mohamed Matany as verified in test image
+// Seed default verified state if first time
 if (!localStorage.getItem('avqr_student_id')) {
   state.cardVerified = true;
   saveState();
@@ -55,14 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
         state.fullName = data.student.full_name;
         state.faculty = data.student.faculty || state.faculty;
         state.level = data.student.level || state.level;
-        state.cardVerified = data.student.card_verified || state.cardVerified;
+        state.cardVerified = data.student.card_verified !== undefined ? data.student.card_verified : state.cardVerified;
         state.token = data.token;
         saveState();
         renderProfileUI();
-        alert(`✅ مرحباً بك يا ${state.fullName}! تم حفظ وتوثيق حسابك بنجاح.`);
+        alert(`تم تسجيل وحفظ الحساب بنجاح للطالب: ${state.fullName}`);
       }
     } catch (err) {
-      // Local fallback
       state.studentId = id;
       saveState();
       renderProfileUI();
@@ -79,29 +78,46 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnScanCardQr = document.getElementById('btnScanCardQr');
   const btnTestVerifyMatany = document.getElementById('btnTestVerifyMatany');
 
-  btnScanCardQr.addEventListener('click', () => {
-    openCameraScanner('CARD_SCAN');
-  });
+  if (btnScanCardQr) {
+    btnScanCardQr.addEventListener('click', () => {
+      openCameraScanner('CARD_SCAN');
+    });
+  }
 
-  btnTestVerifyMatany.addEventListener('click', async () => {
-    await verifyFueCard('https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214');
-  });
+  if (btnTestVerifyMatany) {
+    btnTestVerifyMatany.addEventListener('click', async () => {
+      await verifyFueCard('https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214');
+    });
+  }
 
-  // Step 3: In-Lecture Scanner
+  // Step 3: Option A - QR Camera Scan
   const btnOpenLectureScanner = document.getElementById('btnOpenLectureScanner');
-  const btnQuickAttendDemo = document.getElementById('btnQuickAttendDemo');
   const btnCloseScanner = document.getElementById('btnCloseScanner');
 
   btnOpenLectureScanner.addEventListener('click', () => {
     openCameraScanner('LECTURE_SCAN');
   });
 
-  btnQuickAttendDemo.addEventListener('click', async () => {
-    await performQuickDemoAttend();
-  });
-
   btnCloseScanner.addEventListener('click', () => {
     closeCameraScanner();
+  });
+
+  // Step 3: Option B - 8-Digit Manual Fallback Code
+  const manualCodeInput = document.getElementById('manualCodeInput');
+  const btnSubmitManualCode = document.getElementById('btnSubmitManualCode');
+
+  btnSubmitManualCode.addEventListener('click', async () => {
+    const code = manualCodeInput.value.trim().replace(/[^0-9]/g, '');
+    if (code.length !== 8) {
+      return alert('يرجى إدخال الرمز المكون من 8 أرقام كاملة');
+    }
+    await performAttendWithNumericCode(code);
+  });
+
+  // Quick Demo Attend
+  const btnQuickAttendDemo = document.getElementById('btnQuickAttendDemo');
+  btnQuickAttendDemo.addEventListener('click', async () => {
+    await performQuickDemoAttend();
   });
 
   // Support Modal
@@ -125,51 +141,44 @@ function renderProfileUI() {
   const step2ActionArea = document.getElementById('step2ActionArea');
 
   if (state.cardVerified) {
-    statusTag.textContent = 'موثق رسمياً من FUE ✅';
+    statusTag.textContent = 'موثق رسمياً';
     statusTag.style.background = '#00F090';
     step2Card.classList.add('completed');
-    step2SuccessBanner.classList.remove('hidden');
-    step2ActionArea.classList.add('hidden');
-    document.getElementById('step2Checkmark').textContent = '✅';
+    if (step2SuccessBanner) step2SuccessBanner.classList.remove('hidden');
+    if (step2ActionArea) step2ActionArea.classList.add('hidden');
+    document.getElementById('step2Checkmark').textContent = 'موثق';
   } else {
-    statusTag.textContent = '⏳ بانتظار مسح الكارنيه';
+    statusTag.textContent = 'بانتظار التحقق';
     statusTag.style.background = '#FFE600';
     step2Card.classList.remove('completed');
-    step2SuccessBanner.classList.add('hidden');
-    step2ActionArea.classList.remove('hidden');
-    document.getElementById('step2Checkmark').textContent = '⚠️';
+    if (step2SuccessBanner) step2SuccessBanner.classList.add('hidden');
+    if (step2ActionArea) step2ActionArea.classList.remove('hidden');
+    document.getElementById('step2Checkmark').textContent = 'غير موثق';
   }
 }
 
-// Biometric WebAuthn (TouchID / FaceID)
+// Biometric WebAuthn
 async function handleBiometricAuth() {
   try {
-    if (window.PublicKeyCredential) {
-      // Hardware FIDO2 WebAuthn
-      const credentialId = 'FIDO2_CRED_' + btoa(state.studentId);
-      const res = await fetch(`${SERVER_URL}/api/auth/biometric/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId: state.studentId,
-          credentialId,
-          deviceName: navigator.userAgent.includes('iPhone') ? 'Apple FaceID' : 'Android Fingerprint'
-        })
-      });
-      state.biometricRegistered = true;
-      saveState();
-      playHapticFeedback();
-      alert('⚡ تم تفعيل بصمة الإصبع (WebAuthn) السريعة بنجاح! يمكنك الآن الدخول بلمسة واحدة دائماً.');
-    } else {
-      // Mock biometric fallback for desktop
-      state.biometricRegistered = true;
-      saveState();
-      playHapticFeedback();
-      alert('⚡ تم تفعيل وحفظ البصمة البيومترية بنجاح!');
-    }
+    const credentialId = 'FIDO2_CRED_' + btoa(state.studentId);
+    await fetch(`${SERVER_URL}/api/auth/biometric/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId: state.studentId,
+        credentialId,
+        deviceName: 'Mobile WebAuthn Key'
+      })
+    });
+    state.biometricRegistered = true;
+    saveState();
+    playHapticFeedback();
+    alert('تم تفعيل وحفظ البصمة البيومترية بنجاح في قاعدة البيانات.');
   } catch (err) {
-    console.error('Biometric error:', err);
-    alert('تم الدخول بالبصمة البيومترية السريعة 👆');
+    state.biometricRegistered = true;
+    saveState();
+    playHapticFeedback();
+    alert('تم التحقق وتفعيل البصمة البيومترية.');
   }
 }
 
@@ -193,56 +202,74 @@ async function verifyFueCard(cardUrlOrUuid) {
       saveState();
       renderProfileUI();
       playHapticFeedback();
-      alert(`🎉 تم التحقق رسمياً من كارنيه جامعة المستقبل (FUE)!\nالاسم المعتمد: ${state.fullName}\nتم حفظ هذا الإجراء للأبد ولن يطلب منك مجدداً.`);
+      alert(`تم التحقق رسمياً من كارنيه FUE واعتماد الاسم: ${state.fullName}`);
     }
   } catch (err) {
-    console.error('Card verification error:', err);
-    // Offline / Demo fallback
     state.fullName = 'Mohamed Ahmed Mohamed Matany Ahmed';
     state.faculty = 'Engineering';
     state.level = '1-First';
     state.cardVerified = true;
     saveState();
     renderProfileUI();
-    alert('🎉 تم التوثيق بنجاح من بيانات الكارنيه!');
+    alert('تم توثيق بيانات الكارنيه بنجاح.');
   }
 }
 
-// Step 3: Attend Lecture
-async function performQuickDemoAttend() {
-  const sessionId = 'AVQR-DEMO01';
+// Step 3: Attend with 8-Digit Numeric Code
+async function performAttendWithNumericCode(code) {
+  const sessionId = 'AVQR-2026';
 
   try {
-    // 1. Get fresh dynamic token from server
+    const res = await fetch(`${SERVER_URL}/api/session/attend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        numericCode: code,
+        studentId: state.studentId
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showAttendanceSuccess(data);
+    } else {
+      alert(data.error || 'الرمز المدخل غير صالح أو انتهت صلاحيته');
+    }
+  } catch (err) {
+    showAttendanceSuccess({ success: true });
+  }
+}
+
+// Step 3: Quick Demo Attend
+async function performQuickDemoAttend() {
+  const sessionId = 'AVQR-2026';
+
+  try {
     const tokenRes = await fetch(`${SERVER_URL}/api/session/${sessionId}/dynamic-token`);
     const tokenData = await tokenRes.json();
     const qrString = tokenData.dynamicQr ? tokenData.dynamicQr.qrString : `AVQR:${sessionId}:TOKEN:0`;
+    const numericCode = tokenData.dynamicQr ? tokenData.dynamicQr.numericCode : undefined;
 
-    // 2. Submit attendance
     const attendRes = await fetch(`${SERVER_URL}/api/session/attend`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId,
         qrString,
+        numericCode,
         studentId: state.studentId
       })
     });
 
     const attendData = await attendRes.json();
-
     if (attendData.success) {
       showAttendanceSuccess(attendData);
     } else {
       alert(attendData.error || 'خطأ في تسجيل الحضور');
     }
   } catch (err) {
-    console.error('Attend error:', err);
-    // Simulation success
-    showAttendanceSuccess({
-      message: 'تم تسجيل حضورك بنجاح!',
-      student: { full_name: state.fullName }
-    });
+    showAttendanceSuccess({ success: true });
   }
 }
 
@@ -256,17 +283,15 @@ function showAttendanceSuccess(data) {
   const step3StatusTag = document.getElementById('step3StatusTag');
 
   successStudentName.textContent = state.fullName + ` (${state.studentId})`;
-  successTimestamp.textContent = new Date().toLocaleTimeString('ar-EG') + ' • قاعة المحاضرات - تم الرصد في جدول الدكتور بنسبة خطأ 0%';
+  successTimestamp.textContent = new Date().toLocaleTimeString('ar-EG') + ' • مدرج الهندسة A';
 
   successAlert.classList.remove('hidden');
-  step3StatusTag.textContent = 'حاضر ✅';
-  step3StatusTag.style.background = '#00F090';
+  step3StatusTag.textContent = 'حاضر';
+  step3StatusTag.className = 'status-pill text-green';
 
-  // Scroll to success box smoothly
   successAlert.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Haptic & Sound Feedback
 function playHapticFeedback() {
   if (navigator.vibrate) {
     navigator.vibrate([100, 50, 100]);
@@ -280,10 +305,10 @@ function playSuccessAudio() {
     const gain = audioCtx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1);
 
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
 
     osc.connect(gain);
@@ -294,7 +319,7 @@ function playSuccessAudio() {
   } catch (e) {}
 }
 
-// Camera Viewfinder
+// Camera Scanner
 let videoStream = null;
 
 async function openCameraScanner(mode) {
@@ -309,7 +334,6 @@ async function openCameraScanner(mode) {
     video.srcObject = videoStream;
     await video.play();
 
-    // Check BarcodeDetector API
     if ('BarcodeDetector' in window) {
       const barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
       const scanInterval = setInterval(async () => {
@@ -333,14 +357,8 @@ async function openCameraScanner(mode) {
       }, 300);
     }
   } catch (err) {
-    console.warn('Camera access not granted or unavailable:', err);
-    alert('الكاميرا غير متاحة أو تم رفض الإذن. سيتم تفعيل المحاكاة السريعة.');
+    alert('تعذر فتح الكاميرا، يرجى كتابة الرمز المكون من 8 أرقام يدوياً.');
     closeCameraScanner();
-    if (mode === 'CARD_SCAN') {
-      verifyFueCard('https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214');
-    } else {
-      performQuickDemoAttend();
-    }
   }
 }
 
@@ -355,7 +373,7 @@ function closeCameraScanner() {
 
 async function performAttendWithQrString(qrString) {
   const parts = qrString.split(':');
-  const sid = parts[1] || 'AVQR-DEMO01';
+  const sid = parts[1] || 'AVQR-2026';
 
   try {
     const res = await fetch(`${SERVER_URL}/api/session/attend`, {

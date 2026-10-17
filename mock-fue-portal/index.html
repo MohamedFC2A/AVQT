@@ -180,10 +180,10 @@
       <!-- Bottom Save Action Bar -->
       <div class="table-footer-actions">
         <div class="note-box">
-          ℹ️ تذكير: إضافة AVQR تقوم برصد الـ Checkbox تلقائياً ثم تنفيذ الحفظ الآلي (Auto Save) بعد 3 دقائق.
+          تذكير: إضافة AVQR تقوم برصد الـ Checkbox تلقائياً ثم تنفيذ الحفظ الآلي بعد 3 دقائق.
         </div>
         <button type="submit" id="btnSaveAttendance" class="btn-save-attendance">
-          💾 حفظ كشف الغياب النهائي (Save Attendance)
+          حفظ كشف الغياب النهائي (Save Attendance)
         </button>
       </div>
     </form>
@@ -191,7 +191,7 @@
     <!-- Save Alert Banner -->
     <div id="saveToast" class="save-toast hidden">
       <div class="toast-content">
-        <h3>🎉 تم حفظ وتثبيت كشف غياب المحاضرة بنجاح!</h3>
+        <h3>تم حفظ وتثبيت كشف غياب المحاضرة بنجاح</h3>
         <p id="toastMessage">تم تسجيل حضور الطلاب وإرسال الكشف لقاعدة بيانات جامعة المستقبل FUE بنسبة خطأ 0%.</p>
         <span class="toast-time" id="toastTimestamp"></span>
       </div>
@@ -219,7 +219,7 @@
 
         if (cb.checked) {
           count++;
-          if (statusEl) statusEl.innerHTML = '<span class="badge-present">حاضر ✅</span>';
+          if (statusEl) statusEl.innerHTML = '<span class="badge-present">حاضر</span>';
           if (rowEl) rowEl.classList.add('row-attended');
         } else {
           if (statusEl) statusEl.innerHTML = '<span class="badge-absent">غائب</span>';

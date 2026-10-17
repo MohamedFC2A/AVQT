@@ -40,8 +40,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "presenter.html",
-        "presenter.js",
+        "qrcode.min.js",
         "popup.css",
         "icons/*"
       ],
