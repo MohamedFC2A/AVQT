@@ -621,15 +621,14 @@
     return total;
   }
 
+  let isManuallyDismissed = false;
+
   function isDismissed() {
-    try {
-      return sessionStorage.getItem('avqr_dismissed') === 'true';
-    } catch (e) {
-      return false;
-    }
+    return isManuallyDismissed;
   }
 
   function dismissWidget() {
+    isManuallyDismissed = true;
     const widget = document.getElementById('avqrFloatingWidget');
     if (widget) {
       widget.style.transition = 'all 0.2s ease-out';
@@ -639,9 +638,6 @@
         if (widget) widget.remove();
       }, 200);
     }
-    try {
-      sessionStorage.setItem('avqr_dismissed', 'true');
-    } catch (e) {}
   }
 
   // -------------------------------------------------------------
@@ -662,7 +658,7 @@
 
     widget.innerHTML = `
       <div class="avqr-widget-header">
-        <span class="avqr-widget-tag">AVQR • Matany Group x FUE</span>
+        <span class="avqr-widget-tag">AVQR • رصد الحضور الذكي</span>
         <div class="avqr-header-actions">
           <button id="avqrWidgetClose" class="avqr-close-btn" title="إغلاق وإخفاء">×</button>
         </div>
@@ -673,6 +669,7 @@
           <p class="avqr-prompt-msg">صفحة رصد حضور جاهزة للأتمتة الذكية.</p>
         </div>
         <button id="avqrBtnReady" class="avqr-btn-ready">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-left:6px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
           جاهز ؟
         </button>
       </div>
@@ -920,14 +917,30 @@
     });
   }
 
-  // Initial boot & dynamic check
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+  // Multi-stage Surveillance & Dynamic DOM MutationObserver
+  let observerThrottle = null;
+  const domObserver = new MutationObserver(() => {
+    if (observerThrottle) clearTimeout(observerThrottle);
+    observerThrottle = setTimeout(() => {
       checkAndActivate();
-      setTimeout(checkAndActivate, 800);
-    });
-  } else {
+    }, 400);
+  });
+
+  function startSurveillance() {
     checkAndActivate();
-    setTimeout(checkAndActivate, 800);
+    setTimeout(checkAndActivate, 400);
+    setTimeout(checkAndActivate, 1200);
+    setTimeout(checkAndActivate, 2500);
+
+    const targetNode = document.body || document.documentElement;
+    if (targetNode) {
+      domObserver.observe(targetNode, { childList: true, subtree: true });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startSurveillance);
+  } else {
+    startSurveillance();
   }
 })();

@@ -215,7 +215,7 @@ function renderNumericCode(code) {
 
 function fallbackRender(sessionId) {
   const mockCode = (Math.floor(Date.now() / 5000) % 90000000 + 10000000).toString();
-  const mockQr = `https://avqr-matany-fue.vercel.app/?attend=1&sid=${sessionId}&code=${mockCode}&token=FALLBACK&t=${Date.now()}`;
+  const mockQr = `https://avqr-matany-fue.vercel.app/attend?sid=${sessionId}&code=${mockCode}&token=FALLBACK&t=${Date.now()}`;
   renderStandardQr(mockQr);
   renderNumericCode(mockCode);
 }

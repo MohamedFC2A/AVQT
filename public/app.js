@@ -541,10 +541,11 @@ function hideInstantAttendOverlay() {
 
 async function checkUrlParamsForAutoAttendance() {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('attend') && params.has('sid')) {
-    const sid = params.get('sid') || state.activeSessionId;
-    const code = params.get('code') || '';
-    const token = params.get('token') || '';
+  const isAttendRoute = params.has('attend') || window.location.pathname.includes('/attend');
+  if (isAttendRoute && (params.has('sid') || params.has('s') || params.has('code') || params.has('c'))) {
+    const sid = params.get('sid') || params.get('s') || state.activeSessionId;
+    const code = params.get('code') || params.get('c') || '';
+    const token = params.get('token') || params.get('k') || '';
 
     state.activeSessionId = sid;
     const heroSessionEl = document.getElementById('heroSessionId');

@@ -3,6 +3,8 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/health", "destination": "/api" },
+    { "source": "/attend", "destination": "/index.html" },
+    { "source": "/attend/(.*)", "destination": "/index.html" },
     { "source": "/portal/(.*)", "destination": "/portal/$1" },
     { "source": "/portal", "destination": "/portal/index.html" },
     { "source": "/ext/(.*)", "destination": "/ext/$1" }
