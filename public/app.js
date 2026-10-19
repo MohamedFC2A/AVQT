@@ -222,10 +222,25 @@ function initAuthGateFlow() {
         hideAuthGateAndUnlockApp();
         playHaptic();
         playAudioChime();
-        alert('تم توثيق الطالب وربط الجهاز رسمياً بنجاح.');
+
+        // Check if there was pending attendance from QR camera scan
+        const pendingRaw = sessionStorage.getItem('avqr_pending_attend');
+        if (pendingRaw) {
+          sessionStorage.removeItem('avqr_pending_attend');
+          try {
+            const pending = JSON.parse(pendingRaw);
+            showInstantAttendOverlay('LOADING');
+            await performAttendanceSubmission({
+              sessionId: pending.sid,
+              numericCode: pending.code,
+              token: pending.token,
+              fromCameraScan: true
+            });
+          } catch (e) {}
+        }
       } catch (err) {
         if (err.message && err.message.includes('مقترن رسمياً')) {
-          alert(err.message);
+          showStatusBanner('error', 'الجهاز مقترن بحساب آخر', err.message);
         } else {
           // Fallback local binding
           state.studentId = enteredId;
@@ -237,7 +252,21 @@ function initAuthGateFlow() {
           renderHistoryTimeline();
           hideAuthGateAndUnlockApp();
           playHaptic();
-          alert('تم توثيق الطالب وحفظ قفل الجهاز بنجاح.');
+
+          const pendingRaw = sessionStorage.getItem('avqr_pending_attend');
+          if (pendingRaw) {
+            sessionStorage.removeItem('avqr_pending_attend');
+            try {
+              const pending = JSON.parse(pendingRaw);
+              showInstantAttendOverlay('LOADING');
+              await performAttendanceSubmission({
+                sessionId: pending.sid,
+                numericCode: pending.code,
+                token: pending.token,
+                fromCameraScan: true
+              });
+            } catch (e) {}
+          }
         }
       } finally {
         btnAuthSubmit.disabled = false;
@@ -434,6 +463,82 @@ async function checkLiveSessionStatus() {
   }
 }
 
+function showInstantAttendOverlay(stateType, payload = {}) {
+  const overlay = document.getElementById('instantAttendOverlay');
+  const loadingBlock = document.getElementById('instantAttendLoading');
+  const successBlock = document.getElementById('instantAttendSuccess');
+  const errorBlock = document.getElementById('instantAttendError');
+
+  if (!overlay || !loadingBlock || !successBlock || !errorBlock) return;
+
+  overlay.classList.remove('hidden');
+
+  if (stateType === 'LOADING') {
+    loadingBlock.classList.remove('hidden');
+    successBlock.classList.add('hidden');
+    errorBlock.classList.add('hidden');
+
+    const nameEl = document.getElementById('instantLoadingName');
+    const idEl = document.getElementById('instantLoadingId');
+    if (nameEl) nameEl.textContent = state.fullName || 'Mohamed Ahmed Mohamed Matany Ahmed';
+    if (idEl) idEl.textContent = state.studentId || '20264712';
+  } else if (stateType === 'SUCCESS') {
+    loadingBlock.classList.add('hidden');
+    errorBlock.classList.add('hidden');
+    successBlock.classList.remove('hidden');
+
+    const headingEl = document.getElementById('instantSuccessHeading');
+    const msgEl = document.getElementById('instantSuccessMsg');
+    const studentEl = document.getElementById('instantSummaryStudent');
+    const timeEl = document.getElementById('instantSummaryTime');
+
+    if (payload.alreadyAttended) {
+      if (headingEl) headingEl.textContent = 'أنت مسجل بالفعل في المحاضرة! 🎉';
+      if (msgEl) msgEl.textContent = payload.message || 'تم تسجيل حضورك مسبقاً ومعتمد رسمياً في السحابة الأكاديمية بنسبة دقة 100%.';
+    } else {
+      if (headingEl) headingEl.textContent = 'تم إثبات الحضور بنجاح! 🎓';
+      if (msgEl) msgEl.textContent = payload.message || 'تم تفعيل حضورك في كشف المحاضر بالسحابة الأكاديمية فوراً بدون أخطاء.';
+    }
+
+    if (studentEl) studentEl.textContent = `${state.fullName || 'Mohamed Ahmed Mohamed Matany Ahmed'} (${state.studentId || '20264712'})`;
+    if (timeEl) {
+      const checkDate = payload.record?.check_time ? new Date(payload.record.check_time) : new Date();
+      timeEl.textContent = `${formatArabicDate(checkDate)} • ${formatArabicTime(checkDate)}`;
+    }
+
+    playHaptic();
+    playAudioChime();
+  } else if (stateType === 'ERROR') {
+    loadingBlock.classList.add('hidden');
+    successBlock.classList.add('hidden');
+    errorBlock.classList.remove('hidden');
+
+    const headingEl = document.getElementById('instantErrorHeading');
+    const msgEl = document.getElementById('instantErrorMsg');
+
+    if (payload.reason === 'JUST_EXPIRED') {
+      if (headingEl) headingEl.textContent = 'انتهت صلاحية الرمز للتو (تغير الكود)';
+      if (msgEl) msgEl.textContent = 'تغير رمز الـ QR المعروض على الشاشة منذ لحظات. يرجى مسح الرمز الجديد الظاهر الآن أمامك.';
+    } else if (payload.reason === 'ANCIENT_CODE') {
+      if (headingEl) headingEl.textContent = 'رمز QR قديم جداً أو غير صالح كلياً';
+      if (msgEl) msgEl.textContent = 'الرمز الممسوح منتهي الصلاحية منذ فترة. تأكد من مسح الرمز الحي المباشر من الشاشة الآن.';
+    } else if (payload.reason === 'SESSION_CLOSED') {
+      if (headingEl) headingEl.textContent = 'جلسة الحضور مغلقة رسمياً';
+      if (msgEl) msgEl.textContent = payload.error || 'جلسة تسجيل الحضور مغلقة رسمياً أو انتهت مدة الـ 3 دقائق.';
+    } else {
+      if (headingEl) headingEl.textContent = 'تعذر تسجيل الحضور';
+      if (msgEl) msgEl.textContent = payload.error || 'الرمز غير صحيح أو لا ينتمي إلى هذه المحاضرة.';
+    }
+
+    playHaptic();
+  }
+}
+
+function hideInstantAttendOverlay() {
+  const overlay = document.getElementById('instantAttendOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
 async function checkUrlParamsForAutoAttendance() {
   const params = new URLSearchParams(window.location.search);
   if (params.has('attend') && params.has('sid')) {
@@ -445,11 +550,25 @@ async function checkUrlParamsForAutoAttendance() {
     const heroSessionEl = document.getElementById('heroSessionId');
     if (heroSessionEl) heroSessionEl.textContent = sid;
 
-    await performAttendanceSubmission({
-      sessionId: sid,
-      numericCode: code,
-      token: token
-    });
+    // Check if student is already registered (as user explicitly requested: "لو مسجل اصلا")
+    if (state.isRegistered && state.studentId) {
+      showInstantAttendOverlay('LOADING');
+
+      await performAttendanceSubmission({
+        sessionId: sid,
+        numericCode: code,
+        token: token,
+        fromCameraScan: true
+      });
+    } else {
+      // If student not registered on this device yet, save intent and execute once authenticated
+      sessionStorage.setItem('avqr_pending_attend', JSON.stringify({ sid, code, token }));
+      showStatusBanner(
+        'info',
+        'تم التقاط كود الحضور من الكاميرا بنجاح',
+        'يرجى إتمام تسجيل الدخول أو ربط هويتك لأول مرة ليتم تسجيل حضورك في المحاضرة تلقائياً وفوراً.'
+      );
+    }
 
     const cleanUrl = window.location.pathname;
     window.history.replaceState({}, document.title, cleanUrl);
@@ -458,6 +577,7 @@ async function checkUrlParamsForAutoAttendance() {
 
 async function performAttendanceSubmission(payload) {
   const sid = payload.sessionId || state.activeSessionId;
+  const isCameraScan = Boolean(payload.fromCameraScan);
   const btn = document.getElementById('btnSubmitManualCode');
   const originalText = btn ? btn.textContent : 'تأكيد الحضور';
 
@@ -487,6 +607,14 @@ async function performAttendanceSubmission(payload) {
       updateAttendanceBadge(true);
       displayAttendanceSuccessCard(data.record);
 
+      if (isCameraScan) {
+        showInstantAttendOverlay('SUCCESS', {
+          record: data.record,
+          alreadyAttended: data.alreadyAttended,
+          message: data.message
+        });
+      }
+
       if (data.alreadyAttended) {
         showStatusBanner(
           'already',
@@ -510,9 +638,16 @@ async function performAttendanceSubmission(payload) {
         });
       }
     } else {
-      // Precise diagnostic reasoning based on server analysis
+      // Diagnostic feedback
       const reason = data.reason || 'INVALID_CODE';
       const msg = data.error || 'الرمز غير صالح أو منتهي الصلاحية.';
+
+      if (isCameraScan) {
+        showInstantAttendOverlay('ERROR', {
+          reason: reason,
+          error: msg
+        });
+      }
 
       if (reason === 'JUST_EXPIRED') {
         showStatusBanner(
@@ -547,7 +682,12 @@ async function performAttendanceSubmission(payload) {
       }
     }
   } catch (err) {
-    // Zero fake success: accurately report connection failure
+    if (isCameraScan) {
+      showInstantAttendOverlay('ERROR', {
+        reason: 'CONNECTION_ERROR',
+        error: 'تعذر الاتصال بالسيرفر، يرجى التأكد من شبكة الإنترنت.'
+      });
+    }
     showStatusBanner(
       'error',
       'تعذر الاتصال بالسيرفر',
@@ -694,13 +834,15 @@ function closeCameraScanner() {
 }
 
 function handleScannedQrContent(val) {
+  showInstantAttendOverlay('LOADING');
+
   if (val.includes('?') || val.startsWith('http://') || val.startsWith('https://')) {
     try {
       const url = new URL(val.startsWith('http') ? val : `https://dummy.com/${val}`);
       const sid = url.searchParams.get('sid') || state.activeSessionId;
       const code = url.searchParams.get('code') || '';
       const token = url.searchParams.get('token') || '';
-      performAttendanceSubmission({ sessionId: sid, numericCode: code, token });
+      performAttendanceSubmission({ sessionId: sid, numericCode: code, token, fromCameraScan: true });
       return;
     } catch (e) {}
   }
@@ -710,11 +852,11 @@ function handleScannedQrContent(val) {
     const sid = parts[1] || state.activeSessionId;
     const token = parts[2] || '';
     const numericCode = parts[3] || '';
-    performAttendanceSubmission({ sessionId: sid, token, numericCode });
+    performAttendanceSubmission({ sessionId: sid, token, numericCode, fromCameraScan: true });
     return;
   }
 
-  performAttendanceSubmission({ qrString: val });
+  performAttendanceSubmission({ qrString: val, fromCameraScan: true });
 }
 
 // -------------------------------------------------------------
@@ -1092,6 +1234,23 @@ function initModals() {
 
   if (btnCloseCamera) btnCloseCamera.addEventListener('click', () => closeCameraScanner());
   if (btnCancelScan) btnCancelScan.addEventListener('click', () => closeCameraScanner());
+
+  const btnDismissInstantSuccess = document.getElementById('btnDismissInstantSuccess');
+  const btnDismissInstantError = document.getElementById('btnDismissInstantError');
+  const btnInstantRetryScan = document.getElementById('btnInstantRetryScan');
+
+  if (btnDismissInstantSuccess) {
+    btnDismissInstantSuccess.addEventListener('click', () => hideInstantAttendOverlay());
+  }
+  if (btnDismissInstantError) {
+    btnDismissInstantError.addEventListener('click', () => hideInstantAttendOverlay());
+  }
+  if (btnInstantRetryScan) {
+    btnInstantRetryScan.addEventListener('click', () => {
+      hideInstantAttendOverlay();
+      openCameraScanner();
+    });
+  }
 }
 
 function playHaptic() {

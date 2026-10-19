@@ -26,6 +26,10 @@
       </div>
 
       <div class="topbar-right">
+        <a href="/AVQR-Extension.zip" download="AVQR-Extension.zip" class="topbar-ext-btn" title="تحميل وتحديث إضافة المتصفح">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>تحديث الإضافة (ZIP)</span>
+        </a>
         <div class="student-chip" id="topbarStudentChip">
           <span class="chip-dot"></span>
           <span id="topbarStudentId">20264712</span>
@@ -387,11 +391,20 @@
           <span class="lbl">حالة السحابة الأكاديمية:</span>
           <span class="status-pill pill-green font-xs">سحابة FUE 100% نشطة</span>
         </div>
+        <div class="contact-entry mt-2">
+          <span class="lbl">إضافة المتصفح (Chrome Extension):</span>
+          <a href="/AVQR-Extension.zip" download="AVQR-Extension.zip" class="neo-btn btn-emerald btn-full mt-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            تحميل وتحديث إضافة المتصفح (AVQR-Extension.zip)
+          </a>
+        </div>
       </div>
       <div class="modal-footer">
         <button id="btnCloseHelpBtn" class="neo-btn btn-primary-red btn-full">إغلاق</button>
       </div>
     </div>
+  </div>
+
   <!-- HIGH-PRECISION NATIVE BIOMETRIC MODAL -->
   <div id="biometricModal" class="biometric-modal-overlay hidden">
     <div class="biometric-modal-card">
@@ -407,6 +420,85 @@
       <button id="btnCancelBiometricModal" class="neo-btn btn-subtle-dark btn-full">
         إلغاء
       </button>
+    </div>
+  </div>
+
+  <!-- INSTANT AUTO-ATTENDANCE FULLSCREEN MODAL (Camera Scan & Instant Attendance Flow) -->
+  <div id="instantAttendOverlay" class="instant-attend-overlay hidden">
+    <div class="instant-attend-card">
+      <!-- 1. LOADING STATE -->
+      <div id="instantAttendLoading" class="instant-state-block">
+        <div class="instant-radar-wrap">
+          <div class="instant-radar-circle"></div>
+          <div class="instant-radar-pulse"></div>
+          <svg class="instant-radar-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+        </div>
+        <h3 class="instant-attend-title">جاري تسجيل حضورك فوراً...</h3>
+        <p class="instant-attend-sub">تم التقاط رمز المحاضرة بنجاح • جاري الاعتماد التلقائي بالسحابة الأكاديمية</p>
+        <div class="instant-student-badge">
+          <span id="instantLoadingName">Mohamed Ahmed Mohamed Matany Ahmed</span>
+          <span class="instant-id-pill" id="instantLoadingId">20264712</span>
+        </div>
+      </div>
+
+      <!-- 2. SUCCESS STATE -->
+      <div id="instantAttendSuccess" class="instant-state-block hidden">
+        <div class="instant-success-icon-wrap">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h3 class="instant-attend-title text-emerald" id="instantSuccessHeading">تم إثبات الحضور بنجاح! 🎓</h3>
+        <p class="instant-attend-sub" id="instantSuccessMsg">تم تفعيل حضورك في كشف المحاضر بالسحابة الأكاديمية فوراً</p>
+
+        <div class="instant-summary-box">
+          <div class="summary-line">
+            <span>الطالب:</span>
+            <strong id="instantSummaryStudent">Mohamed Ahmed Mohamed Matany Ahmed</strong>
+          </div>
+          <div class="summary-line">
+            <span>المقرر:</span>
+            <strong>هندسة البرمجيات (CSE 2026)</strong>
+          </div>
+          <div class="summary-line">
+            <span>المحاضر:</span>
+            <strong>د. محمد مطعني</strong>
+          </div>
+          <div class="summary-line">
+            <span>التوقيت:</span>
+            <strong id="instantSummaryTime">الآن</strong>
+          </div>
+          <div class="summary-line">
+            <span>كشف المحاضر:</span>
+            <span class="status-pill pill-green font-xs">تم تفعيل الاختيار (✓) آلياً</span>
+          </div>
+        </div>
+
+        <button id="btnDismissInstantSuccess" class="neo-btn btn-primary-red btn-full btn-large mt-3">
+          تم (عرض كشف الحضور)
+        </button>
+      </div>
+
+      <!-- 3. ERROR STATE -->
+      <div id="instantAttendError" class="instant-state-block hidden">
+        <div class="instant-error-icon-wrap">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+        <h3 class="instant-attend-title text-red" id="instantErrorHeading">تعذر تسجيل الحضور</h3>
+        <p class="instant-attend-sub" id="instantErrorMsg">الرمز غير صالح أو منتهي الصلاحية</p>
+        <button id="btnInstantRetryScan" class="neo-btn btn-emerald btn-full mt-3">
+          مسح كود جديد بالكاميرا
+        </button>
+        <button id="btnDismissInstantError" class="neo-btn btn-subtle-dark btn-full mt-2">
+          إغلاق ومحاولة يدوية
+        </button>
+      </div>
     </div>
   </div>
 

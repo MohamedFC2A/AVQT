@@ -53,7 +53,8 @@ export function verifyDynamicTokenDetailed(sessionId, token, numericCode) {
         const codeMatch = Boolean(cleanCode && cleanCode.length === 8 && cleanCode === expectedCode);
         if (tokenMatch || codeMatch) {
             const diff = currentSeq - seq;
-            if (diff <= 1 && diff >= -1) {
+            // Generous 35-second tolerance (diff <= 6) to allow instant camera scanning, link tapping, and mobile browser loading
+            if (diff <= 6 && diff >= -1) {
                 return {
                     valid: true,
                     reason: 'VALID',
@@ -61,7 +62,7 @@ export function verifyDynamicTokenDetailed(sessionId, token, numericCode) {
                     windowDiff: diff
                 };
             }
-            else if (diff >= 2 && diff <= 5) {
+            else if (diff >= 7 && diff <= 16) {
                 return {
                     valid: false,
                     reason: 'JUST_EXPIRED',

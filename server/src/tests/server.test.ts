@@ -35,9 +35,9 @@ describe('AVQR Anti-Cheating Dynamic QR & 8-Digit Code Engine', () => {
     const secret = process.env.AVQR_SECRET || 'MATANY_GROUP_AVQR_FUE_SECURITY_KEY_2026';
     const currentSeq = Math.floor(Date.now() / 5000);
 
-    // Just expired (3 sequences ago = 15s ago)
+    // Just expired (8 sequences ago = 40s ago)
     const justExpiredHmac = crypto.createHmac('sha256', secret);
-    justExpiredHmac.update(`${sessionId}:${currentSeq - 3}`);
+    justExpiredHmac.update(`${sessionId}:${currentSeq - 8}`);
     const justExpiredToken = justExpiredHmac.digest('hex').substring(0, 16);
 
     const justExpiredResult = verifyDynamicTokenDetailed(sessionId, justExpiredToken);
@@ -45,9 +45,9 @@ describe('AVQR Anti-Cheating Dynamic QR & 8-Digit Code Engine', () => {
     assert.strictEqual(justExpiredResult.reason, 'JUST_EXPIRED');
     assert.match(justExpiredResult.message, /انتهت صلاحية الرمز للتو/);
 
-    // Ancient code (15 sequences ago = 75s ago)
+    // Ancient code (25 sequences ago = 125s ago)
     const ancientHmac = crypto.createHmac('sha256', secret);
-    ancientHmac.update(`${sessionId}:${currentSeq - 15}`);
+    ancientHmac.update(`${sessionId}:${currentSeq - 25}`);
     const ancientToken = ancientHmac.digest('hex').substring(0, 16);
 
     const ancientResult = verifyDynamicTokenDetailed(sessionId, ancientToken);
