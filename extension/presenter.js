@@ -30,6 +30,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e2) {}
   }
 
+  // Check synced start time
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(['avqr_start_time'], (res) => {
+      if (res.avqr_start_time) {
+        const elapsed = Math.floor((Date.now() - res.avqr_start_time) / 1000);
+        autoSaveSeconds = Math.max(0, 180 - elapsed);
+        updateTimerDisplay();
+      }
+    });
+  }
+
   // Initial fetch and render
   await fetchDynamicQrAndCode();
 

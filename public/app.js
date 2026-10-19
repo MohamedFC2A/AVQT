@@ -177,9 +177,9 @@ function initAuthGateFlow() {
   // Handle Auth Gate Submission
   if (btnAuthSubmit) {
     btnAuthSubmit.addEventListener('click', async () => {
-      const enteredId = authStudentIdInput.value.trim();
-      const enteredName = authFullNameInput.value.trim() || 'Mohamed Ahmed Mohamed Matany Ahmed';
-      const enteredPassword = authPasswordInput.value.trim();
+      const enteredId = authStudentIdInput ? authStudentIdInput.value.trim() : '';
+      const enteredName = authFullNameInput ? authFullNameInput.value.trim() || 'Mohamed Ahmed Mohamed Matany Ahmed' : 'Mohamed Ahmed Mohamed Matany Ahmed';
+      const enteredPassword = authPasswordInput ? authPasswordInput.value.trim() : '';
 
       if (!enteredId) {
         return alert('يرجى إدخال الرقم الجامعي الخاص بك.');

@@ -27,13 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check saved state in storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(['avqr_session_id', 'avqr_is_active'], (res) => {
+    chrome.storage.local.get(['avqr_session_id', 'avqr_is_active', 'avqr_start_time'], (res) => {
       if (res.avqr_session_id) {
         currentSessionId = res.avqr_session_id;
         sessionIdInput.value = currentSessionId;
       }
       if (res.avqr_is_active) {
-        startActiveSession(currentSessionId);
+        if (res.avqr_start_time) {
+          const elapsed = Math.floor((Date.now() - res.avqr_start_time) / 1000);
+          autoSaveSeconds = Math.max(0, TOTAL_AUTOSAVE_SECONDS - elapsed);
+        }
+        startActiveSession(currentSessionId, false);
       }
     });
   }
@@ -60,10 +64,18 @@ document.addEventListener('DOMContentLoaded', () => {
   btnStartSession.addEventListener('click', async () => {
     const sid = sessionIdInput.value.trim() || 'AVQR-2026';
     currentSessionId = sid;
+    const startTime = Date.now();
+    autoSaveSeconds = TOTAL_AUTOSAVE_SECONDS;
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ avqr_session_id: sid, avqr_is_active: true, avqr_server_url: activeServerUrl });
+      chrome.storage.local.set({
+        avqr_session_id: sid,
+        avqr_is_active: true,
+        avqr_server_url: activeServerUrl,
+        avqr_start_time: startTime,
+        avqr_sync_pulse: startTime
+      });
     }
-    await startActiveSession(sid);
+    await startActiveSession(sid, true);
   });
 
   // Force Save Button
@@ -92,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-async function startActiveSession(sessionId) {
+async function startActiveSession(sessionId, resetTimer = true) {
   isSessionActive = true;
   document.getElementById('idleSection').classList.add('hidden');
   document.getElementById('activeSection').classList.remove('hidden');
@@ -121,6 +133,9 @@ async function startActiveSession(sessionId) {
   }, 1000);
 
   // Start 3-minute auto-save timer
+  if (resetTimer) {
+    autoSaveSeconds = TOTAL_AUTOSAVE_SECONDS;
+  }
   startAutoSaveTimer();
 
   // Connect Real-time SSE + Active Polling
@@ -138,6 +153,7 @@ function stopActiveSession() {
 
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.set({ avqr_is_active: false });
+    chrome.storage.local.remove(['avqr_start_time']);
   }
 
   document.getElementById('idleSection').classList.remove('hidden');

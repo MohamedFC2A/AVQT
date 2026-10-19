@@ -34,6 +34,17 @@
         }
       }
     } catch (e) {}
+
+    // Also traverse open Shadow Roots (Web Components / Modern LMS)
+    try {
+      const allEls = rootDoc.querySelectorAll('*');
+      for (const el of allEls) {
+        if (el.shadowRoot && !docs.includes(el.shadowRoot)) {
+          docs.push(...getAllDocuments(el.shadowRoot));
+        }
+      }
+    } catch (e) {}
+
     return docs;
   }
 
@@ -122,7 +133,7 @@
   function findCheckboxForStudent(studentId, fullName, doc) {
     if (!doc) return null;
 
-    const checkboxes = Array.from(doc.querySelectorAll('input[type="checkbox"], [role="checkbox"], .custom-checkbox, [data-checkbox]'));
+    const checkboxes = Array.from(doc.querySelectorAll('input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], .custom-checkbox, [data-checkbox]'));
     if (checkboxes.length === 0) return null;
 
     // Tier 1: Explicit <label for="id"> matching (e.g. W3Schools, HTML forms, LMS)
@@ -133,13 +144,13 @@
         if (forId) {
           try {
             const el = doc.getElementById(forId) || doc.querySelector(`[id="${CSS.escape(forId)}"]`);
-            if (el && (el.tagName === 'INPUT' || el.getAttribute('role') === 'checkbox')) {
+            if (el && (el.tagName === 'INPUT' || el.getAttribute('role') === 'checkbox' || el.getAttribute('role') === 'radio')) {
               return { checkbox: el, label: lbl };
             }
           } catch (e) {}
         }
         // Check if the checkbox is nested inside this matching label: <label><input type="checkbox"> Mohamed Matany</label>
-        const innerChk = lbl.querySelector('input[type="checkbox"], [role="checkbox"]');
+        const innerChk = lbl.querySelector('input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"]');
         if (innerChk) {
           return { checkbox: innerChk, label: lbl };
         }
@@ -205,15 +216,18 @@
     const rows = Array.from(doc.querySelectorAll('tr, [role="row"], .student-row, .attendance-row, .user-row'));
     for (const row of rows) {
       if (doesTextMatchStudent(row.textContent, studentId, fullName)) {
-        const rowCheckboxes = Array.from(row.querySelectorAll('input[type="checkbox"], [role="checkbox"], .custom-checkbox'));
+        const rowCheckboxes = Array.from(row.querySelectorAll('input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], .custom-checkbox'));
         if (rowCheckboxes.length === 1) {
           return { checkbox: rowCheckboxes[0], row: row };
         } else if (rowCheckboxes.length > 1) {
-          // If multiple checkboxes in one row (e.g. Present vs Absent columns):
-          // Find the one corresponding to "Present" or "حاضر" or column 1
+          // If multiple checkboxes/radios in one row (e.g. Present vs Absent columns):
+          // Find the one corresponding to "Present" or "حاضر" or column 1 or value P/1
           const presentChk = rowCheckboxes.find(c => {
             const txt = (c.id + ' ' + c.name + ' ' + c.value + ' ' + (c.title || '') + ' ' + (c.getAttribute('aria-label') || '')).toLowerCase();
-            return txt.includes('present') || txt.includes('حاضر') || txt.includes('attend');
+            const parentTxt = (c.parentElement ? c.parentElement.textContent : '').toLowerCase();
+            const nextTxt = (c.nextElementSibling ? c.nextElementSibling.textContent : '').toLowerCase();
+            const combined = txt + ' ' + parentTxt + ' ' + nextTxt;
+            return combined.includes('present') || combined.includes('حاضر') || combined.includes('attend') || c.value === 'P' || c.value === '1';
           });
           return { checkbox: presentChk || rowCheckboxes[0], row: row };
         }
@@ -251,6 +265,10 @@
   // -------------------------------------------------------------
   function applyCheckedState(el) {
     if (!el) return;
+
+    try {
+      if (el.disabled) el.disabled = false;
+    } catch (e) {}
 
     if (el.tagName === 'INPUT' && (el.type === 'checkbox' || el.type === 'radio')) {
       // 1. If not already checked, simulate real user click
@@ -560,10 +578,18 @@
       try {
         const saveBtn = doc.querySelector('#btnSaveAttendance') ||
                         doc.querySelector('button[type="submit"]') ||
-                        doc.querySelector('input[type="submit"][value*="Save"]') ||
-                        doc.querySelector('input[type="submit"][value*="حفظ"]') ||
+                        doc.querySelector('button[id*="save" i]') ||
+                        doc.querySelector('button[id*="submit" i]') ||
+                        doc.querySelector('button[class*="save" i]') ||
+                        doc.querySelector('input[type="submit"]') ||
+                        doc.querySelector('input[value*="Save" i]') ||
+                        doc.querySelector('input[value*="حفظ"]') ||
+                        doc.querySelector('input[value*="Submit" i]') ||
+                        doc.querySelector('input[value*="إرسال"]') ||
                         doc.querySelector('.btn-save') ||
-                        doc.querySelector('[data-action="save"]');
+                        doc.querySelector('.save-btn') ||
+                        doc.querySelector('[data-action="save"]') ||
+                        doc.querySelector('[data-testid*="save" i]');
 
         if (saveBtn) {
           saveBtn.click();

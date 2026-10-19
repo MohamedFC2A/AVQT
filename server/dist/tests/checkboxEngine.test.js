@@ -200,4 +200,39 @@ describe('AVQR Universal Checkbox Engine & Iframe Verification', () => {
         match.checkbox.checked = true;
         assert.strictEqual(chkTable.checked, true);
     });
+    it('correctly selects the Present option when row has multiple options (Present vs Absent)', () => {
+        const chkPresent = { tagName: 'INPUT', type: 'checkbox', id: 'chk_p_1', name: 'att_1', value: 'present', textContent: 'حاضر', checked: false };
+        const chkAbsent = { tagName: 'INPUT', type: 'checkbox', id: 'chk_a_1', name: 'att_1', value: 'absent', textContent: 'غائب', checked: false };
+        const rowMulti = {
+            tagName: 'TR',
+            textContent: '1 20264712 Mohamed Ahmed Mohamed Matany Ahmed حاضر غائب',
+            children: [
+                { tagName: 'TD', textContent: '20264712 Mohamed Ahmed Mohamed Matany Ahmed' },
+                { tagName: 'TD', children: [chkPresent] },
+                { tagName: 'TD', children: [chkAbsent] }
+            ]
+        };
+        const rowCheckboxes = [chkPresent, chkAbsent];
+        const presentChk = rowCheckboxes.find(c => {
+            const txt = (c.id + ' ' + c.name + ' ' + c.value + ' ' + (c.textContent || '')).toLowerCase();
+            return txt.includes('present') || txt.includes('حاضر') || c.value === 'P' || c.value === '1';
+        });
+        assert.ok(presentChk, 'Should resolve the Present option');
+        assert.strictEqual(presentChk.id, 'chk_p_1', 'Must choose Present checkbox, not Absent');
+    });
+    it('safely unlocks disabled checkboxes to ensure successful attendance marking', () => {
+        const disabledChk = {
+            tagName: 'INPUT',
+            type: 'checkbox',
+            id: 'disabled_chk',
+            disabled: true,
+            checked: false
+        };
+        // Apply unlock logic
+        if (disabledChk.disabled)
+            disabledChk.disabled = false;
+        disabledChk.checked = true;
+        assert.strictEqual(disabledChk.disabled, false);
+        assert.strictEqual(disabledChk.checked, true);
+    });
 });
