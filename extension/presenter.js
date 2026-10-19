@@ -44,14 +44,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initial fetch and render
   await fetchDynamicQrAndCode();
 
-  // Start 5-second rotation
+  // Start 5-second dynamic rotation in background (silently without exposing timer to students)
   rotationInterval = setInterval(() => {
     if (rotationSeconds > 1) {
       rotationSeconds--;
-      updateRotationSecsDisplay();
     } else {
       rotationSeconds = ROTATION_TOTAL;
-      updateRotationSecsDisplay();
       fetchDynamicQrAndCode();
     }
   }, 1000);
@@ -59,16 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Start 3-minute Countdown with Auto-Close & Auto-Save
   start3MinuteCountdown();
 
-  // Button actions
-  const btnSaveClose = document.getElementById('btnPresenterSaveAndClose');
-  if (btnSaveClose) {
-    btnSaveClose.addEventListener('click', async () => {
-      btnSaveClose.disabled = true;
-      btnSaveClose.textContent = 'جاري الحفظ والإغلاق...';
-      await triggerAutoSaveAndClose();
-    });
-  }
-
+  // Close Button Action
   const btnClose = document.getElementById('btnPresenterCloseOnly');
   if (btnClose) {
     btnClose.addEventListener('click', () => {
@@ -76,11 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
-
-function updateRotationSecsDisplay() {
-  const el = document.getElementById('rotationSecs');
-  if (el) el.textContent = `${rotationSeconds} ثوانٍ`;
-}
 
 async function fetchDynamicQrAndCode() {
   try {

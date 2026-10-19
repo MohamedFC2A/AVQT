@@ -699,6 +699,16 @@
             avqr_sync_pulse: now
           });
         }
+
+        // Instantly open full-screen Presenter tab
+        try {
+          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ action: 'OPEN_PRESENTER', sessionId: activeSessionId });
+          }
+        } catch (e) {
+          console.warn('AVQR: Open presenter error:', e);
+        }
+
         showActiveMonitoringWidget(now);
         startDualSync(activeSessionId);
       });
@@ -739,7 +749,6 @@
           <span>الحفظ التلقائي:</span>
           <span id="avqrTimerCountdown">03:00</span>
         </div>
-        <button id="avqrWidgetSaveBtn" class="avqr-widget-btn">حفظ الكشف الآن</button>
       </div>
     `;
 
@@ -759,14 +768,6 @@
       closeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         dismissWidget();
-      });
-    }
-
-    // Save Button
-    const saveBtn = document.getElementById('avqrWidgetSaveBtn');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        executePortalAutoSave();
       });
     }
 

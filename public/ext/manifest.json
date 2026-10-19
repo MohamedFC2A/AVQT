@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AVQR - ATT Vision QR Tool | Matany Group x FUE",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "أداة الحضور الذكية المعتمدة للجامعات من Matany Group بتصميم Neubrutalism وأتمتة الـ Checkboxes مع Auto-Save بنسبة خطأ 0%",
   "permissions": [
     "storage",

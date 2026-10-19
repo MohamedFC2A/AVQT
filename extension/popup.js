@@ -21,9 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeSection = document.getElementById('activeSection');
   const sessionIdInput = document.getElementById('sessionIdInput');
   const btnStartSession = document.getElementById('btnStartSession');
-  const btnForceSave = document.getElementById('btnForceSave');
+  const btnOpenPresenterFull = document.getElementById('btnOpenPresenterFull');
   const btnStopSession = document.getElementById('btnStopSession');
-  const serverStatusText = document.getElementById('serverStatusText');
 
   // Check saved state in storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -42,23 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Health check: test sovereign cloud server
-  fetch(`${activeServerUrl}/health`)
-    .then(r => r.json())
-    .then(() => {
-      if (serverStatusText) serverStatusText.textContent = 'سحابة FUE نشطة';
-    })
-    .catch(() => {
-      fetch(`${LOCAL_FALLBACK_URL}/health`)
-        .then(r => r.json())
-        .then(() => {
-          activeServerUrl = LOCAL_FALLBACK_URL;
-          if (serverStatusText) serverStatusText.textContent = 'الخادم الأكاديمي المحلي';
-        })
-        .catch(() => {
-          if (serverStatusText) serverStatusText.textContent = 'السحابة الأكاديمية';
-        });
-    });
+  function openFullPresenter(sid) {
+    const effectiveSid = sid || currentSessionId || 'AVQR-2026';
+    const url = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
+      ? chrome.runtime.getURL(`presenter.html?sid=${encodeURIComponent(effectiveSid)}`)
+      : `presenter.html?sid=${encodeURIComponent(effectiveSid)}`;
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url });
+    } else {
+      window.open(url, '_blank');
+    }
+  }
 
   // Start Session Button
   btnStartSession.addEventListener('click', async () => {
@@ -75,13 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
         avqr_sync_pulse: startTime
       });
     }
+
+    // Immediately open full-page Presenter tab
+    openFullPresenter(sid);
+
     await startActiveSession(sid, true);
   });
 
-  // Force Save Button
-  btnForceSave.addEventListener('click', async () => {
-    await triggerAutoSave();
-  });
+  // Open Full-Page Presenter Button
+  if (btnOpenPresenterFull) {
+    btnOpenPresenterFull.addEventListener('click', () => {
+      openFullPresenter(currentSessionId);
+    });
+  }
 
   // Stop Session Button
   btnStopSession.addEventListener('click', () => {
@@ -92,14 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnOpenPresenter = document.getElementById('btnOpenPresenterMode');
   if (btnOpenPresenter) {
     btnOpenPresenter.addEventListener('click', () => {
-      const url = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
-        ? chrome.runtime.getURL(`presenter.html?sid=${currentSessionId}`)
-        : `presenter.html?sid=${currentSessionId}`;
-      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
-        chrome.tabs.create({ url });
-      } else {
-        window.open(url, '_blank');
-      }
+      openFullPresenter(currentSessionId);
     });
   }
 });
@@ -229,11 +221,7 @@ function fallbackRender(sessionId) {
 }
 
 function updateRotationDisplay() {
-  const txt = document.getElementById('rotationSecondsTxt');
-  if (txt) txt.textContent = `${rotationSeconds} ثوانٍ`;
-  const pct = (rotationSeconds / ROTATION_TOTAL_SECONDS) * 100;
-  const bar = document.getElementById('rotationProgressBar');
-  if (bar) bar.style.width = `${pct}%`;
+  // Silent background rotation
 }
 
 function startAutoSaveTimer() {
@@ -253,26 +241,25 @@ function startAutoSaveTimer() {
 
 function updateAutoSaveDisplay() {
   const timerCountdown = document.getElementById('timerCountdown');
-  const progressBar = document.getElementById('autoSaveProgressBar');
-
   const m = Math.floor(autoSaveSeconds / 60);
   const s = autoSaveSeconds % 60;
-  if (timerCountdown) timerCountdown.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-
-  const pct = (autoSaveSeconds / TOTAL_AUTOSAVE_SECONDS) * 100;
-  if (progressBar) progressBar.style.width = `${pct}%`;
+  if (timerCountdown) {
+    timerCountdown.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
 }
 
 async function triggerAutoSave() {
   try {
     await fetch(`${activeServerUrl}/api/session/${currentSessionId}/auto-save`, { method: 'POST' });
     if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab && tab.id) {
-        chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTO_SAVE' }).catch(() => {});
+      const tabs = await chrome.tabs.query({});
+      for (const tab of tabs) {
+        if (tab && tab.id) {
+          chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTO_SAVE' }).catch(() => {});
+        }
       }
     }
-    alert('تم إتمام الحفظ التلقائي لكشف الحضور بنجاح بنسبة خطأ 0%');
+    console.log('✅ Auto-save completed silently with 0% error.');
   } catch (err) {
     console.error('Auto save error:', err);
   }

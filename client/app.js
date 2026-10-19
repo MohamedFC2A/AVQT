@@ -88,7 +88,7 @@ function getHistoryRecords() {
       courseName: 'هندسة البرمجيات المتقدمة (CSE 2026)',
       dateText: 'السبت، 17 أكتوبر 2026',
       timeText: '10:00:15 ص',
-      doctor: 'د. محمد مطاوع',
+      doctor: 'د. محمد مطعني',
       hall: 'مدرج الهندسة A',
       status: 'حاضر (AVQR)'
     },
@@ -96,7 +96,7 @@ function getHistoryRecords() {
       courseName: 'بنية البيانات والخوارزميات (CSE 2025)',
       dateText: 'الأربعاء، 14 أكتوبر 2026',
       timeText: '11:30:22 ص',
-      doctor: 'د. محمد مطاوع',
+      doctor: 'د. محمد مطعني',
       hall: 'معمل الحاسب 2',
       status: 'حاضر (AVQR)'
     },
@@ -504,7 +504,7 @@ async function performAttendanceSubmission(payload) {
           courseName: 'هندسة البرمجيات المتقدمة (CSE 2026)',
           dateText: formatArabicDate(data.record?.check_time || new Date()),
           timeText: formatArabicTime(data.record?.check_time || new Date()),
-          doctor: 'د. محمد مطاوع',
+          doctor: 'د. محمد مطعني',
           hall: 'مدرج الهندسة A',
           status: 'حاضر (AVQR)'
         });

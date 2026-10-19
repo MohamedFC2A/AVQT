@@ -10,6 +10,15 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'OPEN_PRESENTER') {
+    const sid = message.sessionId || 'AVQR-2026';
+    const url = chrome.runtime.getURL(`presenter.html?sid=${encodeURIComponent(sid)}`);
+    chrome.tabs.create({ url }, (newTab) => {
+      sendResponse({ status: 'OPENED', tabId: newTab ? newTab.id : null });
+    });
+    return true;
+  }
+
   if (message.type === 'PING') {
     sendResponse({ status: 'PONG', timestamp: Date.now() });
   }

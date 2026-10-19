@@ -19,13 +19,8 @@
             <span class="company-name">AVQR Tool</span>
             <span class="partner-tag">FUE</span>
           </div>
-          <span class="university-sub">جامعة المستقبل في مصر • Future University in Egypt</span>
+          <span class="university-sub">جامعة المستقبل في مصر • Matany Group</span>
         </div>
-      </div>
-
-      <div class="cloud-status-pill">
-        <span class="status-indicator-dot"></span>
-        <span id="serverStatusText">السحابة الأكاديمية نشطة</span>
       </div>
     </header>
 
@@ -51,7 +46,7 @@
 
         <div class="security-guarantee-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          <span>تحديث أمني تلقائي مباشر لكود الحضور</span>
+          <span>تحديث أمني تلقائي وحفظ آلي بـ 0% خطأ</span>
         </div>
       </section>
 
@@ -64,7 +59,7 @@
             <strong id="livePresentCount" class="meta-val-green">0</strong>
           </div>
           <div class="meta-stat-pill">
-            <span class="meta-lbl">الحفظ التلقائي:</span>
+            <span class="meta-lbl">المهلة المتبقية:</span>
             <strong id="timerCountdown" class="meta-val-red">03:00</strong>
           </div>
           <div class="meta-session-tag" id="activeSessionBadge">AVQR-2026</div>
@@ -77,40 +72,26 @@
             <canvas id="qrCanvas" width="160" height="160"></canvas>
           </div>
 
-          <!-- 8-Digit Code & Rotation Col -->
+          <!-- 8-Digit Code Col -->
           <div class="code-and-timer-col">
             <div class="code-box-neo">
-              <span class="code-box-lbl">رمز الحضور اليدوي</span>
+              <span class="code-box-lbl">رمز الحضور اليدوي المؤقت</span>
               <div id="numericCodeDisplay" class="code-digits-large">--------</div>
               <span class="code-box-sub">إدخال مباشر بديل للمسح</span>
             </div>
 
-            <!-- Rotation Countdown Indicator -->
-            <div class="rotation-widget">
-              <div class="rotation-widget-head">
-                <span>تحديث الكود:</span>
-                <strong id="rotationSecondsTxt" class="text-crimson">5 ثوانٍ</strong>
-              </div>
-              <div class="progress-track-neo">
-                <div id="rotationProgressBar" class="progress-fill-red" style="width: 100%;"></div>
-              </div>
-            </div>
-
-            <!-- 3-Minute AutoSave Track -->
-            <div class="autosave-track-wrap">
-              <div class="autosave-label">الحفظ التلقائي للكشف:</div>
-              <div class="progress-track-neo small">
-                <div id="autoSaveProgressBar" class="progress-fill-green" style="width: 100%;"></div>
-              </div>
+            <div class="auto-sync-status-box">
+              <span class="auto-sync-dot"></span>
+              <span>الرصد التلقائي لكشوف الطلاب نشط</span>
             </div>
           </div>
         </div>
 
         <!-- ACTION BUTTONS ROW -->
         <div class="action-btn-row">
-          <button id="btnForceSave" class="neo-btn btn-primary-red">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-            حفظ الكشف الآن
+          <button id="btnOpenPresenterFull" class="neo-btn btn-primary-red">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+            عرض شاشة البث الكاملة
           </button>
           <button id="btnStopSession" class="neo-btn btn-subtle-dark">
             إنهاء الجلسة

@@ -224,7 +224,7 @@ app.post('/api/session/create', async (req, res) => {
         const session = await db.createSession({
             id: sessionId,
             course_name: courseName || 'مقدمة في هندسة البرمجيات (CSE 2026)',
-            doctor_name: doctorName || 'د. محمد مطاوع (Matany Group)',
+            doctor_name: doctorName || 'د. محمد مطعني (Matany Group)',
             room_hall: roomHall || 'مدرج A - FUE',
             current_token: dynamicPayload.token,
             token_rotated_at: new Date().toISOString(),
@@ -250,7 +250,7 @@ app.get('/api/session/:id', async (req, res) => {
             session = await db.createSession({
                 id: req.params.id,
                 course_name: 'هندسة البرمجيات المتقدمة (CSE 2026)',
-                doctor_name: 'د. محمد مطاوع (Matany Group)',
+                doctor_name: 'د. محمد مطعني (Matany Group)',
                 room_hall: 'مدرج A - FUE',
                 current_token: dynamicQr.token,
                 token_rotated_at: new Date().toISOString(),
@@ -301,7 +301,7 @@ app.get('/api/session/:id/dynamic-token', async (req, res) => {
             session = await db.createSession({
                 id: req.params.id,
                 course_name: 'هندسة البرمجيات المتقدمة (CSE 2026)',
-                doctor_name: 'د. محمد مطاوع (Matany Group)',
+                doctor_name: 'د. محمد مطعني (Matany Group)',
                 room_hall: 'مدرج A - FUE',
                 current_token: dynamicQr.token,
                 token_rotated_at: new Date().toISOString(),
@@ -424,7 +424,7 @@ app.post('/api/session/attend', async (req, res) => {
             session = await db.createSession({
                 id: effectiveSessionId,
                 course_name: 'مقدمة في هندسة البرمجيات (CSE 2026)',
-                doctor_name: 'د. محمد مطاوع (Matany Group)',
+                doctor_name: 'د. محمد مطعني (Matany Group)',
                 room_hall: 'مدرج A - FUE',
                 current_token: effectiveToken || 'INITIAL_TOKEN',
                 token_rotated_at: new Date().toISOString(),
