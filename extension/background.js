@@ -3,9 +3,10 @@
 chrome.runtime.onInstalled.addListener(() => {
   console.log('⚡ AVQR - ATT Vision QR Tool Extension Installed');
   chrome.storage.local.set({
-    avqr_session_id: 'AVQR-DEMO01',
-    avqr_remaining_seconds: 180
+    avqr_session_id: 'AVQR-2026',
+    avqr_is_active: false
   });
+  chrome.storage.local.remove(['avqr_start_time', 'avqr_remaining_seconds']);
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

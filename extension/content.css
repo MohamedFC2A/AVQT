@@ -36,7 +36,7 @@
   position: fixed;
   bottom: 24px;
   left: 24px;
-  z-index: 9999999;
+  z-index: 999999999;
   background: #FFFFFF;
   border: 2.5px solid #121212;
   box-shadow: 4px 4px 0px #121212;
@@ -46,6 +46,12 @@
   direction: rtl;
   overflow: hidden;
   user-select: none;
+  animation: avqrWidgetPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes avqrWidgetPop {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 .avqr-widget-header {
@@ -60,13 +66,32 @@
   border-bottom: 2px solid #121212;
 }
 
-.avqr-min-btn {
+.avqr-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.avqr-min-btn, .avqr-close-btn {
   background: transparent;
   border: none;
   color: #FFFFFF;
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 900;
   cursor: pointer;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.avqr-close-btn:hover {
+  background: rgba(0, 0, 0, 0.35);
+  color: #FEE2E2;
+}
+
+.avqr-min-btn:hover {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .avqr-widget-body {
@@ -75,6 +100,63 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Prompt State (جاهز؟) */
+.avqr-prompt-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.avqr-prompt-badge {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1.5px solid #059669;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.avqr-prompt-msg {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1.35;
+  margin: 0;
+  text-align: center;
+}
+
+.avqr-btn-ready {
+  width: 100%;
+  background: #B91C1C;
+  color: #FFFFFF;
+  border: 2.5px solid #121212;
+  box-shadow: 3px 3px 0px #121212;
+  padding: 12px 14px;
+  font-weight: 900;
+  font-size: 1.15rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s, box-shadow 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.avqr-btn-ready:hover {
+  background: #DC2626;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px #121212;
+}
+
+.avqr-btn-ready:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px #121212;
 }
 
 .avqr-widget-session {

@@ -156,6 +156,16 @@ function stopActiveSession() {
     chrome.storage.local.remove(['avqr_start_time']);
   }
 
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+    chrome.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        if (tab && tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+          chrome.tabs.sendMessage(tab.id, { action: 'STOP_AUTOSYNC' }).catch(() => {});
+        }
+      }
+    });
+  }
+
   document.getElementById('idleSection').classList.remove('hidden');
   document.getElementById('activeSection').classList.add('hidden');
 }

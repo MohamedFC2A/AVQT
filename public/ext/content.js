@@ -608,20 +608,123 @@
   }
 
   // -------------------------------------------------------------
-  // 9. Universal Neubrutalism Floating Control Widget (Top Window Only)
+  // 9. Page Checkbox Detection & Dismissal State
   // -------------------------------------------------------------
-  function initWidget() {
-    // Only render floating widget in top window to prevent iframe duplication
-    if (!isTopWindow) return;
-    if (document.getElementById('avqrFloatingWidget')) return;
+  function countPageCheckboxes() {
+    const docs = getAllDocuments(document);
+    let total = 0;
+    for (const doc of docs) {
+      try {
+        total += doc.querySelectorAll('input[type="checkbox"], [role="checkbox"], .custom-checkbox').length;
+      } catch (e) {}
+    }
+    return total;
+  }
 
-    const widget = document.createElement('div');
-    widget.id = 'avqrFloatingWidget';
-    widget.className = 'avqr-floating-widget';
+  function isDismissed() {
+    try {
+      return sessionStorage.getItem('avqr_dismissed') === 'true';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function dismissWidget() {
+    const widget = document.getElementById('avqrFloatingWidget');
+    if (widget) {
+      widget.style.transition = 'all 0.2s ease-out';
+      widget.style.opacity = '0';
+      widget.style.transform = 'translateY(15px) scale(0.95)';
+      setTimeout(() => {
+        if (widget) widget.remove();
+      }, 200);
+    }
+    try {
+      sessionStorage.setItem('avqr_dismissed', 'true');
+    } catch (e) {}
+  }
+
+  // -------------------------------------------------------------
+  // 10. Universal Neubrutalism Floating Control Widget (Top Window Only)
+  // -------------------------------------------------------------
+  let widgetTimerInterval = null;
+
+  function showReadyPromptWidget(checkboxCount) {
+    if (!isTopWindow || isDismissed()) return;
+
+    let widget = document.getElementById('avqrFloatingWidget');
+    if (!widget) {
+      widget = document.createElement('div');
+      widget.id = 'avqrFloatingWidget';
+      widget.className = 'avqr-floating-widget';
+      if (document.body) document.body.appendChild(widget);
+    }
+
     widget.innerHTML = `
       <div class="avqr-widget-header">
         <span class="avqr-widget-tag">AVQR • Matany Group x FUE</span>
-        <button id="avqrWidgetMinimize" class="avqr-min-btn">—</button>
+        <div class="avqr-header-actions">
+          <button id="avqrWidgetClose" class="avqr-close-btn" title="إغلاق وإخفاء">×</button>
+        </div>
+      </div>
+      <div class="avqr-widget-body" id="avqrWidgetBody">
+        <div class="avqr-prompt-box">
+          <span class="avqr-prompt-badge">تم رصد كشف طلاب (${checkboxCount} خانات)</span>
+          <p class="avqr-prompt-msg">صفحة رصد حضور جاهزة للأتمتة الذكية.</p>
+        </div>
+        <button id="avqrBtnReady" class="avqr-btn-ready">
+          جاهز ؟
+        </button>
+      </div>
+    `;
+
+    const closeBtn = document.getElementById('avqrWidgetClose');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissWidget();
+      });
+    }
+
+    const readyBtn = document.getElementById('avqrBtnReady');
+    if (readyBtn) {
+      readyBtn.addEventListener('click', () => {
+        const now = Date.now();
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({
+            avqr_session_id: activeSessionId,
+            avqr_is_active: true,
+            avqr_server_url: serverUrl,
+            avqr_start_time: now,
+            avqr_sync_pulse: now
+          });
+        }
+        showActiveMonitoringWidget(now);
+        startDualSync(activeSessionId);
+      });
+    }
+  }
+
+  function showActiveMonitoringWidget(startTime) {
+    if (!isTopWindow || isDismissed()) return;
+
+    let widget = document.getElementById('avqrFloatingWidget');
+    if (!widget) {
+      widget = document.createElement('div');
+      widget.id = 'avqrFloatingWidget';
+      widget.className = 'avqr-floating-widget';
+      if (document.body) document.body.appendChild(widget);
+    }
+
+    const sessionStartTime = startTime || Date.now();
+
+    widget.innerHTML = `
+      <div class="avqr-widget-header">
+        <span class="avqr-widget-tag">AVQR • Matany Group x FUE</span>
+        <div class="avqr-header-actions">
+          <button id="avqrWidgetMinimize" class="avqr-min-btn" title="تصغير">—</button>
+          <button id="avqrWidgetClose" class="avqr-close-btn" title="إغلاق وإخفاء">×</button>
+        </div>
       </div>
       <div class="avqr-widget-body" id="avqrWidgetBody">
         <div class="avqr-widget-session">
@@ -634,31 +737,67 @@
         </div>
         <div class="avqr-timer-line">
           <span>الحفظ التلقائي:</span>
-          <span>مفعل بعد 3 دقائق</span>
+          <span id="avqrTimerCountdown">03:00</span>
         </div>
         <button id="avqrWidgetSaveBtn" class="avqr-widget-btn">حفظ الكشف الآن</button>
       </div>
     `;
 
-    if (document.body) {
-      document.body.appendChild(widget);
-    }
-
+    // Minimize Button
     const minBtn = document.getElementById('avqrWidgetMinimize');
     const body = document.getElementById('avqrWidgetBody');
     if (minBtn && body) {
       minBtn.addEventListener('click', () => {
-        body.style.display = body.style.display === 'none' ? 'block' : 'none';
+        body.style.display = body.style.display === 'none' ? 'flex' : 'none';
         minBtn.textContent = body.style.display === 'none' ? '+' : '—';
       });
     }
 
+    // Prominent Instant Close Button (X)
+    const closeBtn = document.getElementById('avqrWidgetClose');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissWidget();
+      });
+    }
+
+    // Save Button
     const saveBtn = document.getElementById('avqrWidgetSaveBtn');
     if (saveBtn) {
       saveBtn.addEventListener('click', () => {
         executePortalAutoSave();
       });
     }
+
+    // Live Countdown Timer (Synchronized with 3-minute limit)
+    clearInterval(widgetTimerInterval);
+    const updateCountdown = () => {
+      const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+      const remaining = Math.max(0, 180 - elapsed);
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      const timerEl = document.getElementById('avqrTimerCountdown');
+      if (timerEl) {
+        timerEl.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
+
+      if (remaining === 0) {
+        clearInterval(widgetTimerInterval);
+        executePortalAutoSave();
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ avqr_is_active: false });
+          chrome.storage.local.remove(['avqr_start_time']);
+        }
+        setTimeout(() => {
+          dismissWidget();
+        }, 3000);
+      }
+    };
+
+    updateCountdown();
+    widgetTimerInterval = setInterval(updateCountdown, 1000);
+    updateAttendedCount();
   }
 
   function updateWidgetStatus(text) {
@@ -689,34 +828,39 @@
   }
 
   // -------------------------------------------------------------
-  // 10. Multi-Channel Storage & Message Listeners
+  // 11. Intelligent Multi-Channel Activation & Page Surveillance
   // -------------------------------------------------------------
   function checkAndActivate() {
+    if (isDismissed()) return;
+
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['avqr_session_id', 'avqr_is_active', 'avqr_server_url'], (res) => {
+      chrome.storage.local.get(['avqr_session_id', 'avqr_is_active', 'avqr_server_url', 'avqr_start_time'], (res) => {
         if (res.avqr_server_url) serverUrl = res.avqr_server_url;
         if (res.avqr_session_id) activeSessionId = res.avqr_session_id;
 
+        // Check if session has expired (> 3 minutes)
+        if (res.avqr_is_active && res.avqr_start_time) {
+          const elapsed = Date.now() - res.avqr_start_time;
+          if (elapsed >= 180 * 1000) {
+            chrome.storage.local.set({ avqr_is_active: false });
+            chrome.storage.local.remove(['avqr_start_time']);
+            res.avqr_is_active = false;
+          }
+        }
+
+        const boxCount = countPageCheckboxes();
+
         if (res.avqr_is_active) {
-          initWidget();
+          // If active from popup/presenter, show active widget
+          showActiveMonitoringWidget(res.avqr_start_time);
           startDualSync(activeSessionId);
           return;
         }
 
-        // Heuristic detection on any university page
-        const pageText = (document.body ? document.body.innerText : '').toLowerCase();
-        const hasCheckboxes = document.querySelector('input[type="checkbox"], [role="checkbox"]');
-        const hasAttendanceKeywords = pageText.includes('حضور') ||
-                                      pageText.includes('attendance') ||
-                                      pageText.includes('غياب') ||
-                                      pageText.includes('students') ||
-                                      pageText.includes('طلاب') ||
-                                      pageText.includes('fue') ||
-                                      pageText.includes('checkbox');
-
-        if (hasCheckboxes && hasAttendanceKeywords) {
-          initWidget();
-          startDualSync(activeSessionId);
+        // AUTO-DETECTION: Only trigger if page has MORE THAN 1 checkbox!
+        // Never triggers on Gemini, Google, YouTube, etc.
+        if (boxCount >= 2) {
+          showReadyPromptWidget(boxCount);
         }
       });
     }
@@ -727,14 +871,15 @@
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local') {
         if (changes.avqr_is_active || changes.avqr_session_id || changes.avqr_server_url || changes.avqr_sync_pulse) {
-          chrome.storage.local.get(['avqr_session_id', 'avqr_is_active', 'avqr_server_url'], (res) => {
+          chrome.storage.local.get(['avqr_session_id', 'avqr_is_active', 'avqr_server_url', 'avqr_start_time'], (res) => {
             if (res.avqr_server_url) serverUrl = res.avqr_server_url;
             if (res.avqr_session_id) activeSessionId = res.avqr_session_id;
 
             if (res.avqr_is_active) {
-              initWidget();
+              showActiveMonitoringWidget(res.avqr_start_time);
               startDualSync(activeSessionId);
             } else {
+              dismissWidget();
               stopDualSync();
             }
           });
@@ -750,7 +895,7 @@
         if (msg.action === 'ACTIVATE_AUTOSYNC') {
           activeSessionId = msg.sessionId || activeSessionId;
           if (msg.serverUrl) serverUrl = msg.serverUrl;
-          initWidget();
+          showActiveMonitoringWidget(Date.now());
           startDualSync(activeSessionId);
           updateWidgetStatus(`جلسة نشطة: ${activeSessionId}`);
           sendResponse({ status: 'ACTIVE' });
@@ -762,6 +907,10 @@
         } else if (msg.action === 'TRIGGER_AUTO_SAVE') {
           executePortalAutoSave();
           sendResponse({ status: 'SAVED' });
+        } else if (msg.action === 'STOP_AUTOSYNC') {
+          dismissWidget();
+          stopDualSync();
+          sendResponse({ status: 'STOPPED' });
         }
       } catch (err) {
         sendResponse({ status: 'ERROR', message: err.message });
@@ -770,10 +919,14 @@
     });
   }
 
-  // Initial boot
+  // Initial boot & dynamic check
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkAndActivate);
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAndActivate();
+      setTimeout(checkAndActivate, 800);
+    });
   } else {
     checkAndActivate();
+    setTimeout(checkAndActivate, 800);
   }
 })();
