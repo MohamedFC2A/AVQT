@@ -1353,3 +1353,124 @@ body {
   color: #059669 !important;
 }
 
+/* NATIVE BIOMETRIC MODAL - NEUBRUTALISM ZERO GLITCH */
+.biometric-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(18, 18, 18, 0.78);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.biometric-modal-card {
+  background: var(--neo-white);
+  border: var(--border-main);
+  box-shadow: 6px 6px 0px var(--neo-black);
+  border-radius: var(--radius-md);
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  direction: rtl;
+}
+
+.bio-device-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FEF2F2;
+  border: 1.5px solid var(--primary-red);
+  color: var(--primary-red);
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 16px;
+}
+
+.bio-sensor-visual {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 16px auto;
+  border-radius: 50%;
+  border: 2.5px solid var(--neo-black);
+  box-shadow: 3px 3px 0px var(--neo-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F8FAFC;
+  position: relative;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.bio-sensor-visual.scanning {
+  border-color: var(--primary-red);
+  box-shadow: 0 0 0 5px rgba(185, 28, 28, 0.15);
+  animation: pulseSensor 1.4s infinite ease-in-out;
+}
+
+.bio-sensor-visual.success {
+  background: #ECFDF5;
+  border-color: #059669;
+  box-shadow: 4px 4px 0px #065F46;
+  transform: scale(1.05);
+}
+
+.bio-sensor-visual svg {
+  width: 50px;
+  height: 50px;
+  transition: all 0.2s ease;
+}
+
+@keyframes pulseSensor {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.bio-modal-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--neo-black);
+  margin-bottom: 6px;
+}
+
+.bio-modal-desc {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.bio-scan-status {
+  background: #F1F5F9;
+  border: 1.5px solid var(--neo-black);
+  border-radius: var(--radius-xs);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--neo-black);
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.bio-scan-status.success {
+  background: #ECFDF5;
+  border-color: #059669;
+  color: #065F46;
+}
+
+.btn-icon-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+}
+
