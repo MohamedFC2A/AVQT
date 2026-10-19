@@ -215,7 +215,7 @@ function renderNumericCode(code) {
 
 function fallbackRender(sessionId) {
   const mockCode = (Math.floor(Date.now() / 5000) % 90000000 + 10000000).toString();
-  const mockQr = `https://avqr-matany-fue.vercel.app/attend?sid=${sessionId}&code=${mockCode}&token=FALLBACK&t=${Date.now()}`;
+  const mockQr = `${activeServerUrl}/attend?s=${encodeURIComponent(sessionId)}&c=${mockCode}`;
   renderStandardQr(mockQr);
   renderNumericCode(mockCode);
 }
@@ -270,7 +270,7 @@ async function notifyCurrentTabToSync(sessionId) {
     if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
       const tabs = await chrome.tabs.query({});
       for (const tab of tabs) {
-        if (tab && tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+        if (tab && tab.id) {
           if (chrome.scripting && chrome.scripting.executeScript) {
             chrome.scripting.executeScript({
               target: { tabId: tab.id, allFrames: true },
@@ -295,7 +295,7 @@ function broadcastAttendeeToTabs(student) {
   if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
     chrome.tabs.query({}, (tabs) => {
       for (const tab of tabs) {
-        if (tab && tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+        if (tab && tab.id) {
           chrome.tabs.sendMessage(tab.id, {
             action: 'RECORD_ATTENDEE',
             studentId: sId,

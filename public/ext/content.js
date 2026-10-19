@@ -1,21 +1,21 @@
 // AVQR Content Script - Universal Checkbox Automation & Real-Time Sync
 // Designed by Matany Group for Future University in Egypt (FUE) & All University Portals
-// Supports Top-Level Documents, Same-Origin/Cross-Origin Iframes, Dynamic Mutation, and Multi-Level Frameworks
+// Zero-Lag, Ultra-Lightweight, Deterministic Checkbox Actuation Engine
 
 (function () {
   let activeSessionId = 'AVQR-2026';
   let serverUrl = window.location.hostname.includes('localhost') ? 'http://localhost:3001' : 'https://avqr-matany-fue.vercel.app';
   let sseSource = null;
   let pollInterval = null;
-  let recheckInterval = null;
   let isSyncActive = false;
+  let isManuallyDismissed = false;
   const isTopWindow = (window === window.top);
 
   const markedStudents = new Set();
   const attendedRecordsCache = new Map(); // key -> { studentId, fullName }
 
   // -------------------------------------------------------------
-  // 1. Recursive Document Traversal (All Frames & Iframes)
+  // 1. Efficient Frame & Document Traversal (Zero Lag, No querySelectorAll('*'))
   // -------------------------------------------------------------
   function getAllDocuments(rootDoc) {
     if (!rootDoc) rootDoc = document;
@@ -26,25 +26,13 @@
         try {
           const subDoc = ifr.contentDocument || (ifr.contentWindow && ifr.contentWindow.document);
           if (subDoc && !docs.includes(subDoc)) {
-            docs.push(...getAllDocuments(subDoc));
+            docs.push(subDoc);
           }
         } catch (e) {
-          // Cross-origin iframe security boundary:
-          // Handled natively by Chrome via all_frames: true in manifest.json!
+          // Handled natively by Chrome via all_frames: true
         }
       }
     } catch (e) {}
-
-    // Also traverse open Shadow Roots (Web Components / Modern LMS)
-    try {
-      const allEls = rootDoc.querySelectorAll('*');
-      for (const el of allEls) {
-        if (el.shadowRoot && !docs.includes(el.shadowRoot)) {
-          docs.push(...getAllDocuments(el.shadowRoot));
-        }
-      }
-    } catch (e) {}
-
     return docs;
   }
 
@@ -55,14 +43,11 @@
     if (!text || typeof text !== 'string') return '';
     return text
       .toLowerCase()
-      // Arabic letter normalization
       .replace(/[أإآٱ]/g, 'ا')
       .replace(/ة/g, 'ه')
       .replace(/ى/g, 'ي')
       .replace(/[ؤئ]/g, 'ء')
-      // Remove Arabic Tashkeel / Harakat
       .replace(/[\u064B-\u065F\u0670]/g, '')
-      // Collapse all whitespace, tabs, zero-width, non-breaking spaces
       .replace(/[\s\u00A0\u200B\uFEFF]+/g, ' ')
       .trim();
   }
@@ -73,7 +58,7 @@
     const normRaw = normalizeText(rawText);
     const cleanId = (studentId || '').trim();
 
-    // Match 1: Exact or embedded Student ID (e.g. "20264712", "ID: 20264712", "#20264712")
+    // Match 1: Exact or embedded Student ID (e.g. "20264712", "ID: 20264712", "chk-20264712")
     if (cleanId && normRaw.includes(cleanId.toLowerCase())) {
       return true;
     }
@@ -91,35 +76,23 @@
     if (fullName) {
       const normName = normalizeText(fullName);
       if (normName.length >= 3) {
-        // 3.1: Complete normalized name contains or is contained
         if (normRaw.includes(normName) || normName.includes(normRaw)) {
           return true;
         }
 
-        // 3.2: Token-based multi-part matching (handles "Mohamed Matany" or "Matany, Mohamed")
         const nameTokens = normName.split(' ').filter(t => t.length >= 2);
-        if (nameTokens.length > 0) {
-          // If first and last tokens both match (e.g. "Mohamed" and "Matany")
-          if (nameTokens.length >= 2) {
-            const firstToken = nameTokens[0];
-            const lastToken = nameTokens[nameTokens.length - 1];
-            if (normRaw.includes(firstToken) && normRaw.includes(lastToken)) {
-              return true;
-            }
-          }
-
-          // Count matching tokens
-          let matchCount = 0;
-          for (const token of nameTokens) {
-            if (normRaw.includes(token)) {
-              matchCount++;
-            }
-          }
-
-          // If at least 2 tokens match or 100% of single token
-          if (matchCount >= 2 || (nameTokens.length === 1 && matchCount === 1)) {
+        if (nameTokens.length >= 2) {
+          const firstToken = nameTokens[0];
+          const lastToken = nameTokens[nameTokens.length - 1];
+          if (normRaw.includes(firstToken) && normRaw.includes(lastToken)) {
             return true;
           }
+
+          let matchCount = 0;
+          for (const token of nameTokens) {
+            if (normRaw.includes(token)) matchCount++;
+          }
+          if (matchCount >= 2) return true;
         }
       }
     }
@@ -128,100 +101,52 @@
   }
 
   // -------------------------------------------------------------
-  // 3. Hierarchical Checkbox Search (Scoring & Priority Engine)
+  // 3. Hierarchical Checkbox Search (Prioritized for Portal Tables)
   // -------------------------------------------------------------
   function findCheckboxForStudent(studentId, fullName, doc) {
     if (!doc) return null;
+    const cleanId = (studentId || '').trim();
 
-    const checkboxes = Array.from(doc.querySelectorAll('input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], .custom-checkbox, [data-checkbox]'));
-    if (checkboxes.length === 0) return null;
+    // Tier 1: Direct ID or Data Attribute matching on Checkbox or Row
+    if (cleanId) {
+      // Direct checkbox element by ID: e.g. #chk-20264712, #checkbox-20264712, #attendance_20264712
+      try {
+        const directChk = doc.getElementById('chk-' + cleanId) ||
+                          doc.getElementById('chk_' + cleanId) ||
+                          doc.getElementById('checkbox-' + cleanId) ||
+                          doc.getElementById(cleanId) ||
+                          doc.querySelector(`input[type="checkbox"][id*="${CSS.escape(cleanId)}"]`) ||
+                          doc.querySelector(`input[type="checkbox"][name*="${CSS.escape(cleanId)}"]`) ||
+                          doc.querySelector(`input[type="checkbox"][data-student-id="${CSS.escape(cleanId)}"]`) ||
+                          doc.querySelector(`input[type="checkbox"][value="${CSS.escape(cleanId)}"]`);
+        if (directChk) {
+          return { checkbox: directChk, row: directChk.closest('tr') || directChk.closest('[role="row"]') };
+        }
+      } catch (e) {}
 
-    // Tier 1: Explicit <label for="id"> matching (e.g. W3Schools, HTML forms, LMS)
-    const labels = Array.from(doc.querySelectorAll('label'));
-    for (const lbl of labels) {
-      if (doesTextMatchStudent(lbl.textContent, studentId, fullName)) {
-        const forId = lbl.getAttribute('for');
-        if (forId) {
-          try {
-            const el = doc.getElementById(forId) || doc.querySelector(`[id="${CSS.escape(forId)}"]`);
-            if (el && (el.tagName === 'INPUT' || el.getAttribute('role') === 'checkbox' || el.getAttribute('role') === 'radio')) {
-              return { checkbox: el, label: lbl };
-            }
-          } catch (e) {}
+      // Direct row element: e.g. #row-20264712, [data-student-id="20264712"]
+      try {
+        const directRow = doc.getElementById('row-' + cleanId) ||
+                          doc.getElementById('student-' + cleanId) ||
+                          doc.querySelector(`tr[data-student-id="${CSS.escape(cleanId)}"]`) ||
+                          doc.querySelector(`[data-student-id="${CSS.escape(cleanId)}"]`);
+        if (directRow) {
+          const rowChk = directRow.querySelector('input[type="checkbox"], input[type="radio"], [role="checkbox"]');
+          if (rowChk) {
+            return { checkbox: rowChk, row: directRow };
+          }
         }
-        // Check if the checkbox is nested inside this matching label: <label><input type="checkbox"> Mohamed Matany</label>
-        const innerChk = lbl.querySelector('input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"]');
-        if (innerChk) {
-          return { checkbox: innerChk, label: lbl };
-        }
-      }
+      } catch (e) {}
     }
 
-    // Tier 2: Direct ID / Name / Value / Data Attributes on Checkbox
-    for (const chk of checkboxes) {
-      const chkId = chk.id || '';
-      const chkName = chk.name || '';
-      const chkVal = chk.value || '';
-      const dataId = chk.getAttribute('data-student-id') || chk.getAttribute('data-id') || '';
-      const ariaLbl = chk.getAttribute('aria-label') || '';
-
-      if (studentId) {
-        if (doesTextMatchStudent(chkId, studentId, null) ||
-            doesTextMatchStudent(chkName, studentId, null) ||
-            doesTextMatchStudent(chkVal, studentId, null) ||
-            doesTextMatchStudent(dataId, studentId, null) ||
-            doesTextMatchStudent(ariaLbl, studentId, null)) {
-          return { checkbox: chk, label: chk.closest('label') };
-        }
-      }
-      if (fullName) {
-        if (doesTextMatchStudent(ariaLbl, null, fullName) ||
-            doesTextMatchStudent(chkName, null, fullName)) {
-          return { checkbox: chk, label: chk.closest('label') };
-        }
-      }
-    }
-
-    // Tier 3: Checkbox Adjacent Elements / Direct Siblings (e.g. <input> <label>...</label>)
-    for (const chk of checkboxes) {
-      // 3.1: Enclosing <label>
-      const parentLabel = chk.closest('label');
-      if (parentLabel && doesTextMatchStudent(parentLabel.textContent, studentId, fullName)) {
-        return { checkbox: chk, label: parentLabel };
-      }
-
-      // 3.2: Immediate Next Sibling element (e.g. <label>, <span>, <p>, <b>)
-      const nextEl = chk.nextElementSibling;
-      if (nextEl && doesTextMatchStudent(nextEl.textContent, studentId, fullName)) {
-        return { checkbox: chk, label: nextEl };
-      }
-
-      // 3.3: Immediate Previous Sibling element
-      const prevEl = chk.previousElementSibling;
-      if (prevEl && doesTextMatchStudent(prevEl.textContent, studentId, fullName)) {
-        return { checkbox: chk, label: prevEl };
-      }
-
-      // 3.4: Next sibling text node (e.g. <input type="checkbox"> Mohamed Matany <br>)
-      let nextNode = chk.nextSibling;
-      while (nextNode && nextNode.nodeType === Node.TEXT_NODE) {
-        if (doesTextMatchStudent(nextNode.textContent, studentId, fullName)) {
-          return { checkbox: chk, label: null };
-        }
-        nextNode = nextNode.nextSibling;
-      }
-    }
-
-    // Tier 4: Table Rows (<tr> or [role="row"]) - Standard for University Portals
+    // Tier 2: Table Rows (<tr> or [role="row"]) matching Student ID or Name in row text
     const rows = Array.from(doc.querySelectorAll('tr, [role="row"], .student-row, .attendance-row, .user-row'));
     for (const row of rows) {
-      if (doesTextMatchStudent(row.textContent, studentId, fullName)) {
+      if (doesTextMatchStudent(row.textContent, cleanId, fullName)) {
         const rowCheckboxes = Array.from(row.querySelectorAll('input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], .custom-checkbox'));
         if (rowCheckboxes.length === 1) {
           return { checkbox: rowCheckboxes[0], row: row };
         } else if (rowCheckboxes.length > 1) {
-          // If multiple checkboxes/radios in one row (e.g. Present vs Absent columns):
-          // Find the one corresponding to "Present" or "حاضر" or column 1 or value P/1
           const presentChk = rowCheckboxes.find(c => {
             const txt = (c.id + ' ' + c.name + ' ' + c.value + ' ' + (c.title || '') + ' ' + (c.getAttribute('aria-label') || '')).toLowerCase();
             const parentTxt = (c.parentElement ? c.parentElement.textContent : '').toLowerCase();
@@ -234,26 +159,58 @@
       }
     }
 
-    // Tier 5: List Items (<li>) or Cards (.student-card, .attendance-item)
-    const items = Array.from(doc.querySelectorAll('li, .student-card, .attendance-item'));
-    for (const itm of items) {
-      if (doesTextMatchStudent(itm.textContent, studentId, fullName)) {
-        const itmChk = itm.querySelector('input[type="checkbox"], [role="checkbox"]');
-        if (itmChk) {
-          return { checkbox: itmChk, container: itm };
+    // Tier 3: Explicit <label for="id"> matching
+    const labels = Array.from(doc.querySelectorAll('label'));
+    for (const lbl of labels) {
+      if (doesTextMatchStudent(lbl.textContent, cleanId, fullName)) {
+        const forId = lbl.getAttribute('for');
+        if (forId) {
+          try {
+            const el = doc.getElementById(forId) || doc.querySelector(`[id="${CSS.escape(forId)}"]`);
+            if (el && (el.tagName === 'INPUT' || el.getAttribute('role') === 'checkbox')) {
+              return { checkbox: el, label: lbl, row: el.closest('tr') };
+            }
+          } catch (e) {}
+        }
+        const innerChk = lbl.querySelector('input[type="checkbox"], [role="checkbox"]');
+        if (innerChk) {
+          return { checkbox: innerChk, label: lbl, row: innerChk.closest('tr') };
         }
       }
     }
 
-    // Tier 6: Check immediate parent container ONLY IF container contains exactly 1 checkbox
-    // NEVER match entire form, body, or table if it has multiple checkboxes!
+    // Tier 4: All Checkboxes attributes & siblings
+    const checkboxes = Array.from(doc.querySelectorAll('input[type="checkbox"], input[type="radio"], [role="checkbox"]'));
     for (const chk of checkboxes) {
-      const parent = chk.parentElement;
-      if (parent && !['FORM', 'BODY', 'HTML', 'TABLE', 'TBODY', 'MAIN'].includes(parent.tagName)) {
-        const chksInParent = parent.querySelectorAll('input[type="checkbox"], [role="checkbox"]');
-        if (chksInParent.length === 1 && doesTextMatchStudent(parent.textContent, studentId, fullName)) {
-          return { checkbox: chk, container: parent };
+      const chkId = chk.id || '';
+      const chkName = chk.name || '';
+      const chkVal = chk.value || '';
+      const dataId = chk.getAttribute('data-student-id') || chk.getAttribute('data-id') || '';
+      const ariaLbl = chk.getAttribute('aria-label') || '';
+
+      if (cleanId) {
+        if (doesTextMatchStudent(chkId, cleanId, null) ||
+            doesTextMatchStudent(chkName, cleanId, null) ||
+            doesTextMatchStudent(chkVal, cleanId, null) ||
+            doesTextMatchStudent(dataId, cleanId, null) ||
+            doesTextMatchStudent(ariaLbl, cleanId, null)) {
+          return { checkbox: chk, label: chk.closest('label'), row: chk.closest('tr') };
         }
+      }
+      if (fullName) {
+        if (doesTextMatchStudent(ariaLbl, null, fullName) ||
+            doesTextMatchStudent(chkName, null, fullName)) {
+          return { checkbox: chk, label: chk.closest('label'), row: chk.closest('tr') };
+        }
+      }
+
+      const parentLabel = chk.closest('label');
+      if (parentLabel && doesTextMatchStudent(parentLabel.textContent, cleanId, fullName)) {
+        return { checkbox: chk, label: parentLabel, row: chk.closest('tr') };
+      }
+      const nextEl = chk.nextElementSibling;
+      if (nextEl && doesTextMatchStudent(nextEl.textContent, cleanId, fullName)) {
+        return { checkbox: chk, label: nextEl, row: chk.closest('tr') };
       }
     }
 
@@ -271,21 +228,7 @@
     } catch (e) {}
 
     if (el.tagName === 'INPUT' && (el.type === 'checkbox' || el.type === 'radio')) {
-      // 1. If not already checked, simulate real user click
-      if (!el.checked) {
-        try {
-          const clickEvt = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: el.ownerDocument.defaultView || window
-          });
-          el.dispatchEvent(clickEvt);
-        } catch (e) {
-          try { el.click(); } catch (err) {}
-        }
-      }
-
-      // 2. React 16+ / Vue Native Property Setter Bypass
+      // 1. Bypass React 16+ / Vue Native Property Setter
       try {
         const proto = Object.getPrototypeOf(el);
         const descriptor = Object.getOwnPropertyDescriptor(proto, 'checked') ||
@@ -298,50 +241,39 @@
       } catch (e) {
         el.checked = true;
       }
-
-      // 3. Absolute Guarantee of Checked State
       el.checked = true;
 
-      // 4. Dispatch standard change and input events with full bubble
+      // 2. Dispatch events
       try {
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
       } catch (e) {}
 
-      // Re-verify after microtask
-      setTimeout(() => {
-        if (!el.checked) {
-          el.checked = true;
-          try {
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-          } catch (e) {}
-        }
-      }, 50);
+      // 3. Fallback click if not checked
+      try {
+        const clickEvt = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: el.ownerDocument.defaultView || window
+        });
+        el.dispatchEvent(clickEvt);
+      } catch (e) {}
+
+      el.checked = true;
       return;
     }
 
-    // Custom ARIA checkbox or button
+    // ARIA checkbox
     if (el.getAttribute('role') === 'checkbox' || el.hasAttribute('aria-checked')) {
-      const isChecked = el.getAttribute('aria-checked') === 'true' ||
-                        el.classList.contains('active') ||
-                        el.classList.contains('checked') ||
-                        el.classList.contains('selected');
-      if (!isChecked) {
-        el.setAttribute('aria-checked', 'true');
-        el.classList.add('checked', 'active');
-        try {
-          el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        } catch (e) {
-          try { el.click(); } catch (err) {}
-        }
-      }
+      el.setAttribute('aria-checked', 'true');
+      el.classList.add('checked', 'active');
+      try {
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      } catch (e) {}
       return;
     }
 
-    // Generic clickable element fallback
-    try {
-      el.click();
-    } catch (e) {}
+    try { el.click(); } catch (e) {}
   }
 
   function highlightAttendedMatch(match, studentId, fullName) {
@@ -349,41 +281,34 @@
 
     const chk = match.checkbox;
     chk.classList.add('avqr-checkbox-checked');
-    chk.style.outline = '3px solid #059669';
 
     if (match.label) {
       match.label.classList.add('avqr-label-checked');
       match.label.style.backgroundColor = '#ECFDF5';
       match.label.style.color = '#065F46';
-      match.label.style.outline = '1.5px solid #059669';
     }
 
-    if (match.row) {
-      const row = match.row;
-      row.classList.add('avqr-highlight-attended');
-      row.style.outline = '2.5px solid #059669';
+    const row = match.row || chk.closest('tr') || chk.closest('[role="row"]');
+    if (row) {
+      row.classList.add('row-attended', 'avqr-highlight-attended');
+      row.style.outline = '2px solid #059669';
       row.style.backgroundColor = '#ECFDF5';
 
       const statusCell = row.querySelector('.status-cell') ||
-                         row.querySelector(`[id*="status-${studentId}"]`) ||
+                         (studentId ? row.querySelector(`[id*="status-${studentId}"]`) : null) ||
                          row.querySelector('td:last-child');
-      if (statusCell && !statusCell.querySelector('.avqr-badge')) {
-        statusCell.innerHTML = '<span class="avqr-badge" style="background:#059669; color:#FFFFFF; padding:4px 10px; border:2px solid #121212; font-weight:800; font-size:12px; display:inline-block; border-radius:4px;">حاضر (AVQR)</span>';
+      if (statusCell) {
+        statusCell.innerHTML = '<span class="badge-present" style="background:#059669; color:#FFFFFF; padding:4px 10px; border-radius:4px; font-weight:800; font-size:12px; display:inline-block;">حاضر</span>';
       }
-    } else if (match.container) {
-      match.container.classList.add('avqr-highlight-attended');
-      match.container.style.outline = '2px solid #059669';
-      match.container.style.backgroundColor = '#ECFDF5';
     }
   }
 
   // -------------------------------------------------------------
-  // 5. Universal In-DOM Marking across All Frames & Documents
+  // 5. In-DOM Marking across All Frames & Documents
   // -------------------------------------------------------------
   function markStudentPresentInDom(studentId, fullName) {
     if (!studentId && !fullName) return false;
 
-    // Cache record for dynamic DOM mutations / pagination / iframe re-runs
     const key = (studentId || fullName).toString().trim();
     attendedRecordsCache.set(key, { studentId, fullName });
 
@@ -399,7 +324,7 @@
           markedCount++;
         }
       } catch (err) {
-        console.warn('AVQR: Error searching document frame:', err);
+        console.warn('AVQR: Error searching frame:', err);
       }
     }
 
@@ -433,57 +358,12 @@
       } catch (e) {}
     }
 
-    const countBadge = document.getElementById('avqrWidgetCount');
-    if (countBadge) countBadge.textContent = totalChecked;
-
     const portalCount = document.getElementById('presentCount');
     if (portalCount) portalCount.textContent = totalChecked;
   }
 
   // -------------------------------------------------------------
-  // 6. Dynamic DOM Observers & Iframe Reload Surveillance
-  // -------------------------------------------------------------
-  function observeAllFrames() {
-    if (!window.MutationObserver) return;
-
-    // 1. Observe top document body
-    if (document.body) {
-      const topObserver = new MutationObserver(() => {
-        reapplyAllAttendedRecords();
-        attachIframeListeners(document);
-      });
-      topObserver.observe(document.body, { childList: true, subtree: true });
-    }
-
-    // 2. Attach reload listeners to child iframes
-    attachIframeListeners(document);
-
-    // 3. Continuous Resilient Re-check Interval (guarantees checkboxes stay ticked)
-    clearInterval(recheckInterval);
-    recheckInterval = setInterval(() => {
-      if (attendedRecordsCache.size > 0) {
-        reapplyAllAttendedRecords();
-      }
-    }, 1200);
-  }
-
-  function attachIframeListeners(rootDoc) {
-    try {
-      const iframes = rootDoc.querySelectorAll('iframe, frame');
-      iframes.forEach(ifr => {
-        if (!ifr._avqrAttached) {
-          ifr._avqrAttached = true;
-          ifr.addEventListener('load', () => {
-            setTimeout(reapplyAllAttendedRecords, 100);
-            setTimeout(reapplyAllAttendedRecords, 500);
-          });
-        }
-      });
-    } catch (e) {}
-  }
-
-  // -------------------------------------------------------------
-  // 7. Dual Real-time Synchronization (SSE + Polling)
+  // 6. Dual Real-time Synchronization (SSE + Polling)
   // -------------------------------------------------------------
   function startDualSync(sessionId) {
     activeSessionId = sessionId;
@@ -493,27 +373,26 @@
     }
     isSyncActive = true;
 
-    // Start Realtime SSE Stream
+    // Connect SSE Stream
     connectSse(sessionId);
 
-    // Continuous Resilient Polling Loop (1.5 seconds)
+    // Continuous Resilient Polling Loop (every 2 seconds)
     clearInterval(pollInterval);
     pollInterval = setInterval(() => {
       try {
         fetchSessionRecords(sessionId);
       } catch (e) {}
-    }, 1500);
+    }, 2000);
 
     fetchSessionRecords(sessionId);
-    observeAllFrames();
   }
 
   function stopDualSync() {
     isSyncActive = false;
     clearInterval(pollInterval);
-    clearInterval(recheckInterval);
     if (sseSource) {
       try { sseSource.close(); } catch (e) {}
+      sseSource = null;
     }
   }
 
@@ -564,13 +443,13 @@
       });
 
       sseSource.onerror = () => {
-        updateWidgetStatus('المزامنة المباشرة نشطة');
+        // SSE error handled gracefully, polling loop continues
       };
     } catch (err) {}
   }
 
   // -------------------------------------------------------------
-  // 8. Universal Auto-Save Execution
+  // 7. Universal Auto-Save Execution
   // -------------------------------------------------------------
   function executePortalAutoSave() {
     const allDocs = getAllDocuments(document);
@@ -580,16 +459,9 @@
                         doc.querySelector('button[type="submit"]') ||
                         doc.querySelector('button[id*="save" i]') ||
                         doc.querySelector('button[id*="submit" i]') ||
-                        doc.querySelector('button[class*="save" i]') ||
-                        doc.querySelector('input[type="submit"]') ||
-                        doc.querySelector('input[value*="Save" i]') ||
-                        doc.querySelector('input[value*="حفظ"]') ||
-                        doc.querySelector('input[value*="Submit" i]') ||
-                        doc.querySelector('input[value*="إرسال"]') ||
                         doc.querySelector('.btn-save') ||
-                        doc.querySelector('.save-btn') ||
-                        doc.querySelector('[data-action="save"]') ||
-                        doc.querySelector('[data-testid*="save" i]');
+                        doc.querySelector('.btn-save-attendance') ||
+                        doc.querySelector('.save-btn');
 
         if (saveBtn) {
           saveBtn.click();
@@ -608,7 +480,7 @@
   }
 
   // -------------------------------------------------------------
-  // 9. Page Checkbox Detection & Dismissal State
+  // 8. Page Checkbox Detection & Prompt Widget
   // -------------------------------------------------------------
   function countPageCheckboxes() {
     const docs = getAllDocuments(document);
@@ -621,10 +493,15 @@
     return total;
   }
 
-  let isManuallyDismissed = false;
-
   function isDismissed() {
     return isManuallyDismissed;
+  }
+
+  function removePromptWidget() {
+    const widget = document.getElementById('avqrFloatingWidget');
+    if (widget) {
+      widget.remove();
+    }
   }
 
   function dismissWidget() {
@@ -639,11 +516,6 @@
       }, 200);
     }
   }
-
-  // -------------------------------------------------------------
-  // 10. Universal Neubrutalism Floating Control Widget (Top Window Only)
-  // -------------------------------------------------------------
-  let widgetTimerInterval = null;
 
   function showReadyPromptWidget(checkboxCount) {
     if (!isTopWindow || isDismissed()) return;
@@ -686,6 +558,8 @@
     const readyBtn = document.getElementById('avqrBtnReady');
     if (readyBtn) {
       readyBtn.addEventListener('click', () => {
+        dismissWidget();
+
         const now = Date.now();
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
           chrome.storage.local.set({
@@ -706,104 +580,12 @@
           console.warn('AVQR: Open presenter error:', e);
         }
 
-        showActiveMonitoringWidget(now);
         startDualSync(activeSessionId);
       });
     }
   }
 
-  function showActiveMonitoringWidget(startTime) {
-    if (!isTopWindow || isDismissed()) return;
-
-    let widget = document.getElementById('avqrFloatingWidget');
-    if (!widget) {
-      widget = document.createElement('div');
-      widget.id = 'avqrFloatingWidget';
-      widget.className = 'avqr-floating-widget';
-      if (document.body) document.body.appendChild(widget);
-    }
-
-    const sessionStartTime = startTime || Date.now();
-
-    widget.innerHTML = `
-      <div class="avqr-widget-header">
-        <span class="avqr-widget-tag">AVQR • Matany Group x FUE</span>
-        <div class="avqr-header-actions">
-          <button id="avqrWidgetMinimize" class="avqr-min-btn" title="تصغير">—</button>
-          <button id="avqrWidgetClose" class="avqr-close-btn" title="إغلاق وإخفاء">×</button>
-        </div>
-      </div>
-      <div class="avqr-widget-body" id="avqrWidgetBody">
-        <div class="avqr-widget-session">
-          <small>جلسة المحاضرة:</small>
-          <strong id="avqrWidgetSessionName">${activeSessionId}</strong>
-        </div>
-        <div class="avqr-widget-stats">
-          <span>الحاضرون تلقائياً:</span>
-          <strong id="avqrWidgetCount" class="avqr-count-pill">0</strong>
-        </div>
-        <div class="avqr-timer-line">
-          <span>الحفظ التلقائي:</span>
-          <span id="avqrTimerCountdown">03:00</span>
-        </div>
-      </div>
-    `;
-
-    // Minimize Button
-    const minBtn = document.getElementById('avqrWidgetMinimize');
-    const body = document.getElementById('avqrWidgetBody');
-    if (minBtn && body) {
-      minBtn.addEventListener('click', () => {
-        body.style.display = body.style.display === 'none' ? 'flex' : 'none';
-        minBtn.textContent = body.style.display === 'none' ? '+' : '—';
-      });
-    }
-
-    // Prominent Instant Close Button (X)
-    const closeBtn = document.getElementById('avqrWidgetClose');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dismissWidget();
-      });
-    }
-
-    // Live Countdown Timer (Synchronized with 3-minute limit)
-    clearInterval(widgetTimerInterval);
-    const updateCountdown = () => {
-      const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-      const remaining = Math.max(0, 180 - elapsed);
-      const m = Math.floor(remaining / 60);
-      const s = remaining % 60;
-      const timerEl = document.getElementById('avqrTimerCountdown');
-      if (timerEl) {
-        timerEl.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-      }
-
-      if (remaining === 0) {
-        clearInterval(widgetTimerInterval);
-        executePortalAutoSave();
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ avqr_is_active: false });
-          chrome.storage.local.remove(['avqr_start_time']);
-        }
-        setTimeout(() => {
-          dismissWidget();
-        }, 3000);
-      }
-    };
-
-    updateCountdown();
-    widgetTimerInterval = setInterval(updateCountdown, 1000);
-    updateAttendedCount();
-  }
-
-  function updateWidgetStatus(text) {
-    const el = document.getElementById('avqrWidgetSessionName');
-    if (el) el.textContent = text;
-  }
-
-  function showFloatingNotification(msg, duration = 4000) {
+  function showFloatingNotification(msg, duration = 3500) {
     if (!isTopWindow) return;
 
     let container = document.getElementById('avqrToastContainer');
@@ -826,7 +608,7 @@
   }
 
   // -------------------------------------------------------------
-  // 11. Intelligent Multi-Channel Activation & Page Surveillance
+  // 9. Intelligent Activation & Non-Intrusive Page Check
   // -------------------------------------------------------------
   function checkAndActivate() {
     if (isDismissed()) return;
@@ -846,25 +628,25 @@
           }
         }
 
-        const boxCount = countPageCheckboxes();
-
+        // If active, remove any prompt widget and keep background sync alive
         if (res.avqr_is_active) {
-          // If active from popup/presenter, show active widget
-          showActiveMonitoringWidget(res.avqr_start_time);
+          removePromptWidget();
           startDualSync(activeSessionId);
           return;
         }
 
-        // AUTO-DETECTION: Only trigger if page has MORE THAN 1 checkbox!
-        // Never triggers on Gemini, Google, YouTube, etc.
-        if (boxCount >= 2) {
+        // Only show ready prompt if NOT active and page contains checkboxes (>= 1)
+        const boxCount = countPageCheckboxes();
+        if (boxCount >= 1) {
           showReadyPromptWidget(boxCount);
+        } else {
+          removePromptWidget();
         }
       });
     }
   }
 
-  // Real-time synchronization across all frames via Chrome Storage
+  // Real-time synchronization across tabs via Chrome Storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local') {
@@ -874,10 +656,10 @@
             if (res.avqr_session_id) activeSessionId = res.avqr_session_id;
 
             if (res.avqr_is_active) {
-              showActiveMonitoringWidget(res.avqr_start_time);
+              removePromptWidget();
               startDualSync(activeSessionId);
             } else {
-              dismissWidget();
+              removePromptWidget();
               stopDualSync();
             }
           });
@@ -893,9 +675,8 @@
         if (msg.action === 'ACTIVATE_AUTOSYNC') {
           activeSessionId = msg.sessionId || activeSessionId;
           if (msg.serverUrl) serverUrl = msg.serverUrl;
-          showActiveMonitoringWidget(Date.now());
+          removePromptWidget();
           startDualSync(activeSessionId);
-          updateWidgetStatus(`جلسة نشطة: ${activeSessionId}`);
           sendResponse({ status: 'ACTIVE' });
         } else if (msg.action === 'RECORD_ATTENDEE') {
           if (msg.studentId || msg.fullName) {
@@ -906,7 +687,7 @@
           executePortalAutoSave();
           sendResponse({ status: 'SAVED' });
         } else if (msg.action === 'STOP_AUTOSYNC') {
-          dismissWidget();
+          removePromptWidget();
           stopDualSync();
           sendResponse({ status: 'STOPPED' });
         }
@@ -917,30 +698,16 @@
     });
   }
 
-  // Multi-stage Surveillance & Dynamic DOM MutationObserver
-  let observerThrottle = null;
-  const domObserver = new MutationObserver(() => {
-    if (observerThrottle) clearTimeout(observerThrottle);
-    observerThrottle = setTimeout(() => {
-      checkAndActivate();
-    }, 400);
-  });
-
-  function startSurveillance() {
+  // Safe Non-Blocking Initialization (Zero-Lag: No heavy recursive DOM observers)
+  function init() {
     checkAndActivate();
-    setTimeout(checkAndActivate, 400);
-    setTimeout(checkAndActivate, 1200);
-    setTimeout(checkAndActivate, 2500);
-
-    const targetNode = document.body || document.documentElement;
-    if (targetNode) {
-      domObserver.observe(targetNode, { childList: true, subtree: true });
-    }
+    setTimeout(checkAndActivate, 600);
+    setTimeout(checkAndActivate, 1800);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startSurveillance);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    startSurveillance();
+    init();
   }
 })();

@@ -14,6 +14,8 @@ let rotationInterval = null;
 
 let autoSaveSeconds = 180; // 3 Minutes countdown
 let autoSaveInterval = null;
+let sseSource = null;
+let pollRecordsInterval = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const sessionTag = document.getElementById('sessionTag');
@@ -44,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initial fetch and render
   await fetchDynamicQrAndCode();
 
-  // Start 5-second dynamic rotation in background (silently without exposing timer to students)
+  // Start 5-second dynamic rotation in background
   rotationInterval = setInterval(() => {
     if (rotationSeconds > 1) {
       rotationSeconds--;
@@ -56,6 +58,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Start 3-minute Countdown with Auto-Close & Auto-Save
   start3MinuteCountdown();
+
+  // Connect Real-Time Dual Listener to Broadcast Attendance to Portal Tabs
+  startPresenterSync();
 
   // Close Button Action
   const btnClose = document.getElementById('btnPresenterCloseOnly');
@@ -120,9 +125,71 @@ function renderNumericCode(code) {
 
 function fallbackRender() {
   const mockCode = (Math.floor(Date.now() / 5000) % 90000000 + 10000000).toString();
-  const mockQr = `https://avqr-matany-fue.vercel.app/attend?sid=${sessionId}&code=${mockCode}&token=FALLBACK&t=${Date.now()}`;
+  const mockQr = `${activeServerUrl}/attend?s=${encodeURIComponent(sessionId)}&c=${mockCode}`;
   renderLargeQr(mockQr);
   renderNumericCode(mockCode);
+}
+
+// -------------------------------------------------------------
+// Real-Time SSE + Polling in Presenter Window -> Broadcasts to Tabs
+// -------------------------------------------------------------
+function startPresenterSync() {
+  try {
+    if (sseSource) {
+      try { sseSource.close(); } catch (e) {}
+    }
+
+    sseSource = new EventSource(`${activeServerUrl}/api/session/${sessionId}/stream`);
+
+    sseSource.addEventListener('STUDENT_ATTENDED', (e) => {
+      try {
+        const student = JSON.parse(e.data);
+        broadcastStudentToTabs(student);
+      } catch (err) {}
+    });
+
+    sseSource.addEventListener('AUTO_SAVED', () => {
+      triggerAutoSaveAndClose();
+    });
+  } catch (err) {}
+
+  // Resilient Polling
+  clearInterval(pollRecordsInterval);
+  pollRecordsInterval = setInterval(() => {
+    fetch(`${activeServerUrl}/api/session/${sessionId}/records`)
+      .then(r => r.json())
+      .then(records => {
+        if (Array.isArray(records)) {
+          records.forEach(rec => {
+            broadcastStudentToTabs({
+              studentId: rec.student_id,
+              fullName: rec.student_name
+            });
+          });
+        }
+      })
+      .catch(() => {});
+  }, 2000);
+}
+
+function broadcastStudentToTabs(student) {
+  if (!student) return;
+  const sId = student.studentId || student.student_id;
+  const sName = student.fullName || student.student_name;
+
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+    chrome.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        if (tab && tab.id) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: 'RECORD_ATTENDEE',
+            studentId: sId,
+            fullName: sName
+          }).catch(() => {});
+        }
+      }
+    });
+  }
 }
 
 // 3-Minute Countdown: Closes presenter and auto-saves when expired
@@ -167,6 +234,7 @@ async function triggerAutoSaveAndClose() {
     // 3. Mark session inactive in storage
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       chrome.storage.local.set({ avqr_is_active: false });
+      chrome.storage.local.remove(['avqr_start_time']);
     }
   } catch (err) {
     console.error('Auto save error:', err);

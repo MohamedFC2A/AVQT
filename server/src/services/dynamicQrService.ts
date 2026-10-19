@@ -34,8 +34,8 @@ export function generateDynamicQrToken(sessionId: string): DynamicQrPayload {
   const numericCode = tokenTo8DigitCode(token);
 
   const baseUrl = process.env.APP_URL || 'https://avqr-matany-fue.vercel.app';
-  // Canonical clean path to ensure 100% compatibility across all Android/Xiaomi/iOS camera scanners
-  const actionUrl = `${baseUrl}/attend?sid=${encodeURIComponent(sessionId)}&code=${numericCode}&token=${token}&t=${now}`;
+  // Canonical short path (~55 chars) for 100% instant camera scanning on all Xiaomi/Samsung/iPhone phones
+  const actionUrl = `${baseUrl}/attend?s=${encodeURIComponent(sessionId)}&c=${numericCode}`;
 
   const payload: DynamicQrPayload = {
     type: 'AVQR_LECTURE',

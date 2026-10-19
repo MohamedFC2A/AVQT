@@ -419,9 +419,9 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
       } else if (qrString.includes('?') || qrString.startsWith('http://') || qrString.startsWith('https://')) {
         try {
           const urlObj = new URL(qrString.startsWith('http') ? qrString : `https://dummy.com/${qrString}`);
-          effectiveSessionId = urlObj.searchParams.get('sid') || effectiveSessionId;
-          effectiveNumericCode = urlObj.searchParams.get('code') || effectiveNumericCode;
-          effectiveToken = urlObj.searchParams.get('token') || effectiveToken;
+          effectiveSessionId = urlObj.searchParams.get('s') || urlObj.searchParams.get('sid') || effectiveSessionId;
+          effectiveNumericCode = urlObj.searchParams.get('c') || urlObj.searchParams.get('code') || effectiveNumericCode;
+          effectiveToken = urlObj.searchParams.get('k') || urlObj.searchParams.get('token') || effectiveToken;
         } catch (e) {}
       }
     }
