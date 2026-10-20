@@ -981,9 +981,10 @@ function formatArabicTime(dateInput) {
 }
 
 // -------------------------------------------------------------
-// 4. Camera Scanner
+// 4. Camera Scanner (Universal: BarcodeDetector + jsQR Fallback)
 // -------------------------------------------------------------
 let cameraStream = null;
+let cameraScanInterval = null;
 
 async function openCameraScanner() {
   const modal = document.getElementById('cameraModal');
@@ -992,33 +993,73 @@ async function openCameraScanner() {
 
   try {
     cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
     });
+
     if (video) {
       video.srcObject = cameraStream;
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('autoplay', 'true');
+      video.muted = true;
       await video.play();
     }
 
-    if ('BarcodeDetector' in window) {
-      const detector = new BarcodeDetector({ formats: ['qr_code'] });
-      const scanTimer = setInterval(async () => {
-        if (!cameraStream) {
-          clearInterval(scanTimer);
-          return;
-        }
+    const offscreenCanvas = document.createElement('canvas');
+    const offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+
+    const hasBarcodeDetector = ('BarcodeDetector' in window);
+    let barcodeDetector = null;
+    if (hasBarcodeDetector) {
+      try {
+        barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+      } catch (e) {
+        barcodeDetector = null;
+      }
+    }
+
+    cameraScanInterval = setInterval(async () => {
+      if (!cameraStream || !video || video.readyState < 2) return;
+
+      // 1. Try Native BarcodeDetector first
+      if (barcodeDetector) {
         try {
-          const codes = await detector.detect(video);
-          if (codes.length > 0) {
+          const codes = await barcodeDetector.detect(video);
+          if (codes && codes.length > 0 && codes[0].rawValue) {
             const rawVal = codes[0].rawValue;
-            clearInterval(scanTimer);
             closeCameraScanner();
             handleScannedQrContent(rawVal);
+            return;
           }
         } catch (e) {}
-      }, 300);
-    }
+      }
+
+      // 2. Universal jsQR fallback (iPhone / iPad / Safari / Android / Desktop)
+      if (window.jsQR && video.videoWidth > 0 && video.videoHeight > 0 && offscreenCtx) {
+        try {
+          if (offscreenCanvas.width !== video.videoWidth || offscreenCanvas.height !== video.videoHeight) {
+            offscreenCanvas.width = video.videoWidth;
+            offscreenCanvas.height = video.videoHeight;
+          }
+          offscreenCtx.drawImage(video, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+          const imgData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+          const decoded = window.jsQR(imgData.data, imgData.width, imgData.height, {
+            inversionAttempts: 'dontInvert'
+          });
+          if (decoded && decoded.data) {
+            closeCameraScanner();
+            handleScannedQrContent(decoded.data);
+            return;
+          }
+        } catch (err) {}
+      }
+    }, 200);
   } catch (err) {
-    alert('تعذر فتح الكاميرا، يرجى كتابة الرمز المكون من 8 أرقام المعروض في الشاشة.');
+    console.error('Camera access error:', err);
+    alert('تعذر فتح الكاميرا، يرجى التأكد من منح إذن الوصول للكاميرا في إعدادات المتصفح.');
     closeCameraScanner();
   }
 }
@@ -1026,6 +1067,10 @@ async function openCameraScanner() {
 function closeCameraScanner() {
   const modal = document.getElementById('cameraModal');
   if (modal) modal.classList.add('hidden');
+  if (cameraScanInterval) {
+    clearInterval(cameraScanInterval);
+    cameraScanInterval = null;
+  }
   if (cameraStream) {
     cameraStream.getTracks().forEach(t => t.stop());
     cameraStream = null;
