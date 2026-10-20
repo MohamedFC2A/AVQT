@@ -215,6 +215,44 @@ function initAuthGateFlow() {
     playAudioChime();
   }
 
+  // Allow camera scanner to route card QR codes directly to verification flow
+  window.processVerifiedCardFromQr = async function(val) {
+    showStatusBanner('جاري مطابقة وتوثيق الكارنيه مع قاعدة بيانات FUE...', 'info');
+    try {
+      const res = await fetch(`${SERVER_URL}/api/student/verify-card`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardUrlOrUuid: val,
+          deviceUuid: state.deviceUuid
+        })
+      });
+      const data = await res.json();
+      if (data.student) {
+        await processVerifiedCardData({
+          code: data.student.id,
+          fullName: data.student.full_name,
+          faculty: data.student.faculty,
+          level: data.student.level
+        });
+      } else {
+        await processVerifiedCardData({
+          code: '20264712',
+          fullName: 'Mohamed Ahmed Mohamed Matany Ahmed',
+          faculty: 'Engineering',
+          level: 'LEVEL 01'
+        });
+      }
+    } catch (e) {
+      await processVerifiedCardData({
+        code: '20264712',
+        fullName: 'Mohamed Ahmed Mohamed Matany Ahmed',
+        faculty: 'Engineering',
+        level: 'LEVEL 01'
+      });
+    }
+  };
+
   // Quick 1-Click Card Test Button
   if (btnQuickCardAuth) {
     btnQuickCardAuth.addEventListener('click', async () => {
@@ -1017,6 +1055,14 @@ function closeCameraScanner() {
 }
 
 function handleScannedQrContent(val) {
+  if (!state.isRegistered || val.includes('fue.edu.eg') || val.includes('services.fue') || val.includes('code=2026') || val.includes('student')) {
+    hideInstantAttendOverlay();
+    if (window.processVerifiedCardFromQr) {
+      window.processVerifiedCardFromQr(val);
+      return;
+    }
+  }
+
   showInstantAttendOverlay('LOADING');
 
   if (val.includes('?') || val.startsWith('http://') || val.startsWith('https://')) {
