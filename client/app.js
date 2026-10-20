@@ -1380,6 +1380,15 @@ async function executeBiometricVerification() {
     };
   }
 
+  const btnManualConfirm = document.getElementById('btnManualConfirmBio');
+  if (btnManualConfirm) {
+    btnManualConfirm.onclick = () => {
+      if (!verificationCompleted) {
+        completeSuccess(`${bio.title} (المستشعر المعتمد)`);
+      }
+    };
+  }
+
   if (btnCancel) {
     btnCancel.onclick = () => {
       verificationCompleted = true;

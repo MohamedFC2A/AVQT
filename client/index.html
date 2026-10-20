@@ -529,9 +529,14 @@
       <h3 class="bio-modal-title" id="bioModalTitle">المصادقة البيومترية</h3>
       <p class="bio-modal-desc" id="bioModalDesc">جاري التحقق من بصمة الطالب المقترنة بالجهاز...</p>
       <div class="bio-scan-status" id="bioScanStatus">بانتظار استجابة المستشعر الحركي</div>
-      <button id="btnCancelBiometricModal" class="neo-btn btn-subtle-dark btn-full">
-        إلغاء
-      </button>
+      <div style="display: flex; gap: 10px; margin-top: 16px; width: 100%;">
+        <button id="btnManualConfirmBio" class="neo-btn btn-emerald btn-full" style="flex: 1.5; font-size: 0.95rem;">
+          ✓ تأكيد المصادقة فوراً
+        </button>
+        <button id="btnCancelBiometricModal" class="neo-btn btn-subtle-dark" style="flex: 1;">
+          إلغاء
+        </button>
+      </div>
     </div>
   </div>
 
