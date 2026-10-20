@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="assets/ehdar-icon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=2.3.0">
+  <link rel="stylesheet" href="style.css?v=2.4.0">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -57,76 +57,107 @@
           <p class="auth-desc">وجه الكاميرا نحو كود QR بكارنيه جامعة المستقبل للتعرف الفوري على بياناتك</p>
         </div>
 
-        <!-- 3D CARD SCAN TUTORIAL (IMAGE 3 MATCHING LTR LAYOUT) -->
+        <!-- HIGH-TECH 3D CARD SCAN TUTORIAL & HUD SIMULATOR (IMAGE 3 MATCHING) -->
         <div class="auth-tutorial-scene" id="authTutorialScene">
-          <div class="tutorial-3d-card" dir="ltr">
-            <div class="tutorial-laser-beam"></div>
-            <div class="tutorial-qr-target"></div>
-            
-            <!-- Mock Header -->
-            <div class="fue-front-topbar">
-              <div class="fue-topbar-left">
-                <span class="fue-year-txt">2026/2027</span>
+          <!-- Live Status HUD Pill -->
+          <div class="hud-status-badge">
+            <span class="hud-status-seeking">
+              <span class="hud-pulse-dot"></span>
+              محاذاة الكاميرا مع الكارنيه...
+            </span>
+            <span class="hud-status-locked">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              تم التقاط كود QR بنجاح
+            </span>
+          </div>
+
+          <div class="tutorial-card-container">
+            <!-- Simulated Scanning Frame / Viewfinder HUD (Matching Image 3) -->
+            <div class="hud-viewfinder-overlay" dir="ltr">
+              <div class="hud-card-bracket bracket-tl"></div>
+              <div class="hud-card-bracket bracket-tr"></div>
+              <div class="hud-card-bracket bracket-bl"></div>
+              <div class="hud-card-bracket bracket-br"></div>
+              
+              <!-- Targeted QR Lock Reticle on Right Side -->
+              <div class="hud-qr-lock-target">
+                <div class="qr-corner qrc-tl"></div>
+                <div class="qr-corner qrc-tr"></div>
+                <div class="qr-corner qrc-bl"></div>
+                <div class="qr-corner qrc-br"></div>
+                <div class="hud-laser-sweep"></div>
+                <div class="hud-lock-ping"></div>
               </div>
-              <div class="fue-topbar-right">
-                <div class="fue-brand-header-wrap">
-                  <img src="assets/fue-shield-logo.jpg" class="fue-shield-img" alt="FUE Logo">
-                  <div class="fue-brand-text">
-                    <span class="fue-brand-title">FUTURE</span>
-                    <span class="fue-brand-sub">UNIVERSITY IN EGYPT</span>
-                    <span class="fue-brand-ar">جامعة المستقبل</span>
+            </div>
+
+            <div class="tutorial-3d-card" dir="ltr">
+              <div class="card-glare"></div>
+            
+              <!-- Mock Header -->
+              <div class="fue-front-topbar">
+                <div class="fue-topbar-left">
+                  <span class="fue-year-txt">2026/2027</span>
+                </div>
+                <div class="fue-topbar-right">
+                  <div class="fue-brand-header-wrap">
+                    <img src="assets/fue-shield-logo.jpg" class="fue-shield-img" alt="FUE Logo">
+                    <div class="fue-brand-text">
+                      <span class="fue-brand-title">FUTURE</span>
+                      <span class="fue-brand-sub">UNIVERSITY IN EGYPT</span>
+                      <span class="fue-brand-ar">جامعة المستقبل</span>
+                    </div>
+                  </div>
+                  <div class="fue-level-badge-row">
+                    <span class="fue-level-tag">LEVEL 01</span>
                   </div>
                 </div>
-                <div class="fue-level-badge-row">
-                  <span class="fue-level-tag">LEVEL 01</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Mock Body: Photo Left, Info Center, QR Right -->
-            <div class="fue-front-body">
-              <div class="fue-photo-col">
-                <div class="fue-photo-frame">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                </div>
-                <div class="fue-serial-dots">******</div>
               </div>
 
-              <div class="fue-info-col">
-                <div class="fue-info-block">
-                  <div class="fue-lbl-bilingual">الاسم / Name</div>
-                  <div class="fue-val-name">طالب المستقبل</div>
+              <!-- Mock Body: Photo Left, Info Center, QR Right -->
+              <div class="fue-front-body">
+                <div class="fue-photo-col">
+                  <div class="fue-photo-frame">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  </div>
+                  <div class="fue-serial-dots">******</div>
                 </div>
-                <div class="fue-info-block">
-                  <div class="fue-lbl-bilingual">التخصص / Faculty</div>
-                  <div class="fue-val-fac">Engineering</div>
+
+                <div class="fue-info-col">
+                  <div class="fue-info-block">
+                    <div class="fue-lbl-bilingual">الاسم / Name</div>
+                    <div class="fue-val-name">طالب المستقبل</div>
+                  </div>
+                  <div class="fue-info-block">
+                    <div class="fue-lbl-bilingual">التخصص / Faculty</div>
+                    <div class="fue-val-fac">Engineering</div>
+                  </div>
+                  <div class="fue-id-block">
+                    <span class="fue-id-txt">ID: 20260000</span>
+                  </div>
                 </div>
-                <div class="fue-id-block">
-                  <span class="fue-id-txt">ID: 20260000</span>
+
+                <div class="fue-qr-col">
+                  <div class="fue-qr-canvas-wrapper">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="3" height="3"></rect><rect x="18" y="18" width="3" height="3"></rect></svg>
+                  </div>
                 </div>
               </div>
 
-              <div class="fue-qr-col">
-                <div class="fue-qr-canvas-wrapper">
-                  <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="3" height="3"></rect><rect x="18" y="18" width="3" height="3"></rect></svg>
+              <!-- Mock Footer -->
+              <div class="fue-front-footer">
+                <div class="fue-footer-phone-col">
+                  <div class="fue-phone-line">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    <span class="fue-phone-num">16383</span>
+                  </div>
+                  <div class="fue-web-link">www.fue.edu.eg</div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Mock Footer -->
-            <div class="fue-front-footer">
-              <div class="fue-footer-phone-col">
-                <div class="fue-phone-line">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                  <span class="fue-phone-num">16383</span>
-                </div>
-                <div class="fue-web-link">www.fue.edu.eg</div>
-              </div>
-              <div class="fue-footer-badges-col">
-                <div class="fue-ranking-title">THE TOP PRIVATE UNIVERSITY IN EGYPT</div>
-                <div class="fue-ranking-badges">
-                  <span class="ranking-pill pill-gold">5 STARS QS</span>
-                  <span class="ranking-pill pill-gold">TOP 10</span>
+                <div class="fue-footer-badges-col">
+                  <div class="fue-ranking-title">THE TOP PRIVATE UNIVERSITY IN EGYPT</div>
+                  <div class="fue-ranking-badges">
+                    <span class="ranking-pill pill-gold">5 STARS QS</span>
+                    <span class="ranking-pill pill-gold">TOP 10</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -542,19 +573,107 @@
     </div>
   </nav>
 
-  <!-- CAMERA SCANNER MODAL -->
+  <!-- CAMERA SCANNER MODAL (IMAGE 3 DUAL-RETICLE HIGH-TECH SCANNER) -->
   <div id="cameraModal" class="camera-modal-overlay hidden">
     <div class="camera-modal-card">
       <div class="camera-modal-header">
-        <strong>مسح كود الحضور المباشر</strong>
-        <button id="btnCloseCameraModal" class="btn-icon-close">X</button>
+        <h3 id="cameraModalTitle" class="camera-modal-title">مسح وتوثيق الكارنيه</h3>
+        <div class="camera-header-actions">
+          <button id="btnToggleTorch" class="btn-torch-toggle hidden" title="إضاءة الفلاش">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </button>
+          <button id="btnCloseCameraModal" class="btn-icon-close" title="إغلاق">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
       </div>
-      <div class="camera-viewport-frame">
+      
+      <div class="camera-viewport-frame" id="cameraViewportFrame">
         <video id="scannerVideo" class="scanner-video" playsinline></video>
-        <div class="camera-crosshairs"></div>
+        
+        <!-- CARD SCANNING RETICLE (MATCHING IMAGE 3 EXACTLY) -->
+        <div class="camera-card-guide" id="cameraCardGuide" dir="ltr">
+          <div class="guide-corner gc-tl"></div>
+          <div class="guide-corner gc-tr"></div>
+          <div class="guide-corner gc-bl"></div>
+          <div class="guide-corner gc-br"></div>
+
+          <!-- TARGETED QR CODE RETICLE ON THE RIGHT (IMAGE 3) -->
+          <div class="camera-card-qr-reticle" id="cameraCardQrReticle">
+            <div class="reticle-corner rc-tl"></div>
+            <div class="reticle-corner rc-tr"></div>
+            <div class="reticle-corner rc-bl"></div>
+            <div class="reticle-corner rc-br"></div>
+            <div class="camera-laser-beam"></div>
+            <span class="qr-target-tag">QR CODE</span>
+          </div>
+        </div>
+
+        <!-- LECTURE QR CODE RETICLE (CENTERED FOR CLASSROOM SCREEN SCAN) -->
+        <div class="camera-lecture-qr-reticle hidden" id="cameraLectureQrReticle">
+          <div class="reticle-corner rc-tl"></div>
+          <div class="reticle-corner rc-tr"></div>
+          <div class="reticle-corner rc-bl"></div>
+          <div class="reticle-corner rc-br"></div>
+          <div class="camera-laser-beam"></div>
+        </div>
       </div>
-      <p class="camera-modal-hint">وجه الكاميرا نحو كود QR المعروض في شاشة القاعة</p>
+
+      <p class="camera-modal-hint" id="cameraModalHint">ضع الكارنيه داخل الإطار الكبير • سيلتقط المربع الرمز تلقائياً</p>
+
+      <!-- Fallback gallery trigger -->
+      <button id="btnTriggerGalleryUpload" class="camera-fallback-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        الكاميرا لا تعمل؟ اختر صورة الكارنيه من الاستوديو
+      </button>
+
       <button id="btnCancelScan" class="neo-btn btn-subtle-dark btn-full mt-2">إلغاء المسح</button>
+    </div>
+  </div>
+
+  <!-- HIDDEN PHOTO PICKER INPUT FOR ZERO-FRICTION FALLBACK -->
+  <input type="file" id="cardImageFileInput" accept="image/*" capture="environment" style="display:none;">
+
+  <!-- CAMERA PERMISSION ASSISTANT MODAL (FOR USERS WHO BLOCKED CAMERA) -->
+  <div id="cameraPermissionModal" class="camera-permission-overlay hidden">
+    <div class="camera-permission-card">
+      <div class="perm-icon-wrap">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0B63E5" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle><line x1="1" y1="1" x2="23" y2="23" stroke="#DC2626" stroke-width="2.5"></line></svg>
+      </div>
+
+      <h3 class="perm-title">تفعيل إذن الكاميرا للمتابعة</h3>
+      <p class="perm-desc">
+        لم نتمكن من الوصول لكاميرا الجهاز بسبب حظر الإذن في المتصفح. يمكنك تفعيلها بثوانٍ بسيطة:
+      </p>
+
+      <!-- OS Dynamic Step Guidance -->
+      <div class="perm-guide-box" id="permGuideBox">
+        <div class="perm-step-item">
+          <div class="perm-step-num">1</div>
+          <div class="perm-step-text" id="permStep1Text">اضغط على أيقونة الإعدادات أو القفل بجوار رابط الموقع في شريط المتصفح.</div>
+        </div>
+        <div class="perm-step-item">
+          <div class="perm-step-num">2</div>
+          <div class="perm-step-text" id="permStep2Text">اختر <strong>أذونات الموقع (Permissions)</strong> ثم <strong>الكاميرا (Camera)</strong>.</div>
+        </div>
+        <div class="perm-step-item">
+          <div class="perm-step-num">3</div>
+          <div class="perm-step-text" id="permStep3Text">قم بتغيير الإذن إلى <strong>السماح (Allow)</strong> ثم عد للتطبيق.</div>
+        </div>
+      </div>
+
+      <button id="btnRetryCameraPermission" class="neo-btn btn-primary-blue btn-full btn-large mt-3">
+        إعادة طلب إذن الكاميرا
+      </button>
+
+      <button id="btnPermissionFallbackGallery" class="neo-btn btn-emerald btn-full mt-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        تصوير الكارنيه أو اختيار صورة من الاستوديو فوراً
+      </button>
+
+      <button id="btnCloseCameraPermissionModal" class="neo-btn btn-subtle-dark btn-full mt-2">
+        إلغاء والعودة
+      </button>
     </div>
   </div>
 
@@ -747,6 +866,6 @@
 
   <script src="qrcode.min.js"></script>
   <script src="jsQR.min.js"></script>
-  <script src="app.js?v=2.3.0"></script>
+  <script src="app.js?v=2.4.0"></script>
 </body>
 </html>

@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAttendanceFlow();
   initBiometrics();
   initModals();
+  initPhotoUploadFallbackEngine();
   renderHistoryTimeline();
   checkLiveSessionStatus();
   checkUrlParamsForAutoAttendance();
@@ -243,10 +244,10 @@ function initAuthGateFlow() {
     }
   };
 
-  // Camera Scan Button on Gate
+  // Camera Scan Button on Gate (Explicit CARD Mode)
   if (btnStartCardScan) {
     btnStartCardScan.addEventListener('click', () => {
-      openCameraScanner();
+      openCameraScanner('CARD');
     });
   }
 
@@ -793,7 +794,7 @@ function initAttendanceFlow() {
 
   if (btnOpenScanner) {
     btnOpenScanner.addEventListener('click', () => {
-      openCameraScanner();
+      openCameraScanner('ATTENDANCE');
     });
   }
 
@@ -1150,22 +1151,52 @@ function formatArabicTime(dateInput) {
 }
 
 // -------------------------------------------------------------
-// 4. Camera Scanner (Universal: BarcodeDetector + jsQR Fallback)
+// 4. Ultra-HD Dual-Reticle Camera Scanner (Image 3 Architecture)
 // -------------------------------------------------------------
 let cameraStream = null;
 let cameraScanInterval = null;
+let currentScanMode = 'CARD'; // 'CARD' | 'ATTENDANCE'
 
-async function openCameraScanner() {
+async function openCameraScanner(mode = 'CARD') {
+  currentScanMode = mode;
   const modal = document.getElementById('cameraModal');
   const video = document.getElementById('scannerVideo');
+  const title = document.getElementById('cameraModalTitle');
+  const hint = document.getElementById('cameraModalHint');
+  const cardGuide = document.getElementById('cameraCardGuide');
+  const lectureReticle = document.getElementById('cameraLectureQrReticle');
+  const btnTorch = document.getElementById('btnToggleTorch');
+
+  if (title) {
+    title.textContent = (mode === 'CARD') ? 'مسح وتوثيق الكارنيه' : 'مسح كود الحضور المباشر';
+  }
+  if (hint) {
+    hint.textContent = (mode === 'CARD')
+      ? 'ضع الكارنيه داخل الإطار الكبير • سيلتقط المربع الرمز تلقائياً'
+      : 'وجه الكاميرا نحو كود QR المعروض في شاشة القاعة';
+  }
+
+  if (cardGuide && lectureReticle) {
+    if (mode === 'CARD') {
+      cardGuide.classList.remove('hidden');
+      lectureReticle.classList.add('hidden');
+    } else {
+      cardGuide.classList.add('hidden');
+      lectureReticle.classList.remove('hidden');
+    }
+  }
+
   if (modal) modal.classList.remove('hidden');
 
   try {
+    // Ultra-HD Camera Constraints for continuous focus and crystal clarity
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
+        width: { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 },
+        aspectRatio: { ideal: 16 / 9 },
+        advanced: [{ focusMode: 'continuous' }]
       }
     });
 
@@ -1175,6 +1206,27 @@ async function openCameraScanner() {
       video.setAttribute('autoplay', 'true');
       video.muted = true;
       await video.play();
+    }
+
+    // Torch Capability Check
+    if (btnTorch && cameraStream) {
+      const track = cameraStream.getVideoTracks()[0];
+      const capabilities = (track && track.getCapabilities) ? track.getCapabilities() : {};
+      if (capabilities.torch) {
+        btnTorch.classList.remove('hidden');
+        let torchActive = false;
+        btnTorch.onclick = async () => {
+          try {
+            torchActive = !torchActive;
+            await track.applyConstraints({ advanced: [{ torch: torchActive }] });
+            btnTorch.classList.toggle('torch-active', torchActive);
+          } catch (e) {
+            console.warn('Torch error:', e);
+          }
+        };
+      } else {
+        btnTorch.classList.add('hidden');
+      }
     }
 
     const offscreenCanvas = document.createElement('canvas');
@@ -1193,7 +1245,11 @@ async function openCameraScanner() {
     cameraScanInterval = setInterval(async () => {
       if (!cameraStream || !video || video.readyState < 2) return;
 
-      // 1. Try Native BarcodeDetector first
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (vw <= 0 || vh <= 0) return;
+
+      // 1. Try Native BarcodeDetector first on full frame
       if (barcodeDetector) {
         try {
           const codes = await barcodeDetector.detect(video);
@@ -1206,18 +1262,49 @@ async function openCameraScanner() {
         } catch (e) {}
       }
 
-      // 2. Universal jsQR fallback (iPhone / iPad / Safari / Android / Desktop)
-      if (window.jsQR && video.videoWidth > 0 && video.videoHeight > 0 && offscreenCtx) {
+      // 2. High-speed jsQR processing
+      if (window.jsQR && offscreenCtx) {
         try {
-          if (offscreenCanvas.width !== video.videoWidth || offscreenCanvas.height !== video.videoHeight) {
-            offscreenCanvas.width = video.videoWidth;
-            offscreenCanvas.height = video.videoHeight;
+          // Pass A (Prioritized ROI for Card Mode):
+          // In CARD mode, crop the right 45% region of the camera feed where the QR reticle sits
+          if (currentScanMode === 'CARD') {
+            const cropX = Math.floor(vw * 0.45);
+            const cropY = Math.floor(vh * 0.15);
+            const cropW = Math.floor(vw * 0.52);
+            const cropH = Math.floor(vh * 0.70);
+
+            if (offscreenCanvas.width !== cropW || offscreenCanvas.height !== cropH) {
+              offscreenCanvas.width = cropW;
+              offscreenCanvas.height = cropH;
+            }
+            offscreenCtx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            const roiData = offscreenCtx.getImageData(0, 0, cropW, cropH);
+            const decodedRoi = window.jsQR(roiData.data, roiData.width, roiData.height, {
+              inversionAttempts: 'dontInvert'
+            });
+
+            if (decodedRoi && decodedRoi.data) {
+              closeCameraScanner();
+              handleScannedQrContent(decodedRoi.data);
+              return;
+            }
           }
-          offscreenCtx.drawImage(video, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
-          const imgData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+          // Pass B (Full Frame Fallback):
+          const scale = Math.min(1, 1080 / Math.max(vw, vh));
+          const targetW = Math.floor(vw * scale);
+          const targetH = Math.floor(vh * scale);
+
+          if (offscreenCanvas.width !== targetW || offscreenCanvas.height !== targetH) {
+            offscreenCanvas.width = targetW;
+            offscreenCanvas.height = targetH;
+          }
+          offscreenCtx.drawImage(video, 0, 0, targetW, targetH);
+          const imgData = offscreenCtx.getImageData(0, 0, targetW, targetH);
           const decoded = window.jsQR(imgData.data, imgData.width, imgData.height, {
             inversionAttempts: 'dontInvert'
           });
+
           if (decoded && decoded.data) {
             closeCameraScanner();
             handleScannedQrContent(decoded.data);
@@ -1225,11 +1312,119 @@ async function openCameraScanner() {
           }
         } catch (err) {}
       }
-    }, 200);
+    }, 120);
+
   } catch (err) {
     console.error('Camera access error:', err);
-    alert('تعذر فتح الكاميرا، يرجى التأكد من منح إذن الوصول للكاميرا في إعدادات المتصفح.');
     closeCameraScanner();
+    // Graceful permission guidance & fallback
+    showCameraPermissionAssistant(mode);
+  }
+}
+
+// -------------------------------------------------------------
+// 4.1 Permission Assistant & Zero-Friction Photo Upload Fallback
+// -------------------------------------------------------------
+function showCameraPermissionAssistant(mode = 'CARD') {
+  const permModal = document.getElementById('cameraPermissionModal');
+  const step1 = document.getElementById('permStep1Text');
+  const step2 = document.getElementById('permStep2Text');
+  const step3 = document.getElementById('permStep3Text');
+  const btnRetry = document.getElementById('btnRetryCameraPermission');
+  const btnFallback = document.getElementById('btnPermissionFallbackGallery');
+  const btnClose = document.getElementById('btnCloseCameraPermissionModal');
+
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPhone|iPad|iPod/.test(ua);
+  const isAndroid = /Android/i.test(ua);
+
+  if (isIOS) {
+    if (step1) step1.innerHTML = 'اضغط على أيقونة <strong>aA</strong> أو خيارات الصفحة في شريط العنوان بالأسفل أو بالأعلى.';
+    if (step2) step2.innerHTML = 'اختر <strong>إعدادات موقع الويب (Website Settings)</strong>.';
+    if (step3) step3.innerHTML = 'اضغط على <strong>الكاميرا (Camera)</strong> وحدد <strong>السماح (Allow)</strong>.';
+  } else if (isAndroid) {
+    if (step1) step1.innerHTML = 'اضغط على أيقونة <strong>القفل أو الضبط</strong> بجوار رابط الموقع.';
+    if (step2) step2.innerHTML = 'اختر <strong>الأذونات (Permissions)</strong> ثم اضغط على <strong>الكاميرا</strong>.';
+    if (step3) step3.innerHTML = 'قم بتحديد <strong>السماح عند استخدام التطبيق</strong>.';
+  } else {
+    if (step1) step1.innerHTML = 'اضغط على أيقونة الكاميرا أو القفل في شريط المتصفح بالأعلى.';
+    if (step2) step2.innerHTML = 'اختر <strong>السماح بالوصول دائماً لهذا الموقع</strong>.';
+    if (step3) step3.innerHTML = 'أعد تحميل الصفحة للمتابعة.';
+  }
+
+  if (btnRetry) {
+    btnRetry.onclick = () => {
+      if (permModal) permModal.classList.add('hidden');
+      openCameraScanner(mode);
+    };
+  }
+
+  if (btnFallback) {
+    btnFallback.onclick = () => {
+      const fileInput = document.getElementById('cardImageFileInput');
+      if (fileInput) fileInput.click();
+    };
+  }
+
+  if (btnClose) {
+    btnClose.onclick = () => {
+      if (permModal) permModal.classList.add('hidden');
+    };
+  }
+
+  if (permModal) permModal.classList.remove('hidden');
+}
+
+function initPhotoUploadFallbackEngine() {
+  const fileInput = document.getElementById('cardImageFileInput');
+  const btnTrigger = document.getElementById('btnTriggerGalleryUpload');
+
+  if (btnTrigger && fileInput) {
+    btnTrigger.onclick = () => fileInput.click();
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const permModal = document.getElementById('cameraPermissionModal');
+      const cameraModal = document.getElementById('cameraModal');
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const offCanvas = document.createElement('canvas');
+          offCanvas.width = img.width;
+          offCanvas.height = img.height;
+          const offCtx = offCanvas.getContext('2d');
+          offCtx.drawImage(img, 0, 0);
+
+          const imgData = offCtx.getImageData(0, 0, img.width, img.height);
+          let decoded = null;
+          if (window.jsQR) {
+            decoded = window.jsQR(imgData.data, imgData.width, imgData.height, {
+              inversionAttempts: 'attemptBoth'
+            });
+          }
+
+          if (decoded && decoded.data) {
+            if (permModal) permModal.classList.add('hidden');
+            if (cameraModal) cameraModal.classList.add('hidden');
+            closeCameraScanner();
+            playAudioChime();
+            playHaptic();
+            handleScannedQrContent(decoded.data);
+          } else {
+            alert('لم يتم العثور على رمز QR واضح في الصورة المختارة.\n\nيرجى التأكد من اختيار صورة ذات إضاءة جيدة يظهر فيها كود QR الكارنيه بوضوح.');
+          }
+          fileInput.value = '';
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
   }
 }
 
@@ -1680,7 +1875,7 @@ function initModals() {
   if (btnInstantRetryScan) {
     btnInstantRetryScan.addEventListener('click', () => {
       hideInstantAttendOverlay();
-      openCameraScanner();
+      openCameraScanner('ATTENDANCE');
     });
   }
 }
