@@ -94,11 +94,12 @@ function fetchHtml(urlStr: string, timeoutMs: number): Promise<string> {
 }
 
 export function parseFueCardHtml(html: string, rawUrl: string, ssUuid: string): FueStudentCardData {
-  // Extract photo URL if present
+  // Extract student photo URL (specifically from personImage or ImageHandler)
   let photoUrl = '';
-  const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (imgMatch && imgMatch[1]) {
-    photoUrl = imgMatch[1].replace(/&amp;/g, '&');
+  const studentImgMatch = html.match(/<img[^>]+id=["']personImage["'][^>]+src=["']([^"']+)["']/i) ||
+                          html.match(/<img[^>]+src=["']([^"']*(?:ImageHandler\.ashx|ShowMultimedia)[^"']*)["']/i);
+  if (studentImgMatch && studentImgMatch[1]) {
+    photoUrl = studentImgMatch[1].replace(/&amp;/g, '&');
     if (photoUrl.startsWith('/')) {
       photoUrl = `https://services.fue.edu.eg${photoUrl}`;
     }
