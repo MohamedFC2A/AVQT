@@ -3,11 +3,56 @@
 
 const SERVER_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001' : '';
 
-// Device Binding Identity
+// Deterministic Universal Hardware Fingerprint Generator
+function generateHardwareFingerprint() {
+  try {
+    const rawSignals = [
+      navigator.userAgent || 'Mozilla/5.0',
+      navigator.hardwareConcurrency || 4,
+      navigator.deviceMemory || 8,
+      screen.width || 1920,
+      screen.height || 1080,
+      screen.colorDepth || 24,
+      (Intl && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Africa/Cairo',
+      navigator.language || 'ar-EG'
+    ];
+    try {
+      const c = document.createElement('canvas');
+      c.width = 120;
+      c.height = 30;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillText('FUE-HWID-SEC-2026', 2, 2);
+        rawSignals.push(c.toDataURL().slice(-40));
+      }
+    } catch (e) {}
+
+    const seedStr = rawSignals.join('|');
+    let hash1 = 0;
+    for (let i = 0; i < seedStr.length; i++) {
+      hash1 = ((hash1 << 5) - hash1) + seedStr.charCodeAt(i);
+      hash1 |= 0;
+    }
+    const hex1 = Math.abs(hash1).toString(16).toUpperCase().padStart(8, '0');
+    let hash2 = 5381;
+    for (let i = seedStr.length - 1; i >= 0; i--) {
+      hash2 = ((hash2 << 5) + hash2) + seedStr.charCodeAt(i);
+      hash2 |= 0;
+    }
+    const hex2 = Math.abs(hash2).toString(16).toUpperCase().padStart(8, '0');
+    return `HWID-FUE-${hex1.slice(0, 4)}-${hex1.slice(4, 8)}-${hex2.slice(0, 4)}-${hex2.slice(4, 8)}`;
+  } catch (err) {
+    return 'HWID-FUE-8F4A-91C2-E57B-43A0';
+  }
+}
+
+// Device Binding Identity (Permanent Hardware Anchor)
 function getOrCreateDeviceUuid() {
   let devId = localStorage.getItem('avqr_device_bound_uuid');
-  if (!devId) {
-    devId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'dev-' + Math.random().toString(36).substring(2, 12);
+  if (!devId || !devId.startsWith('HWID-FUE-')) {
+    devId = generateHardwareFingerprint();
     localStorage.setItem('avqr_device_bound_uuid', devId);
   }
   return devId;
@@ -491,7 +536,7 @@ function renderCardOfficialQr(targetUrl) {
   if (!qrCanvas || !window.QRCode || typeof window.QRCode.toCanvas !== 'function') return;
   const url = targetUrl || state.cardUrl || (state.studentId ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214` : 'https://fue.edu.eg');
   window.QRCode.toCanvas(qrCanvas, url, {
-    width: 100,
+    width: 74,
     margin: 2,
     color: { dark: '#0F172A', light: '#FFFFFF' }
   }, (err) => {
@@ -635,10 +680,13 @@ function initEmergencyVaultKey() {
   let isRevealed = false;
 
   function updateDisplay() {
-    const key = state.emergencyAccessKey || '•••• •••• •••• ••••';
     if (!vaultText) return;
     vaultText.textContent = isRevealed ? (state.emergencyAccessKey || 'FUE-SEC-2026-KEY') : '•••• •••• •••• ••••';
-    if (btnToggle) btnToggle.textContent = isRevealed ? 'إخفاء' : 'إظهار';
+    if (btnToggle) {
+      const sp = btnToggle.querySelector('span');
+      if (sp) sp.textContent = isRevealed ? 'إخفاء' : 'إظهار';
+      else btnToggle.textContent = isRevealed ? 'إخفاء' : 'إظهار';
+    }
   }
 
   if (btnToggle) {
@@ -654,10 +702,13 @@ function initEmergencyVaultKey() {
       const key = state.emergencyAccessKey || 'FUE-SEC-2026-KEY';
       try {
         await navigator.clipboard.writeText(key);
-        btnCopy.textContent = 'تم النسخ';
+        const sp = btnCopy.querySelector('span');
+        if (sp) sp.textContent = 'تم النسخ';
+        else btnCopy.textContent = 'تم النسخ';
         playHaptic();
         setTimeout(() => {
-          btnCopy.textContent = 'نسخ';
+          if (sp) sp.textContent = 'نسخ';
+          else btnCopy.textContent = 'نسخ';
         }, 2000);
       } catch (e) {
         alert('مفتاح الأمان الخاص بك: ' + key);
@@ -674,7 +725,7 @@ function initEmergencyVaultKey() {
       localStorage.clear();
       sessionStorage.clear();
       state = {
-        deviceUuid: 'DEV_' + Math.random().toString(36).substring(2, 10),
+        deviceUuid: getOrCreateDeviceUuid(),
         studentId: '',
         boundStudentId: '',
         fullName: '',
@@ -687,7 +738,7 @@ function initEmergencyVaultKey() {
         biometricCredentialId: '',
         isRegistered: false,
         biometricType: 'بصمة الإصبع',
-        activeSessionId: 'AVQR-2026'
+        activeSessionId: 'SESSION-2026'
       };
       saveState();
       alert('تم مسح البيانات بنجاح. يمكنك الآن مسح أي كارنيه آخر عبر الكاميرا.');
@@ -727,6 +778,9 @@ function renderStudentProfile() {
 
   const secBoundId = document.getElementById('secBoundStudentId');
   if (secBoundId) secBoundId.textContent = state.boundStudentId || state.studentId || 'غير مقترن';
+
+  const secHwid = document.getElementById('secCurrentDeviceUuid');
+  if (secHwid) secHwid.textContent = state.deviceUuid;
 
   const bioPill = document.getElementById('bioStatusPill');
   const bioTitle = document.getElementById('bioVisualTitle');
@@ -862,10 +916,10 @@ function showInstantAttendOverlay(stateType, payload = {}) {
 
     if (payload.alreadyAttended) {
       if (headingEl) headingEl.textContent = 'أنت مسجل بالفعل في المحاضرة';
-      if (msgEl) msgEl.textContent = payload.message || 'تم تسجيل حضورك مسبقاً ومعتمد رسمياً في السحابة الأكاديمية بنسبة دقة 100%.';
+      if (msgEl) msgEl.textContent = payload.message || 'تم تسجيل حضورك مسبقاً ومعتمد رسمياً في سجل حضور جامعة المستقبل بنسبة 100%.';
     } else {
       if (headingEl) headingEl.textContent = 'تم إثبات الحضور بنجاح';
-      if (msgEl) msgEl.textContent = payload.message || 'تم تفعيل حضورك في كشف المحاضر بالسحابة الأكاديمية فوراً بدون أخطاء.';
+      if (msgEl) msgEl.textContent = payload.message || 'تم اعتماد حضورك في كشف المحاضرة الرسمي فوراً بنجاح.';
     }
 
     if (studentEl) studentEl.textContent = `${state.fullName || 'طالب مقيد'} (${state.studentId || ''})`;
@@ -994,16 +1048,16 @@ async function performAttendanceSubmission(payload) {
         showStatusBanner(
           'success',
           'تم إثبات الحضور بنجاح',
-          data.message || 'تم تسجيل حضورك واعتماده في كشف المحاضر بالسحابة الأكاديمية بنسبة دقة 100%.'
+          data.message || 'تم تسجيل حضورك واعتماده رسمياً في سجل المحاضرة بنجاح.'
         );
 
         saveHistoryRecord({
-          courseName: 'هندسة البرمجيات المتقدمة (CSE 2026)',
+          courseName: 'المحاضرة المعتمدة (FUE 2026)',
           dateText: formatArabicDate(data.record?.check_time || new Date()),
           timeText: formatArabicTime(data.record?.check_time || new Date()),
           doctor: 'د. محمد مطعني',
           hall: 'مدرج الهندسة A',
-          status: 'حاضر (AVQR)'
+          status: 'حاضر (معتمد)'
         });
       }
     } else {
@@ -1189,16 +1243,46 @@ async function openCameraScanner(mode = 'CARD') {
   if (modal) modal.classList.remove('hidden');
 
   try {
-    // Ultra-HD Camera Constraints for continuous focus and crystal clarity
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1920, min: 1280 },
-        height: { ideal: 1080, min: 720 },
-        aspectRatio: { ideal: 16 / 9 },
-        advanced: [{ focusMode: 'continuous' }]
+    // Resilient Multi-Tier Camera Constraints (Ultra-HD with universal mobile fallback)
+    const constraintsList = [
+      {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 16 / 9 },
+          advanced: [{ focusMode: 'continuous' }]
+        }
+      },
+      {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      },
+      {
+        video: {
+          facingMode: { ideal: 'environment' }
+        }
+      },
+      {
+        video: true
       }
-    });
+    ];
+
+    let stream = null;
+    let streamError = null;
+    for (const c of constraintsList) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(c);
+        if (stream) break;
+      } catch (e) {
+        streamError = e;
+      }
+    }
+    if (!stream) throw streamError || new Error('Camera stream could not be acquired');
+    cameraStream = stream;
 
     if (video) {
       video.srcObject = cameraStream;

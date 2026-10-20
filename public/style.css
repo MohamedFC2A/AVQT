@@ -927,33 +927,34 @@ body {
   flex-direction: row;
   align-items: stretch;
   justify-content: space-between;
-  padding: 6px 12px;
+  padding: 6px 10px;
   flex: 1;
   background: #FFFFFF;
-  gap: 10px;
+  gap: 6px;
   box-sizing: border-box;
   direction: ltr !important;
+  overflow: hidden;
 }
 
 .fue-photo-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 88px;
+  width: 76px;
   flex-shrink: 0;
   position: relative;
   z-index: 5;
 }
 
 .fue-photo-frame {
-  width: 82px;
-  height: 96px;
-  border-radius: 41px 41px 36px 36px;
-  border: 4px solid #FFFFFF;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2), 0 0 0 1.5px #CBD5E1;
+  width: 72px;
+  height: 86px;
+  border-radius: 36px 36px 30px 30px;
+  border: 3.5px solid #FFFFFF;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), 0 0 0 1px #CBD5E1;
   overflow: hidden;
   background: #E2E8F0;
-  margin-top: -18px;
+  margin-top: -16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -967,24 +968,26 @@ body {
 }
 
 .fue-serial-dots {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 900;
   color: #8A151B;
-  margin-top: 4px;
-  letter-spacing: 1.5px;
+  margin-top: 3px;
+  letter-spacing: 1px;
   font-family: monospace;
   line-height: 1;
 }
 
 .fue-info-col {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   text-align: left;
-  gap: 4px;
-  padding-left: 2px;
+  gap: 3px;
+  padding: 0 2px;
   direction: ltr !important;
+  overflow: hidden;
 }
 
 .fue-info-block {
@@ -994,24 +997,24 @@ body {
 }
 
 .fue-lbl-bilingual {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 800;
   color: #64748B;
 }
 
 .fue-val-name {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 900;
   color: #0F172A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 155px;
+  max-width: 135px;
   line-height: 1.2;
 }
 
 .fue-val-fac {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #1E293B;
   line-height: 1.2;
@@ -1022,7 +1025,7 @@ body {
 }
 
 .fue-id-txt {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 900;
   color: #8A151B;
   font-family: 'Courier New', Courier, monospace;
@@ -1031,8 +1034,8 @@ body {
 
 /* High-Contrast Unclipped QR Code Column */
 .fue-qr-col {
-  width: 104px;
-  height: 104px;
+  width: 86px;
+  height: 86px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1045,22 +1048,23 @@ body {
 }
 
 .fue-qr-canvas-wrapper {
-  width: 100px;
-  height: 100px;
-  padding: 2px;
+  width: 82px;
+  height: 82px;
+  padding: 4px;
   background: #FFFFFF;
   border: 1.5px solid #CBD5E1;
   border-radius: 6px;
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .fue-qr-canvas-wrapper canvas {
-  width: 96px !important;
-  height: 96px !important;
+  width: 74px !important;
+  height: 74px !important;
   display: block;
 }
 
@@ -1132,6 +1136,13 @@ body {
   padding: 1px 4px;
   border-radius: 2px;
   line-height: 1.1;
+}
+
+.fue-rankings-badge-img {
+  height: 20px;
+  max-width: 160px;
+  object-fit: contain;
+  display: block;
 }
 
 /* Back Card Elements */
@@ -1822,23 +1833,20 @@ body {
   object-fit: cover;
 }
 
-/* Card Guide (Matches Image 3 green rounded card outline) */
+/* Card Guide (Clean White Reticle matching physical FUE card dimensions) */
 .camera-card-guide {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 90%;
-  max-width: 360px;
+  max-width: 350px;
   aspect-ratio: 1.58 / 1;
-  border: 3.5px solid #10B981;
-  border-radius: 12px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 16px rgba(16, 185, 129, 0.45);
+  border: 2px solid #FFFFFF;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(0, 0, 0, 0.5);
   pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 10px 14px;
+  display: block;
   box-sizing: border-box;
   direction: ltr !important;
 }
@@ -1846,27 +1854,30 @@ body {
 /* Corner Highlights for Card Guide */
 .guide-corner {
   position: absolute;
-  width: 18px;
-  height: 18px;
-  border-color: #34D399;
+  width: 16px;
+  height: 16px;
+  border-color: #FFFFFF;
   border-style: solid;
   border-width: 0;
 }
 
-.gc-tl { top: -2px; left: -2px; border-top-width: 4px; border-left-width: 4px; border-top-left-radius: 8px; }
-.gc-tr { top: -2px; right: -2px; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 8px; }
-.gc-bl { bottom: -2px; left: -2px; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 8px; }
-.gc-br { bottom: -2px; right: -2px; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 8px; }
+.gc-tl { top: -2px; left: -2px; border-top-width: 3.5px; border-left-width: 3.5px; border-top-left-radius: 6px; }
+.gc-tr { top: -2px; right: -2px; border-top-width: 3.5px; border-right-width: 3.5px; border-top-right-radius: 6px; }
+.gc-bl { bottom: -2px; left: -2px; border-bottom-width: 3.5px; border-left-width: 3.5px; border-bottom-left-radius: 6px; }
+.gc-br { bottom: -2px; right: -2px; border-bottom-width: 3.5px; border-right-width: 3.5px; border-bottom-right-radius: 6px; }
 
-/* Targeted QR Code Reticle on the RIGHT (Image 3) */
+/* Targeted QR Code Reticle on the RIGHT (Clean White outline, matching Image 5 card position) */
 .camera-card-qr-reticle {
-  width: 33%;
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 31%;
   aspect-ratio: 1 / 1;
-  border: 3px solid #10B981;
+  border: 2px solid #FFFFFF;
   border-radius: 8px;
-  background: rgba(16, 185, 129, 0.12);
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.55), inset 0 0 8px rgba(16, 185, 129, 0.2);
-  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -1876,11 +1887,11 @@ body {
 .qr-target-tag {
   position: absolute;
   bottom: 3px;
-  font-size: 0.55rem;
+  font-size: 0.52rem;
   font-weight: 900;
   letter-spacing: 0.5px;
-  color: #10B981;
-  background: rgba(0, 0, 0, 0.6);
+  color: #FFFFFF;
+  background: rgba(0, 0, 0, 0.7);
   padding: 1px 4px;
   border-radius: 2px;
 }
@@ -1893,10 +1904,10 @@ body {
   transform: translate(-50%, -50%);
   width: 190px;
   height: 190px;
-  border: 3px solid var(--brand-blue);
+  border: 2.5px solid #FFFFFF;
   border-radius: 12px;
-  background: rgba(11, 99, 229, 0.08);
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 18px rgba(11, 99, 229, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   overflow: hidden;
 }
@@ -1916,15 +1927,15 @@ body {
 .rc-bl { bottom: -1px; left: -1px; border-bottom-width: 3px; border-left-width: 3px; }
 .rc-br { bottom: -1px; right: -1px; border-bottom-width: 3px; border-right-width: 3px; }
 
-/* Camera Laser Beam */
+/* Camera Laser Beam (Clean White, No Neon Green) */
 .camera-laser-beam {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #10B981, #FFFFFF, #10B981, transparent);
-  box-shadow: 0 0 8px #10B981, 0 0 2px #FFFFFF;
+  height: 2.5px;
+  background: linear-gradient(90deg, transparent, #FFFFFF, transparent);
+  box-shadow: 0 0 6px #FFFFFF;
   animation: cameraLaserScan 2s ease-in-out infinite;
 }
 
@@ -2836,5 +2847,65 @@ body {
   display: flex;
   gap: 8px;
   margin-top: 4px;
+}
+
+/* White-Themed Device Management & Encrypted Vault Key */
+.device-hwid-text {
+  font-family: 'Courier New', monospace;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--brand-blue);
+  word-break: break-all;
+}
+
+.vault-key-container-white {
+  background: #F8FAFC;
+  color: #0F172A;
+  border: 2px solid var(--neo-black);
+  box-shadow: 3px 3px 0px var(--neo-black);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  direction: ltr;
+}
+
+.vault-key-text-white {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #0F172A;
+}
+
+.btn-vault-action-white {
+  background: #FFFFFF;
+  color: var(--neo-black);
+  border: 1.5px solid var(--neo-black);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 1px 1px 0px var(--neo-black);
+  transition: all 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-vault-action-white:hover {
+  background: #F1F5F9;
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0px var(--neo-black);
+}
+
+.card-inner-divider {
+  border: none;
+  border-top: 1.5px dashed #CBD5E1;
+  margin: 16px 0;
 }
 
