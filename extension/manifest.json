@@ -46,7 +46,10 @@
       "resources": [
         "qrcode.min.js",
         "popup.css",
-        "icons/*"
+        "icons/*",
+        "ehdar-icon.svg",
+        "ehdar-logo-full.svg",
+        "avqr-logo.svg"
       ],
       "matches": ["<all_urls>"]
     }
