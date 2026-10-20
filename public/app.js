@@ -322,9 +322,21 @@ function initCinematicSmartSplash() {
   splash.style.opacity = '1';
   splash.style.visibility = 'visible';
 
-  if (slideFue) slideFue.classList.add('active');
-  if (slideMoodle) slideMoodle.classList.remove('active');
-  if (slideMatany) slideMatany.classList.remove('active');
+  // Allow student to tap anywhere to dismiss if desired
+  splash.onclick = () => {
+    dismissSplash();
+  };
+
+  if (slideFue) {
+    slideFue.classList.remove('exit');
+    slideFue.classList.add('active');
+  }
+  if (slideMoodle) {
+    slideMoodle.classList.remove('active', 'exit');
+  }
+  if (slideMatany) {
+    slideMatany.classList.remove('active', 'exit');
+  }
 
   function dismissSplash() {
     if (dismissed) return;
@@ -341,6 +353,8 @@ function initCinematicSmartSplash() {
   // 1. Play video and freeze precisely on the settled full logo frame (around 3.68s)
   if (video) {
     try {
+      video.muted = true;
+      video.playsInline = true;
       video.currentTime = 0;
       video.load();
     } catch (e) {}
@@ -365,33 +379,48 @@ function initCinematicSmartSplash() {
   }
 
   // 2. Partner Showcase Carousel (With: FUE -> Moodle -> Matany Group)
-  // Stage 1: FUE (0s - 1.1s)
-  if (slideFue) slideFue.classList.add('active');
+  // Stage 1: FUE (0s - 1.2s)
+  if (slideFue) {
+    slideFue.classList.remove('exit');
+    slideFue.classList.add('active');
+  }
 
-  // Stage 2: Moodle (1.1s - 2.2s)
+  // Stage 2: Moodle (1.2s - 2.5s)
   setTimeout(() => {
     if (dismissed) return;
-    if (slideFue) slideFue.classList.remove('active');
-    if (slideMoodle) slideMoodle.classList.add('active');
-  }, 1100);
+    if (slideFue) {
+      slideFue.classList.remove('active');
+      slideFue.classList.add('exit');
+    }
+    if (slideMoodle) {
+      slideMoodle.classList.remove('exit');
+      slideMoodle.classList.add('active');
+    }
+  }, 1200);
 
-  // Stage 3: Matany Group (2.2s - 4.1s) - Hero Partner with longest showcase
+  // Stage 3: Matany Group (2.5s - 4.7s) - Hero Partner with longest showcase
   setTimeout(() => {
     if (dismissed) return;
-    if (slideMoodle) slideMoodle.classList.remove('active');
-    if (slideMatany) slideMatany.classList.add('active');
-    playHaptic();
-  }, 2200);
+    if (slideMoodle) {
+      slideMoodle.classList.remove('active');
+      slideMoodle.classList.add('exit');
+    }
+    if (slideMatany) {
+      slideMatany.classList.remove('exit');
+      slideMatany.classList.add('active');
+    }
+    try { playHaptic(); } catch (e) {}
+  }, 2500);
 
-  // Stage 4: Cinematic Exit (4.1s)
+  // Stage 4: Cinematic Exit (4.7s)
   setTimeout(() => {
     dismissSplash();
-  }, 4100);
+  }, 4700);
 
   // Emergency safety timeout in case of any stall
   setTimeout(() => {
     dismissSplash();
-  }, 4800);
+  }, 5400);
 }
 
 window.addEventListener('pageshow', (event) => {
@@ -399,8 +428,6 @@ window.addEventListener('pageshow', (event) => {
     initCinematicSmartSplash();
   }
 });
-  }, 4800);
-}
 
 // -------------------------------------------------------------
 // 0. Card-First Authentication Gate & Strict Device Binding

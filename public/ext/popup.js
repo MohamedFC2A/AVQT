@@ -33,9 +33,20 @@ function initCinematicSmartSplash() {
   splash.style.opacity = '1';
   splash.style.visibility = 'visible';
 
-  if (slideFue) slideFue.classList.add('active');
-  if (slideMoodle) slideMoodle.classList.remove('active');
-  if (slideMatany) slideMatany.classList.remove('active');
+  splash.onclick = () => {
+    dismissSplash();
+  };
+
+  if (slideFue) {
+    slideFue.classList.remove('exit');
+    slideFue.classList.add('active');
+  }
+  if (slideMoodle) {
+    slideMoodle.classList.remove('active', 'exit');
+  }
+  if (slideMatany) {
+    slideMatany.classList.remove('active', 'exit');
+  }
 
   function dismissSplash() {
     if (dismissed) return;
@@ -51,6 +62,8 @@ function initCinematicSmartSplash() {
 
   // 1. Play video and freeze precisely on the settled full logo frame (at ~3.68s)
   if (video) {
+    video.muted = true;
+    video.playsInline = true;
     video.currentTime = 0;
     const playPromise = video.play();
     if (playPromise !== undefined) {
@@ -69,29 +82,42 @@ function initCinematicSmartSplash() {
   }
 
   // 2. Partner Carousel (With: FUE -> Moodle -> Matany Group)
-  if (slideFue) slideFue.classList.add('active');
-  if (slideMoodle) slideMoodle.classList.remove('active');
-  if (slideMatany) slideMatany.classList.remove('active');
+  if (slideFue) {
+    slideFue.classList.remove('exit');
+    slideFue.classList.add('active');
+  }
 
   setTimeout(() => {
     if (dismissed) return;
-    if (slideFue) slideFue.classList.remove('active');
-    if (slideMoodle) slideMoodle.classList.add('active');
-  }, 1100);
+    if (slideFue) {
+      slideFue.classList.remove('active');
+      slideFue.classList.add('exit');
+    }
+    if (slideMoodle) {
+      slideMoodle.classList.remove('exit');
+      slideMoodle.classList.add('active');
+    }
+  }, 1200);
 
   setTimeout(() => {
     if (dismissed) return;
-    if (slideMoodle) slideMoodle.classList.remove('active');
-    if (slideMatany) slideMatany.classList.add('active');
-  }, 2200);
+    if (slideMoodle) {
+      slideMoodle.classList.remove('active');
+      slideMoodle.classList.add('exit');
+    }
+    if (slideMatany) {
+      slideMatany.classList.remove('exit');
+      slideMatany.classList.add('active');
+    }
+  }, 2400);
 
   setTimeout(() => {
     dismissSplash();
-  }, 4100);
+  }, 4600);
 
   setTimeout(() => {
     dismissSplash();
-  }, 4800);
+  }, 5200);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
