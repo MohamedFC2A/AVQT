@@ -870,6 +870,15 @@ body {
   gap: 6px;
 }
 
+.fue-official-logo-img {
+  height: 38px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45));
+}
+
 .fue-shield-img {
   width: 28px;
   height: 28px;
@@ -2908,4 +2917,346 @@ body {
   border-top: 1.5px dashed #CBD5E1;
   margin: 16px 0;
 }
+
+/* ==========================================================================
+   PERMANENT RIOT / TAMPER LOCKDOWN SCREEN (STRICTLY NO BUTTONS, NO LINKS)
+   ========================================================================== */
+.screen-permanent-riot-ban {
+  position: fixed;
+  inset: 0;
+  z-index: 99999999;
+  background: radial-gradient(circle at center, #1E1012 0%, #080304 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  user-select: none;
+  animation: riotFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes riotFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.screen-permanent-riot-ban.hidden {
+  display: none !important;
+}
+
+.riot-ban-card {
+  background: #0F0809;
+  border: 4px solid #DC2626;
+  box-shadow: 10px 10px 0px #000000, 0 0 40px rgba(220, 38, 38, 0.35);
+  border-radius: 12px;
+  max-width: 480px;
+  width: 100%;
+  padding: 32px 24px;
+  text-align: center;
+  box-sizing: border-box;
+  color: #FFFFFF;
+}
+
+.riot-ban-shield-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.riot-ban-fue-logo {
+  height: 48px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+}
+
+.riot-ban-icon-circle {
+  width: 88px;
+  height: 88px;
+  background: rgba(220, 38, 38, 0.12);
+  border: 3px solid #DC2626;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+  box-shadow: 0 0 25px rgba(220, 38, 38, 0.4);
+  animation: riotPulse 2s infinite ease-in-out;
+}
+
+@keyframes riotPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(220, 38, 38, 0.3); }
+  50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(220, 38, 38, 0.6); }
+}
+
+.riot-ban-badge {
+  display: inline-block;
+  background: #DC2626;
+  color: #FFFFFF;
+  font-weight: 900;
+  font-size: 0.8rem;
+  padding: 4px 14px;
+  border-radius: 6px;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+}
+
+.riot-ban-title {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0 0 10px 0;
+  line-height: 1.3;
+  text-shadow: 0 2px 8px rgba(220, 38, 38, 0.5);
+}
+
+.riot-ban-message {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #F87171;
+  margin: 0 0 22px 0;
+  line-height: 1.4;
+}
+
+.riot-ban-details {
+  background: #1A0D0F;
+  border: 2px solid #7F1D1D;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.riot-meta-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  border-bottom: 1px dashed rgba(220, 38, 38, 0.2);
+  padding-bottom: 8px;
+}
+
+.riot-meta-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.riot-meta-item .meta-lbl {
+  color: #94A3B8;
+  font-weight: 700;
+}
+
+.riot-meta-item .meta-val {
+  color: #F1F5F9;
+  font-weight: 800;
+}
+
+.riot-meta-item .meta-val.text-red {
+  color: #EF4444;
+}
+
+.riot-security-notice {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #94A3B8;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #331014;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+/* ==========================================================================
+   AVQR CINEMATIC SMART LOADING SPLASH (PURE WHITE CANVAS, SMART CROPPING)
+   ========================================================================== */
+.avqr-smart-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 999999999;
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 16px 36px 16px;
+  box-sizing: border-box;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.45s ease;
+  user-select: none;
+  overflow: hidden;
+}
+
+.avqr-smart-splash.dismissed {
+  opacity: 0;
+  transform: scale(1.02);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-inner-content {
+  width: 100%;
+  max-width: 440px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.splash-video-container {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 260px;
+}
+
+.splash-video-element {
+  width: 100%;
+  max-width: 340px;
+  max-height: 58vh;
+  object-fit: contain;
+  background-color: #FFFFFF;
+  display: block;
+}
+
+.splash-bottom-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding-bottom: 6px;
+}
+
+.splash-with-label {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #94A3B8;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.splash-with-label::before,
+.splash-with-label::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 26px;
+  height: 1.5px;
+  background: #E2E8F0;
+}
+
+.splash-with-label::before {
+  right: 100%;
+  margin-right: 12px;
+}
+
+.splash-with-label::after {
+  left: 100%;
+  margin-left: 12px;
+}
+
+.splash-partner-slider {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-partner-slide {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(12px) scale(0.95);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.splash-partner-slide.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.partner-img-fue {
+  height: 42px;
+  max-width: 150px;
+  object-fit: contain;
+}
+
+.partner-img-moodle {
+  height: 38px;
+  max-width: 160px;
+  object-fit: contain;
+}
+
+/* HERO SLIDE: MATANY GROUP */
+.splash-partner-slide.hero-slide.active {
+  animation: matanyHeroPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes matanyHeroPop {
+  0% { opacity: 0; transform: translateY(14px) scale(0.92); }
+  60% { opacity: 1; transform: translateY(-2px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.matany-hero-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #09090B;
+  color: #FFFFFF;
+  border: 2.5px solid #18181B;
+  box-shadow: 4px 4px 0px #000000, 0 4px 20px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 8px 18px 8px 14px;
+}
+
+.partner-img-matany {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(255, 255, 255, 0.25));
+}
+
+.matany-meta-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.matany-brand-title {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #FFFFFF;
+}
+
+.matany-tech-subtitle {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #A1A1AA;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+
 

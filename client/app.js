@@ -75,6 +75,7 @@ let state = {
   biometricCredentialId: localStorage.getItem('avqr_bio_cred_id') || '',
   isRegistered: localStorage.getItem('avqr_registered') === 'true',
   token: localStorage.getItem('avqr_token') || '',
+  sessionToken: localStorage.getItem('avqr_session_token') || '',
   activeSessionId: 'AVQR-2026'
 };
 
@@ -91,6 +92,117 @@ function saveState() {
   localStorage.setItem('avqr_bio_registered', state.biometricRegistered ? 'true' : 'false');
   if (state.biometricCredentialId) localStorage.setItem('avqr_bio_cred_id', state.biometricCredentialId);
   if (state.token) localStorage.setItem('avqr_token', state.token);
+  if (state.sessionToken) localStorage.setItem('avqr_session_token', state.sessionToken);
+}
+
+// Permanent Riot / Multi-Device Tamper Lockdown Screen Sentry
+function showPermanentBanScreen(message) {
+  localStorage.setItem('avqr_permanent_banned', 'true');
+  const banScreen = document.getElementById('screenPermanentRiotBan');
+  if (banScreen) {
+    banScreen.classList.remove('hidden');
+  }
+  const views = document.querySelectorAll('.app-view');
+  views.forEach(v => v.classList.remove('active'));
+  const dock = document.getElementById('smartBottomDock');
+  if (dock) {
+    dock.classList.add('dock-hidden');
+    dock.style.display = 'none';
+  }
+  const modals = document.querySelectorAll('.modal-overlay, .neo-modal');
+  modals.forEach(m => m.classList.add('hidden'));
+
+  if (cameraStream) {
+    try {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    } catch (e) {}
+  }
+}
+
+function hidePermanentBanScreen() {
+  localStorage.removeItem('avqr_permanent_banned');
+  const banScreen = document.getElementById('screenPermanentRiotBan');
+  if (banScreen) banScreen.classList.add('hidden');
+  const dock = document.getElementById('smartBottomDock');
+  if (dock) {
+    dock.classList.remove('dock-hidden');
+    dock.style.display = '';
+  }
+}
+
+// Force immediate complete logout & deactivation on concurrent login or device switch
+function forceLogoutAndDeactivate(reasonMessage) {
+  state.isRegistered = false;
+  state.token = '';
+  state.sessionToken = '';
+  state.boundStudentId = '';
+  localStorage.removeItem('avqr_registered');
+  localStorage.removeItem('avqr_token');
+  localStorage.removeItem('avqr_session_token');
+  localStorage.removeItem('avqr_bound_student_id');
+
+  if (cameraStream) {
+    try {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    } catch (e) {}
+  }
+
+  showAuthGateOnly();
+  if (reasonMessage) {
+    alert(reasonMessage);
+  }
+}
+
+let sessionHeartbeatTimer = null;
+function startSessionHeartbeatMonitor() {
+  if (sessionHeartbeatTimer) clearInterval(sessionHeartbeatTimer);
+  sessionHeartbeatTimer = setInterval(async () => {
+    // 1. Check if user is marked banned locally or check status with Neon
+    if (localStorage.getItem('avqr_permanent_banned') === 'true') {
+      if (state.studentId) {
+        try {
+          const res = await fetch(`${SERVER_URL}/api/student/status/${state.studentId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (!data.isBanned) {
+              hidePermanentBanScreen();
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+      showPermanentBanScreen();
+      return;
+    }
+
+    if (!state.isRegistered || !state.studentId) return;
+
+    // 2. Active Session Sentry: Zero Concurrent Sessions across devices
+    try {
+      const res = await fetch(`${SERVER_URL}/api/auth/session-heartbeat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: state.studentId,
+          sessionToken: state.sessionToken,
+          deviceUuid: state.deviceUuid
+        })
+      });
+
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.reason === 'ACCOUNT_BANNED' || data.error === 'ACCOUNT_BANNED' || data.banned) {
+          showPermanentBanScreen(data.message);
+          return;
+        }
+      } else if (res.status === 401) {
+        const data = await res.json();
+        forceLogoutAndDeactivate(data.message || 'تم نقل الحساب أو تسجيل الدخول من جهاز آخر. تم تسجيل خروجك بالكامل.');
+      }
+    } catch (e) {}
+  }, 2500);
 }
 
 // Single Attendance per Session Helper
@@ -167,6 +279,13 @@ function renderHistoryTimeline() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initCinematicSmartSplash();
+
+  if (localStorage.getItem('avqr_permanent_banned') === 'true') {
+    showPermanentBanScreen();
+  }
+  startSessionHeartbeatMonitor();
+
   initAuthGateFlow();
   initDockNavigation();
   init3DCardEngine();
@@ -181,6 +300,107 @@ document.addEventListener('DOMContentLoaded', () => {
   checkUrlParamsForAutoAttendance();
   initDeviceTransferListener();
 });
+
+// -------------------------------------------------------------
+// 0. Cinematic Smart Loading Splash (Checkmark Video & Brand Carousel)
+// Guaranteed to appear EVERY SINGLE TIME on every visit and reload
+// -------------------------------------------------------------
+function initCinematicSmartSplash() {
+  const splash = document.getElementById('avqrSmartSplash');
+  if (!splash) return;
+
+  const video = document.getElementById('splashVideo');
+  const slideFue = document.getElementById('splashSlideFue');
+  const slideMoodle = document.getElementById('splashSlideMoodle');
+  const slideMatany = document.getElementById('splashSlideMatany');
+
+  let dismissed = false;
+
+  // Force reset splash visibility on every single execution
+  splash.classList.remove('dismissed');
+  splash.style.display = 'flex';
+  splash.style.opacity = '1';
+  splash.style.visibility = 'visible';
+
+  if (slideFue) slideFue.classList.add('active');
+  if (slideMoodle) slideMoodle.classList.remove('active');
+  if (slideMatany) slideMatany.classList.remove('active');
+
+  function dismissSplash() {
+    if (dismissed) return;
+    dismissed = true;
+    splash.classList.add('dismissed');
+    setTimeout(() => {
+      splash.style.display = 'none';
+      if (video) {
+        try { video.pause(); } catch (e) {}
+      }
+    }, 450);
+  }
+
+  // 1. Play video and freeze precisely on the settled full logo frame (around 3.68s)
+  if (video) {
+    try {
+      video.currentTime = 0;
+      video.load();
+    } catch (e) {}
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Autoplay policy prevented playback, proceed with partner timeline
+      });
+    }
+
+    video.addEventListener('timeupdate', () => {
+      // Freeze exactly on the full logo
+      if (video.currentTime >= 3.68) {
+        video.pause();
+      }
+    });
+
+    video.addEventListener('ended', () => {
+      video.pause();
+    });
+  }
+
+  // 2. Partner Showcase Carousel (With: FUE -> Moodle -> Matany Group)
+  // Stage 1: FUE (0s - 1.1s)
+  if (slideFue) slideFue.classList.add('active');
+
+  // Stage 2: Moodle (1.1s - 2.2s)
+  setTimeout(() => {
+    if (dismissed) return;
+    if (slideFue) slideFue.classList.remove('active');
+    if (slideMoodle) slideMoodle.classList.add('active');
+  }, 1100);
+
+  // Stage 3: Matany Group (2.2s - 4.1s) - Hero Partner with longest showcase
+  setTimeout(() => {
+    if (dismissed) return;
+    if (slideMoodle) slideMoodle.classList.remove('active');
+    if (slideMatany) slideMatany.classList.add('active');
+    playHaptic();
+  }, 2200);
+
+  // Stage 4: Cinematic Exit (4.1s)
+  setTimeout(() => {
+    dismissSplash();
+  }, 4100);
+
+  // Emergency safety timeout in case of any stall
+  setTimeout(() => {
+    dismissSplash();
+  }, 4800);
+}
+
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    initCinematicSmartSplash();
+  }
+});
+  }, 4800);
+}
 
 // -------------------------------------------------------------
 // 0. Card-First Authentication Gate & Strict Device Binding
@@ -265,11 +485,20 @@ function initAuthGateFlow() {
         })
       });
       const data = await res.json();
-      if (res.status === 403 && data.error === 'DEVICE_LOCKED') {
-        showDeviceTransferWaitingModal(data.studentId, data.transferId);
-        return;
+      if (res.status === 403) {
+        if (data.error === 'ACCOUNT_BANNED' || data.banned) {
+          showPermanentBanScreen(data.message);
+          return;
+        }
+        if (data.error === 'DEVICE_LOCKED') {
+          showDeviceTransferWaitingModal(data.studentId, data.transferId);
+          return;
+        }
       }
       if (res.ok && (data.student || data.cardData)) {
+        if (data.sessionToken) {
+          state.sessionToken = data.sessionToken;
+        }
         const studentInfo = data.student || {};
         const cardInfo = data.cardData || {};
         await processVerifiedCardData({
@@ -345,6 +574,10 @@ function showDeviceTransferWaitingModal(studentId, transferId) {
           state.level = data.student.level;
           state.photoUrl = data.student.photo_url;
           state.emergencyAccessKey = data.student.emergency_access_key;
+          if (data.sessionToken) {
+            state.sessionToken = data.sessionToken;
+          }
+          state.isRegistered = true;
           saveState();
 
           const authBioStudentName = document.getElementById('authBioStudentName');
@@ -386,9 +619,20 @@ function initDeviceTransferListener() {
   let activePendingTransfer = null;
 
   async function checkPendingTransfers() {
+    if (localStorage.getItem('avqr_permanent_banned') === 'true') {
+      showPermanentBanScreen();
+      return;
+    }
     if (!state.isRegistered || !state.studentId) return;
     try {
       const res = await fetch(`${SERVER_URL}/api/device-transfer/pending/${state.studentId}`);
+      if (res.status === 403) {
+        const d = await res.json();
+        if (d.error === 'ACCOUNT_BANNED' || d.banned) {
+          showPermanentBanScreen(d.message);
+          return;
+        }
+      }
       if (!res.ok) return;
       const data = await res.json();
       if (data.transfer && data.transfer.status === 'PENDING') {
@@ -426,12 +670,12 @@ function initDeviceTransferListener() {
       if (res.ok) {
         if (modalApproval) modalApproval.classList.add('hidden');
         if (banner) banner.classList.add('hidden');
-        alert('تمت الموافقة ونقل الحساب إلى الهاتف الجديد بنجاح. سيتم إلغاء تفعيل هذا الهاتف الآن.');
-        state.isRegistered = false;
-        state.boundStudentId = null;
-        saveState();
-        showAuthGateOnly();
+        forceLogoutAndDeactivate('تمت الموافقة ونقل الحساب إلى الهاتف الجديد بنجاح. تم إلغاء تفعيل هذا الهاتف بالكامل.');
       } else {
+        if (data.error === 'ACCOUNT_BANNED' || data.banned) {
+          showPermanentBanScreen(data.message);
+          return;
+        }
         alert(data.error || 'تعذر اعتماد النقل');
       }
     } catch (e) {
@@ -1019,11 +1263,21 @@ async function performAttendanceSubmission(payload) {
         token: payload.token,
         qrString: payload.qrString,
         studentId: state.studentId,
-        deviceUuid: state.deviceUuid
+        deviceUuid: state.deviceUuid,
+        sessionToken: state.sessionToken
       })
     });
 
     const data = await res.json();
+
+    if (res.status === 403 && (data.banned || data.error === 'ACCOUNT_BANNED')) {
+      showPermanentBanScreen(data.message);
+      return;
+    }
+    if (res.status === 401 && data.error === 'SESSION_REVOKED') {
+      forceLogoutAndDeactivate(data.message || 'تم تسجيل الدخول أو نقل الحساب إلى جهاز آخر.');
+      return;
+    }
 
     if (res.ok && data.success) {
       markSessionAsAttended(sid);
@@ -1072,7 +1326,10 @@ async function performAttendanceSubmission(payload) {
         });
       }
 
-      if (reason === 'JUST_EXPIRED') {
+      if (reason === 'ACCOUNT_BANNED' || data.banned) {
+        showPermanentBanScreen(msg);
+        return;
+      } else if (reason === 'JUST_EXPIRED') {
         showStatusBanner(
           'expired',
           'انتهت صلاحية الرمز للتو (تغير الكود)',

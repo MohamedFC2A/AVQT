@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
@@ -36,17 +37,30 @@ function broadcastToSession(sessionId, event, data) {
         }
     }
 }
+function generateSessionToken() {
+    return 'SES-' + crypto.randomUUID();
+}
+const BAN_MESSAGE = 'تم الحظر بسبب الاشتباه في أعمال الشغب. توجه للدعم والـ Admission.';
 // -------------------------------------------------------------
 // 1. Student Authentication & Registration (Step 1)
 // -------------------------------------------------------------
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { id, password, fullName, deviceUuid } = req.body;
+        const { id, password, fullName, deviceUuid, deviceName } = req.body;
         if (!id || typeof id !== 'string') {
             return res.status(400).json({ error: 'الرقم الجامعي مطلوب (مثال: 20264712)' });
         }
         const cleanId = id.trim();
-        // Strict Device Lock: verify device is not bound to another student
+        // 1. Check if student already exists and is banned
+        const existing = await db.getStudent(cleanId);
+        if (existing && existing.is_banned) {
+            return res.status(403).json({
+                error: 'ACCOUNT_BANNED',
+                banned: true,
+                message: existing.ban_reason || BAN_MESSAGE
+            });
+        }
+        // 2. Strict Device Lock: verify device is not bound to another student
         if (deviceUuid) {
             const boundStudent = await db.getStudentByDevice(deviceUuid);
             if (boundStudent && boundStudent.id !== cleanId) {
@@ -55,22 +69,49 @@ app.post('/api/auth/register', async (req, res) => {
                 });
             }
         }
+        // 3. Check for existing device transfer limit (Max 1 time)
+        if (existing && existing.device_uuid && deviceUuid && existing.device_uuid !== deviceUuid) {
+            if ((existing.device_transfers_count || 0) >= 1) {
+                // SECOND TRANSFER ATTEMPT -> IMMEDIATE PERMANENT BAN
+                await db.banStudent(cleanId, BAN_MESSAGE);
+                return res.status(403).json({
+                    error: 'ACCOUNT_BANNED',
+                    banned: true,
+                    message: BAN_MESSAGE
+                });
+            }
+            // FIRST TRANSFER: create transfer request without revealing limits
+            let transfer = await db.getPendingTransferRequest(cleanId);
+            if (!transfer || transfer.to_device_uuid !== deviceUuid) {
+                transfer = await db.createDeviceTransferRequest(cleanId, existing.device_uuid, deviceUuid, deviceName || 'هاتف محمول جديد');
+            }
+            return res.status(403).json({
+                error: 'DEVICE_LOCKED',
+                message: 'هذا الكارنيه مقترن بهاتف آخر. تم إرسال طلب اعتماد إلى الهاتف الأصلي المصرح به.',
+                studentId: cleanId,
+                transferId: transfer.id,
+                fromDeviceUuid: existing.device_uuid
+            });
+        }
         let passwordHash;
         if (password) {
             passwordHash = await bcrypt.hash(password, 10);
         }
+        const sessionToken = generateSessionToken();
         const student = await db.upsertStudent({
             id: cleanId,
-            full_name: fullName || `طالب ${cleanId}`,
+            full_name: fullName || existing?.full_name || `طالب ${cleanId}`,
             password_hash: passwordHash,
-            device_uuid: deviceUuid
+            device_uuid: deviceUuid || existing?.device_uuid,
+            active_session_token: sessionToken
         });
         const token = jwt.sign({ id: student.id }, JWT_SECRET, { expiresIn: '30d' });
         res.json({
             success: true,
             message: 'تم تسجيل الحساب وتوثيق الجهاز الجامعي بنجاح',
             student,
-            token
+            token,
+            sessionToken
         });
     }
     catch (error) {
@@ -79,12 +120,22 @@ app.post('/api/auth/register', async (req, res) => {
 });
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { id, password, deviceUuid } = req.body;
+        const { id, password, deviceUuid, deviceName } = req.body;
         if (!id) {
             return res.status(400).json({ error: 'الرقم الجامعي مطلوب' });
         }
         const cleanId = id.trim();
-        // Strict Device Lock
+        // Check if student exists
+        let student = await db.getStudent(cleanId);
+        // 1. Ban Check
+        if (student && student.is_banned) {
+            return res.status(403).json({
+                error: 'ACCOUNT_BANNED',
+                banned: true,
+                message: student.ban_reason || BAN_MESSAGE
+            });
+        }
+        // 2. Strict Device Lock Check: Is device bound to another student?
         if (deviceUuid) {
             const boundStudent = await db.getStudentByDevice(deviceUuid);
             if (boundStudent && boundStudent.id !== cleanId) {
@@ -93,32 +144,124 @@ app.post('/api/auth/login', async (req, res) => {
                 });
             }
         }
-        let student = await db.getStudent(cleanId);
+        // 3. Multi-Device Detection & Max 1 Transfer Policy
+        if (student && student.device_uuid && deviceUuid && student.device_uuid !== deviceUuid) {
+            if ((student.device_transfers_count || 0) >= 1) {
+                // SECOND TRANSFER ATTEMPT -> IMMEDIATE RIOT/TAMPER BAN
+                await db.banStudent(cleanId, BAN_MESSAGE);
+                return res.status(403).json({
+                    error: 'ACCOUNT_BANNED',
+                    banned: true,
+                    message: BAN_MESSAGE
+                });
+            }
+            // FIRST TRANSFER: create transfer request without revealing limits
+            let transfer = await db.getPendingTransferRequest(cleanId);
+            if (!transfer || transfer.to_device_uuid !== deviceUuid) {
+                transfer = await db.createDeviceTransferRequest(cleanId, student.device_uuid, deviceUuid, deviceName || 'هاتف محمول جديد');
+            }
+            return res.status(403).json({
+                error: 'DEVICE_LOCKED',
+                message: 'هذا الكارنيه مقترن بهاتف آخر. تم إرسال طلب اعتماد إلى الهاتف الأصلي المصرح به.',
+                studentId: cleanId,
+                transferId: transfer.id,
+                fromDeviceUuid: student.device_uuid
+            });
+        }
+        // If new student, auto-provision
+        const sessionToken = generateSessionToken();
         if (!student) {
-            // Auto-register convenience for student flow
-            student = await db.upsertStudent({ id: cleanId, device_uuid: deviceUuid });
+            student = await db.upsertStudent({
+                id: cleanId,
+                device_uuid: deviceUuid,
+                active_session_token: sessionToken
+            });
         }
         else {
-            if (deviceUuid && !student.device_uuid) {
-                student = await db.upsertStudent({ id: cleanId, device_uuid: deviceUuid });
-            }
             if (password && student.password_hash) {
                 const match = await bcrypt.compare(password, student.password_hash);
                 if (!match) {
                     return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
                 }
             }
+            student = await db.upsertStudent({
+                id: cleanId,
+                device_uuid: deviceUuid || student.device_uuid,
+                active_session_token: sessionToken
+            });
         }
         const token = jwt.sign({ id: student.id }, JWT_SECRET, { expiresIn: '30d' });
         res.json({
             success: true,
             message: 'تم تسجيل الدخول وتوثيق الجهاز بنجاح',
             student,
-            token
+            token,
+            sessionToken
         });
     }
     catch (error) {
         res.status(500).json({ error: error.message || 'خطأ في الخادم' });
+    }
+});
+// Real-Time Active Session Heartbeat & Concurrency Sentry
+app.post(['/api/auth/session-heartbeat', '/api/auth/heartbeat'], async (req, res) => {
+    try {
+        const { studentId, sessionToken, deviceUuid } = req.body;
+        if (!studentId) {
+            return res.status(400).json({ valid: false, error: 'studentId مطلوب' });
+        }
+        const verification = await db.verifySession(studentId, sessionToken, deviceUuid);
+        if (!verification.valid) {
+            if (verification.reason === 'ACCOUNT_BANNED') {
+                return res.status(403).json({
+                    valid: false,
+                    reason: 'ACCOUNT_BANNED',
+                    message: verification.student?.ban_reason || BAN_MESSAGE
+                });
+            }
+            if (verification.reason === 'DEVICE_MISMATCH' || verification.reason === 'SESSION_REVOKED') {
+                return res.status(401).json({
+                    valid: false,
+                    reason: verification.reason,
+                    message: 'تم تسجيل الدخول أو نقل الحساب إلى جهاز آخر. تم تسجيل خروجك بالكامل لحماية الحساب.'
+                });
+            }
+            return res.status(401).json({ valid: false, reason: verification.reason });
+        }
+        res.json({
+            valid: true,
+            studentId: verification.student.id,
+            cardVerified: verification.student.card_verified,
+            deviceUuid: verification.student.device_uuid
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// Check Student Status (Quick Check if Banned)
+app.get('/api/student/status/:id', async (req, res) => {
+    try {
+        const student = await db.getStudent(req.params.id);
+        if (!student) {
+            return res.status(404).json({ error: 'الطالب غير موجود' });
+        }
+        if (student.is_banned) {
+            return res.status(403).json({
+                isBanned: true,
+                reason: 'ACCOUNT_BANNED',
+                message: student.ban_reason || BAN_MESSAGE
+            });
+        }
+        res.json({
+            isBanned: false,
+            cardVerified: student.card_verified,
+            transfersCount: student.device_transfers_count,
+            deviceBound: Boolean(student.device_uuid)
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 // Biometric WebAuthn Mock / Registration API
@@ -127,6 +270,10 @@ app.post('/api/auth/biometric/register', async (req, res) => {
         const { studentId, credentialId, publicKey, deviceName } = req.body;
         if (!studentId || !credentialId) {
             return res.status(400).json({ error: 'بيانات البصمة غير مكتملة' });
+        }
+        const student = await db.getStudent(studentId);
+        if (student?.is_banned) {
+            return res.status(403).json({ error: 'ACCOUNT_BANNED', message: BAN_MESSAGE });
         }
         await db.saveCredential({
             id: credentialId,
@@ -147,21 +294,31 @@ app.post('/api/auth/biometric/register', async (req, res) => {
 });
 app.post('/api/auth/biometric/login', async (req, res) => {
     try {
-        const { studentId, credentialId } = req.body;
+        const { studentId, credentialId, deviceUuid } = req.body;
         let student = await db.getStudent(studentId);
         if (!student) {
             return res.status(404).json({ error: 'الطالب غير موجود' });
+        }
+        if (student.is_banned) {
+            return res.status(403).json({ error: 'ACCOUNT_BANNED', message: BAN_MESSAGE });
         }
         const cred = await db.getCredential(credentialId);
         if (cred && cred.student_id !== studentId) {
             return res.status(401).json({ error: 'البصمة غير مطابقة لهذا الحساب' });
         }
+        const sessionToken = generateSessionToken();
+        student = await db.upsertStudent({
+            id: student.id,
+            device_uuid: deviceUuid || student.device_uuid,
+            active_session_token: sessionToken
+        });
         const token = jwt.sign({ id: student.id }, JWT_SECRET, { expiresIn: '30d' });
         res.json({
             success: true,
             message: 'تم تسجيل الدخول بالبصمة البيومترية بنجاح',
             student,
-            token
+            token,
+            sessionToken
         });
     }
     catch (error) {
@@ -173,7 +330,7 @@ app.post('/api/auth/biometric/login', async (req, res) => {
 // -------------------------------------------------------------
 app.post('/api/student/verify-card', async (req, res) => {
     try {
-        const { studentId, cardUrlOrUuid, deviceUuid } = req.body;
+        const { studentId, cardUrlOrUuid, deviceUuid, deviceName } = req.body;
         if (!studentId && !cardUrlOrUuid) {
             return res.status(400).json({ error: 'رابط أو كود الكارنيه مطلوب' });
         }
@@ -184,22 +341,40 @@ app.post('/api/student/verify-card', async (req, res) => {
         if (!targetStudentId) {
             return res.status(400).json({ error: 'تعذر استخراج رقم الطالب من الكارنيه' });
         }
-        // Strict 1:1 Device Binding Verification
         const existingStudent = await db.getStudent(targetStudentId);
+        // 1. Permanent Ban check
+        if (existingStudent && existingStudent.is_banned) {
+            return res.status(403).json({
+                error: 'ACCOUNT_BANNED',
+                banned: true,
+                message: existingStudent.ban_reason || BAN_MESSAGE
+            });
+        }
+        // 2. Strict 1:1 Device Binding & Single Transfer Limit Check
         if (existingStudent && existingStudent.device_uuid && deviceUuid && existingStudent.device_uuid !== deviceUuid) {
-            // Conflict: Attempting to register on another phone
+            if ((existingStudent.device_transfers_count || 0) >= 1) {
+                // SECOND TRANSFER ATTEMPT -> BAN IMMEDIATELY
+                await db.banStudent(targetStudentId, BAN_MESSAGE);
+                return res.status(403).json({
+                    error: 'ACCOUNT_BANNED',
+                    banned: true,
+                    message: BAN_MESSAGE
+                });
+            }
+            // FIRST TRANSFER: Create transfer request without revealing limits
             let transfer = await db.getPendingTransferRequest(targetStudentId);
             if (!transfer || transfer.to_device_uuid !== deviceUuid) {
-                transfer = await db.createDeviceTransferRequest(targetStudentId, existingStudent.device_uuid, deviceUuid, req.body.deviceName || 'هاتف محمول جديد');
+                transfer = await db.createDeviceTransferRequest(targetStudentId, existingStudent.device_uuid, deviceUuid, deviceName || 'هاتف محمول جديد');
             }
             return res.status(403).json({
                 error: 'DEVICE_LOCKED',
-                message: 'هذا الكارنيه مقترن بهاتف آخر. تم إرسال طلب انتقال ذكي إلى الهاتف المعتمد للموافقة بالبصمة.',
+                message: 'هذا الكارنيه مقترن بهاتف آخر. تم إرسال طلب اعتماد إلى الهاتف الأصلي المصرح به.',
                 studentId: targetStudentId,
                 transferId: transfer.id,
                 fromDeviceUuid: existingStudent.device_uuid
             });
         }
+        const sessionToken = generateSessionToken();
         // Verify code match or update student record
         const updated = await db.upsertStudent({
             id: targetStudentId,
@@ -210,13 +385,15 @@ app.post('/api/student/verify-card', async (req, res) => {
             card_verified: true,
             card_ss_uuid: cardData.ssUuid,
             card_verified_at: new Date().toISOString(),
-            device_uuid: deviceUuid || existingStudent?.device_uuid
+            device_uuid: deviceUuid || existingStudent?.device_uuid,
+            active_session_token: sessionToken
         });
         res.json({
             success: true,
             message: 'تم التحقق من كارنيه جامعة المستقبل (FUE) واعتماد الاسم الرسمي للأبد بنجاح',
             student: updated,
-            cardData
+            cardData,
+            sessionToken
         });
     }
     catch (error) {
@@ -230,6 +407,9 @@ app.get('/api/student/profile/:id', async (req, res) => {
         if (!student) {
             return res.status(404).json({ error: 'الطالب غير موجود' });
         }
+        if (student.is_banned) {
+            return res.status(403).json({ error: 'ACCOUNT_BANNED', message: BAN_MESSAGE });
+        }
         res.json({ student });
     }
     catch (error) {
@@ -241,6 +421,10 @@ app.get('/api/student/profile/:id', async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/device-transfer/pending/:studentId', async (req, res) => {
     try {
+        const student = await db.getStudent(req.params.studentId);
+        if (student?.is_banned) {
+            return res.status(403).json({ error: 'ACCOUNT_BANNED', message: BAN_MESSAGE });
+        }
         const transfer = await db.getPendingTransferRequest(req.params.studentId);
         res.json({ transfer });
     }
@@ -257,7 +441,7 @@ app.get('/api/device-transfer/status/:requestId', async (req, res) => {
         if (transfer.status === 'APPROVED') {
             student = await db.getStudent(transfer.student_id);
         }
-        res.json({ transfer, student });
+        res.json({ transfer, student, sessionToken: student?.active_session_token });
     }
     catch (e) {
         res.status(500).json({ error: e.message });
@@ -274,8 +458,28 @@ app.post('/api/device-transfer/approve', async (req, res) => {
         if (authorizingDeviceUuid && transfer.from_device_uuid && transfer.from_device_uuid !== authorizingDeviceUuid) {
             return res.status(403).json({ error: 'غير مصرح: يجب الموافقة من الجهاز الأصلي المعتمد حصراً' });
         }
-        const resolved = await db.resolveTransferRequest(requestId, 'APPROVED');
-        res.json({ success: true, message: 'تم اعتماد نقل الحساب إلى الجهاز الجديد بنجاح', transfer: resolved });
+        const student = await db.getStudent(transfer.student_id);
+        if (!student) {
+            return res.status(404).json({ error: 'الطالب غير موجود' });
+        }
+        if (student.is_banned) {
+            return res.status(403).json({ error: 'ACCOUNT_BANNED', message: BAN_MESSAGE });
+        }
+        // Safety check: if already transferred once, ban immediately
+        if ((student.device_transfers_count || 0) >= 1) {
+            await db.banStudent(student.id, BAN_MESSAGE);
+            return res.status(403).json({ error: 'ACCOUNT_BANNED', message: BAN_MESSAGE });
+        }
+        // Generate new active session token for the new device
+        const newSessionToken = generateSessionToken();
+        const resolved = await db.resolveTransferRequest(requestId, 'APPROVED', newSessionToken);
+        res.json({
+            success: true,
+            message: 'تم اعتماد نقل الحساب إلى الجهاز الجديد بنجاح',
+            transfer: resolved?.transfer,
+            student: resolved?.student,
+            sessionToken: newSessionToken
+        });
     }
     catch (e) {
         res.status(500).json({ error: e.message });
@@ -285,7 +489,20 @@ app.post('/api/device-transfer/reject', async (req, res) => {
     try {
         const { requestId } = req.body;
         const resolved = await db.resolveTransferRequest(requestId, 'REJECTED');
-        res.json({ success: true, message: 'تم رفض طلب نقل الحساب بنجاح', transfer: resolved });
+        res.json({ success: true, message: 'تم رفض طلب نقل الحساب بنجاح', transfer: resolved?.transfer });
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// Admin / Support Unban Route
+app.post('/api/student/unban', async (req, res) => {
+    try {
+        const { studentId } = req.body;
+        if (!studentId)
+            return res.status(400).json({ error: 'studentId مطلوب' });
+        const student = await db.unbanStudent(studentId);
+        res.json({ success: true, message: 'تم فك حظر الطالب وإعادة تصفير عداد الأجهزة بنجاح', student });
     }
     catch (e) {
         res.status(500).json({ error: e.message });
@@ -306,7 +523,7 @@ app.post('/api/session/create', async (req, res) => {
             room_hall: roomHall || 'مدرج A - FUE',
             current_token: dynamicPayload.token,
             token_rotated_at: new Date().toISOString(),
-            auto_save_seconds: autoSaveSeconds || 180, // 3 Minutes default
+            auto_save_seconds: autoSaveSeconds || 180,
             status: 'ACTIVE',
             created_at: new Date().toISOString()
         });
@@ -425,18 +642,51 @@ app.get('/api/session/:id/stream', (req, res) => {
 // Student Submits Dynamic QR or 8-Digit Numeric Code Attendance
 app.post('/api/session/attend', async (req, res) => {
     try {
-        const { sessionId, qrString, token, numericCode, studentId, deviceUuid } = req.body;
+        const { sessionId, qrString, token, numericCode, studentId, deviceUuid, sessionToken } = req.body;
         if (!sessionId || !studentId) {
             return res.status(400).json({ error: 'معرف الجلسة ورقم الطالب مطلوبان' });
         }
-        // Strict Device Lock Check during attendance
+        const cleanId = String(studentId).trim();
+        const student = await db.getStudent(cleanId);
+        // 1. Permanent Ban check
+        if (student && student.is_banned) {
+            return res.status(403).json({
+                success: false,
+                error: 'ACCOUNT_BANNED',
+                banned: true,
+                message: student.ban_reason || BAN_MESSAGE
+            });
+        }
+        // 2. Strict Device Binding & Session Token check
         if (deviceUuid) {
             const boundStudent = await db.getStudentByDevice(deviceUuid);
-            if (boundStudent && boundStudent.id !== studentId) {
+            if (boundStudent && boundStudent.id !== cleanId) {
                 return res.status(403).json({
                     error: `تم رفض الحضور: هذا الجهاز مقترن رسمياً بحساب الطالب (${boundStudent.id}). يستحيل تسجيل حضور طالب آخر من نفس الجهاز حفاظاً على النزاهة الأكاديمية.`
                 });
             }
+        }
+        if (student && student.device_uuid && deviceUuid && student.device_uuid !== deviceUuid) {
+            if ((student.device_transfers_count || 0) >= 1) {
+                // SECOND DEVICE ATTEMPT DURING ATTENDANCE -> IMMEDIATE BAN
+                await db.banStudent(cleanId, BAN_MESSAGE);
+                return res.status(403).json({
+                    error: 'ACCOUNT_BANNED',
+                    banned: true,
+                    message: BAN_MESSAGE
+                });
+            }
+            return res.status(403).json({
+                error: 'DEVICE_LOCKED',
+                message: 'هذا الجهاز غير معتمد لهذا الحساب. يجب تسجيل الدخول ونقل الجهاز من الهاتف المعتمد.'
+            });
+        }
+        // 3. Concurrency check
+        if (student && student.active_session_token && sessionToken && student.active_session_token !== sessionToken) {
+            return res.status(401).json({
+                error: 'SESSION_REVOKED',
+                message: 'تم تسجيل الدخول من جهاز آخر أو إلغاء هذه الجلسة.'
+            });
         }
         // Extract token if raw qrString or URL was passed
         let effectiveToken = token;
@@ -459,8 +709,8 @@ app.post('/api/session/attend', async (req, res) => {
                 catch (e) { }
             }
         }
-        // 1. Check if student already attended this session (avoids duplicate processing and gives exact feedback)
-        const existingRecord = await db.getAttendanceRecord(effectiveSessionId, studentId);
+        // Check if student already attended this session
+        const existingRecord = await db.getAttendanceRecord(effectiveSessionId, cleanId);
         if (existingRecord) {
             let arabicTime = existingRecord.check_time;
             try {
@@ -479,7 +729,7 @@ app.post('/api/session/attend', async (req, res) => {
                 record: existingRecord
             });
         }
-        // 2. Check if session is closed
+        // Check if session is closed
         let session = await db.getSession(effectiveSessionId);
         if (session && session.status === 'CLOSED') {
             return res.status(400).json({
@@ -488,7 +738,7 @@ app.post('/api/session/attend', async (req, res) => {
                 error: 'جلسة تسجيل الحضور مغلقة رسمياً أو انتهت المدة المحددة (3 دقائق). لا يمكن قبول تسجيلات جديدة.'
             });
         }
-        // 3. Verify dynamic cryptographic token or 8-digit numeric code with exact time analysis
+        // Verify dynamic cryptographic token or 8-digit numeric code
         const verification = verifyDynamicTokenDetailed(effectiveSessionId, effectiveToken, effectiveNumericCode);
         if (!verification.valid) {
             return res.status(400).json({
@@ -511,12 +761,12 @@ app.post('/api/session/attend', async (req, res) => {
                 created_at: new Date().toISOString()
             });
         }
-        // 4. Verify or auto-provision student
-        let student = await db.getStudent(studentId);
-        if (!student) {
-            student = await db.upsertStudent({
-                id: studentId,
-                full_name: studentId === '20264712' ? 'Mohamed Ahmed Mohamed Matany Ahmed' : `طالب ${studentId}`,
+        // Verify or auto-provision student
+        let activeStudent = student;
+        if (!activeStudent) {
+            activeStudent = await db.upsertStudent({
+                id: cleanId,
+                full_name: cleanId === '20264712' ? 'Mohamed Ahmed Mohamed Matany Ahmed' : `طالب ${cleanId}`,
                 faculty: 'Engineering',
                 level: '1-First',
                 card_verified: true,
@@ -526,25 +776,25 @@ app.post('/api/session/attend', async (req, res) => {
             });
         }
         else {
-            const updates = { id: student.id };
-            if (!student.card_verified) {
+            const updates = { id: activeStudent.id };
+            if (!activeStudent.card_verified) {
                 updates.card_verified = true;
-                updates.full_name = student.id === '20264712' ? 'Mohamed Ahmed Mohamed Matany Ahmed' : student.full_name;
+                updates.full_name = activeStudent.id === '20264712' ? 'Mohamed Ahmed Mohamed Matany Ahmed' : activeStudent.full_name;
                 updates.card_verified_at = new Date().toISOString();
             }
-            if (deviceUuid && !student.device_uuid) {
+            if (deviceUuid && !activeStudent.device_uuid) {
                 updates.device_uuid = deviceUuid;
             }
-            student = await db.upsertStudent(updates);
+            activeStudent = await db.upsertStudent(updates);
         }
-        // 5. Record attendance in database (strictly single attendance per student per session)
-        const { record, isNew } = await db.recordAttendance(effectiveSessionId, student.id, student.full_name);
+        // Record attendance in database
+        const { record, isNew } = await db.recordAttendance(effectiveSessionId, activeStudent.id, activeStudent.full_name);
         if (isNew) {
-            // 6. Instant Real-time Broadcast to Doctor's Chrome Extension
+            // Instant Real-time Broadcast to Doctor's Chrome Extension
             broadcastToSession(effectiveSessionId, 'STUDENT_ATTENDED', {
-                studentId: student.id,
-                fullName: student.full_name,
-                faculty: student.faculty,
+                studentId: activeStudent.id,
+                fullName: activeStudent.full_name,
+                faculty: activeStudent.faculty,
                 checkTime: record.check_time,
                 recordId: record.id
             });
@@ -564,7 +814,7 @@ app.post('/api/session/attend', async (req, res) => {
             isNew: true,
             reason: 'ATTENDANCE_RECORDED',
             message: `تم إثبات وتسجيل حضورك بنجاح واعتماده في كشف المحاضر (بتاريخ: ${arabicTime}).`,
-            student,
+            student: activeStudent,
             record
         });
     }

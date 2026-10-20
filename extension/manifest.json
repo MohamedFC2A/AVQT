@@ -47,6 +47,7 @@
         "qrcode.min.js",
         "popup.css",
         "icons/*",
+        "assets/*",
         "ehdar-icon.svg",
         "ehdar-logo-full.svg",
         "avqr-logo.svg"

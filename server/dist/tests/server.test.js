@@ -1,4 +1,4 @@
-import { test, describe } from 'node:test';
+import { test, describe, after } from 'node:test';
 import assert from 'node:assert';
 import crypto from 'crypto';
 import { generateDynamicQrToken, verifyDynamicQrToken, verifyDynamicNumericCode, verifyDynamicTokenDetailed } from '../services/dynamicQrService.js';
@@ -130,5 +130,76 @@ describe('AVQR Database & Attendance Lifecycle', () => {
         // Non-existent device should return null
         const notFound = await db.getStudentByDevice('NON-EXISTENT-DEVICE');
         assert.strictEqual(notFound, null);
+    });
+    test('enforces Zero-Concurrent-Sessions, Single Transfer Limit, and Permanent Riot Ban', async () => {
+        const testId = '20268888';
+        const device1 = 'DEV-HWID-ALPHA-01';
+        const device2 = 'DEV-HWID-BETA-02';
+        const device3 = 'DEV-HWID-GAMMA-03';
+        // 1. Initial Registration on Device 1
+        const student = await db.upsertStudent({
+            id: testId,
+            full_name: 'Test Multi-Device Student',
+            device_uuid: device1,
+            device_transfers_count: 0,
+            is_banned: false,
+            active_session_token: 'SES-TOKEN-DEVICE1'
+        });
+        assert.strictEqual(student.device_uuid, device1);
+        assert.strictEqual(student.device_transfers_count, 0);
+        assert.strictEqual(student.is_banned, false);
+        // Verify session on Device 1 is VALID
+        const sess1 = await db.verifySession(testId, 'SES-TOKEN-DEVICE1', device1);
+        assert.strictEqual(sess1.valid, true);
+        // Verify session from another device fails with DEVICE_MISMATCH
+        const sessWrongDev = await db.verifySession(testId, 'SES-TOKEN-DEVICE1', device2);
+        assert.strictEqual(sessWrongDev.valid, false);
+        assert.strictEqual(sessWrongDev.reason, 'DEVICE_MISMATCH');
+        // 2. FIRST TRANSFER: Request transfer to Device 2
+        const transfer1 = await db.createDeviceTransferRequest(testId, device1, device2, 'Phone 2');
+        assert.strictEqual(transfer1.status, 'PENDING');
+        assert.strictEqual(transfer1.from_device_uuid, device1);
+        assert.strictEqual(transfer1.to_device_uuid, device2);
+        // Approve first transfer (increments transfers count to 1, rotates session token)
+        const approveResult = await db.resolveTransferRequest(transfer1.id, 'APPROVED', 'SES-TOKEN-DEVICE2');
+        assert.ok(approveResult);
+        assert.strictEqual(approveResult.transfer.status, 'APPROVED');
+        // Check student state after 1st transfer
+        const studentAfterTrf1 = await db.getStudent(testId);
+        assert.ok(studentAfterTrf1);
+        assert.strictEqual(studentAfterTrf1.device_uuid, device2, 'Device must now be Device 2');
+        assert.strictEqual(studentAfterTrf1.device_transfers_count, 1, 'Transfer count must be 1');
+        assert.strictEqual(studentAfterTrf1.is_banned, false);
+        // Old Device 1 session is now TERMINATED (DEVICE_MISMATCH & SESSION_REVOKED)
+        const oldDeviceCheck = await db.verifySession(testId, 'SES-TOKEN-DEVICE1', device1);
+        assert.strictEqual(oldDeviceCheck.valid, false);
+        // New Device 2 session is ACTIVE
+        const newDeviceCheck = await db.verifySession(testId, 'SES-TOKEN-DEVICE2', device2);
+        assert.strictEqual(newDeviceCheck.valid, true);
+        // 3. SECOND TRANSFER ATTEMPT (SUSPICIOUS / RIOT TRIGGER):
+        // Student attempts to switch again (transfer count is already 1)
+        assert.ok(studentAfterTrf1.device_transfers_count >= 1, 'Student reached maximum 1 transfer limit');
+        // Server detects second transfer attempt and triggers IMMEDIATE RIOT BAN
+        const bannedStudent = await db.banStudent(testId, 'تم الحظر بسبب الاشتباه في أعمال الشغب. توجه للدعم والـ Admission.');
+        assert.ok(bannedStudent);
+        assert.strictEqual(bannedStudent.is_banned, true);
+        assert.match(bannedStudent.ban_reason, /أعمال الشغب/);
+        // After Ban: Any session verification MUST fail with ACCOUNT_BANNED
+        const bannedCheck = await db.verifySession(testId, 'SES-TOKEN-DEVICE2', device2);
+        assert.strictEqual(bannedCheck.valid, false);
+        assert.strictEqual(bannedCheck.reason, 'ACCOUNT_BANNED');
+        // 4. NEON.TECH EASY UNBAN:
+        // Admin runs single UPDATE query or unban in Neon
+        const unbanned = await db.unbanStudent(testId);
+        assert.ok(unbanned);
+        assert.strictEqual(unbanned.is_banned, false);
+        assert.strictEqual(unbanned.device_transfers_count, 0);
+        // Session is now unbanned and ready for re-authentication
+        const afterUnban = await db.getStudent(testId);
+        assert.strictEqual(afterUnban?.is_banned, false);
+        assert.strictEqual(afterUnban?.device_transfers_count, 0);
+    });
+    after(async () => {
+        await db.closePool();
     });
 });
