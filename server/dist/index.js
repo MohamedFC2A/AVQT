@@ -184,6 +184,22 @@ app.post('/api/student/verify-card', async (req, res) => {
         if (!targetStudentId) {
             return res.status(400).json({ error: 'تعذر استخراج رقم الطالب من الكارنيه' });
         }
+        // Strict 1:1 Device Binding Verification
+        const existingStudent = await db.getStudent(targetStudentId);
+        if (existingStudent && existingStudent.device_uuid && deviceUuid && existingStudent.device_uuid !== deviceUuid) {
+            // Conflict: Attempting to register on another phone
+            let transfer = await db.getPendingTransferRequest(targetStudentId);
+            if (!transfer || transfer.to_device_uuid !== deviceUuid) {
+                transfer = await db.createDeviceTransferRequest(targetStudentId, existingStudent.device_uuid, deviceUuid, req.body.deviceName || 'هاتف محمول جديد');
+            }
+            return res.status(403).json({
+                error: 'DEVICE_LOCKED',
+                message: 'هذا الكارنيه مقترن بهاتف آخر. تم إرسال طلب انتقال ذكي إلى الهاتف المعتمد للموافقة بالبصمة.',
+                studentId: targetStudentId,
+                transferId: transfer.id,
+                fromDeviceUuid: existingStudent.device_uuid
+            });
+        }
         // Verify code match or update student record
         const updated = await db.upsertStudent({
             id: targetStudentId,
@@ -194,7 +210,7 @@ app.post('/api/student/verify-card', async (req, res) => {
             card_verified: true,
             card_ss_uuid: cardData.ssUuid,
             card_verified_at: new Date().toISOString(),
-            device_uuid: deviceUuid
+            device_uuid: deviceUuid || existingStudent?.device_uuid
         });
         res.json({
             success: true,
@@ -218,6 +234,61 @@ app.get('/api/student/profile/:id', async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+// -------------------------------------------------------------
+// 2.1 Biometric Sovereign Device Transfer Endpoints
+// -------------------------------------------------------------
+app.get('/api/device-transfer/pending/:studentId', async (req, res) => {
+    try {
+        const transfer = await db.getPendingTransferRequest(req.params.studentId);
+        res.json({ transfer });
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+app.get('/api/device-transfer/status/:requestId', async (req, res) => {
+    try {
+        const transfer = await db.getTransferRequest(req.params.requestId);
+        if (!transfer)
+            return res.status(404).json({ error: 'طلب النقل غير موجود' });
+        let student = null;
+        if (transfer.status === 'APPROVED') {
+            student = await db.getStudent(transfer.student_id);
+        }
+        res.json({ transfer, student });
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+app.post('/api/device-transfer/approve', async (req, res) => {
+    try {
+        const { requestId, authorizingDeviceUuid } = req.body;
+        const transfer = await db.getTransferRequest(requestId);
+        if (!transfer)
+            return res.status(404).json({ error: 'طلب النقل غير موجود' });
+        if (transfer.status !== 'PENDING')
+            return res.status(400).json({ error: 'تم البت في هذا الطلب مسبقاً' });
+        if (authorizingDeviceUuid && transfer.from_device_uuid && transfer.from_device_uuid !== authorizingDeviceUuid) {
+            return res.status(403).json({ error: 'غير مصرح: يجب الموافقة من الجهاز الأصلي المعتمد حصراً' });
+        }
+        const resolved = await db.resolveTransferRequest(requestId, 'APPROVED');
+        res.json({ success: true, message: 'تم اعتماد نقل الحساب إلى الجهاز الجديد بنجاح', transfer: resolved });
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+app.post('/api/device-transfer/reject', async (req, res) => {
+    try {
+        const { requestId } = req.body;
+        const resolved = await db.resolveTransferRequest(requestId, 'REJECTED');
+        res.json({ success: true, message: 'تم رفض طلب نقل الحساب بنجاح', transfer: resolved });
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 // -------------------------------------------------------------

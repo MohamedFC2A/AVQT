@@ -60,6 +60,17 @@ export interface BiometricCredential {
   created_at: string;
 }
 
+export interface DeviceTransferRequest {
+  id: string;
+  student_id: string;
+  from_device_uuid: string;
+  to_device_uuid: string;
+  to_device_name: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  created_at: string;
+  resolved_at?: string;
+}
+
 import fs from 'fs';
 import path from 'path';
 
@@ -70,6 +81,7 @@ class MemoryStore {
   students: Map<string, Student> = new Map();
   credentials: Map<string, BiometricCredential> = new Map();
   sessions: Map<string, AttendanceSession> = new Map();
+  transfers: Map<string, DeviceTransferRequest> = new Map();
   records: AttendanceRecord[] = [];
   recordIdSeq = 1;
 
@@ -83,6 +95,7 @@ class MemoryStore {
         students: Array.from(this.students.entries()),
         credentials: Array.from(this.credentials.entries()),
         sessions: Array.from(this.sessions.entries()),
+        transfers: Array.from(this.transfers.entries()),
         records: this.records,
         recordIdSeq: this.recordIdSeq
       };
@@ -98,6 +111,7 @@ class MemoryStore {
         if (parsed.students) this.students = new Map(parsed.students);
         if (parsed.credentials) this.credentials = new Map(parsed.credentials);
         if (parsed.sessions) this.sessions = new Map(parsed.sessions);
+        if (parsed.transfers) this.transfers = new Map(parsed.transfers);
         if (parsed.records) this.records = parsed.records;
         if (parsed.recordIdSeq) this.recordIdSeq = parsed.recordIdSeq;
       }
@@ -402,5 +416,52 @@ export const db = {
       return res.rows;
     }
     return memoryStore.records.filter(r => r.session_id === sessionId);
+  },
+
+  async createDeviceTransferRequest(studentId: string, fromDevice: string, toDevice: string, toDeviceName: string): Promise<DeviceTransferRequest> {
+    const id = 'TRF-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+    const trf: DeviceTransferRequest = {
+      id,
+      student_id: studentId,
+      from_device_uuid: fromDevice,
+      to_device_uuid: toDevice,
+      to_device_name: toDeviceName || 'هاتف ذكي جديد',
+      status: 'PENDING',
+      created_at: new Date().toISOString()
+    };
+    memoryStore.transfers.set(id, trf);
+    memoryStore.save();
+    return trf;
+  },
+
+  async getPendingTransferRequest(studentId: string): Promise<DeviceTransferRequest | null> {
+    for (const trf of memoryStore.transfers.values()) {
+      if (trf.student_id === studentId && trf.status === 'PENDING') {
+        return trf;
+      }
+    }
+    return null;
+  },
+
+  async getTransferRequest(requestId: string): Promise<DeviceTransferRequest | null> {
+    return memoryStore.transfers.get(requestId) || null;
+  },
+
+  async resolveTransferRequest(requestId: string, status: 'APPROVED' | 'REJECTED'): Promise<DeviceTransferRequest | null> {
+    const trf = memoryStore.transfers.get(requestId);
+    if (!trf) return null;
+    trf.status = status;
+    trf.resolved_at = new Date().toISOString();
+
+    if (status === 'APPROVED') {
+      const student = memoryStore.students.get(trf.student_id);
+      if (student) {
+        student.device_uuid = trf.to_device_uuid;
+        memoryStore.students.set(student.id, student);
+      }
+    }
+    memoryStore.transfers.set(requestId, trf);
+    memoryStore.save();
+    return trf;
   }
 };

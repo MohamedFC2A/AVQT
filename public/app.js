@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistoryTimeline();
   checkLiveSessionStatus();
   checkUrlParamsForAutoAttendance();
+  initDeviceTransferListener();
 });
 
 // -------------------------------------------------------------
@@ -145,6 +146,8 @@ function initAuthGateFlow() {
   const btnConfirmBio = document.getElementById('btnConfirmBiometricAuth');
   const authBioStudentName = document.getElementById('authBioStudentName');
   const authBioStudentId = document.getElementById('authBioStudentId');
+  const authBioStudentFac = document.getElementById('authBioStudentFac');
+  const authBioStudentPhoto = document.getElementById('authBioStudentPhoto');
 
   // Gate Check: If not registered, show ONLY auth gate and hide bottom dock
   if (!state.isRegistered) {
@@ -190,7 +193,9 @@ function initAuthGateFlow() {
     saveState();
 
     if (authBioStudentName) authBioStudentName.textContent = fullName;
-    if (authBioStudentId) authBioStudentId.textContent = `الرقم الجامعي: ${studentId} • ${faculty} • ${level}`;
+    if (authBioStudentId) authBioStudentId.textContent = `الرقم الجامعي: ${studentId}`;
+    if (authBioStudentFac) authBioStudentFac.textContent = `${faculty} • ${level}`;
+    if (authBioStudentPhoto && photoUrl) authBioStudentPhoto.src = photoUrl;
 
     if (authCardStep) authCardStep.classList.add('hidden');
     if (authBioStep) authBioStep.classList.remove('hidden');
@@ -203,15 +208,21 @@ function initAuthGateFlow() {
   window.processVerifiedCardFromQr = async function(val) {
     showStatusBanner('info', 'جاري مطابقة وتوثيق الكارنيه مع قاعدة بيانات FUE...', 'جاري استخراج بيانات الطالب والصورة الرسمية من نظام الجامعة...');
     try {
+      const devName = navigator.userAgent.includes('iPhone') ? 'Apple iPhone' : (navigator.userAgent.includes('Android') ? 'Android Device' : 'متصفح ويب');
       const res = await fetch(`${SERVER_URL}/api/student/verify-card`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cardUrlOrUuid: val,
-          deviceUuid: state.deviceUuid
+          deviceUuid: state.deviceUuid,
+          deviceName: devName
         })
       });
       const data = await res.json();
+      if (res.status === 403 && data.error === 'DEVICE_LOCKED') {
+        showDeviceTransferWaitingModal(data.studentId, data.transferId);
+        return;
+      }
       if (res.ok && (data.student || data.cardData)) {
         const studentInfo = data.student || {};
         const cardInfo = data.cardData || {};
@@ -247,6 +258,164 @@ function initAuthGateFlow() {
       btnConfirmBio.disabled = false;
     });
   }
+}
+
+// -------------------------------------------------------------
+// 0.1 Cross-Device Transfer Coordination & Polling
+// -------------------------------------------------------------
+let transferPollTimer = null;
+
+function showDeviceTransferWaitingModal(studentId, transferId) {
+  const modal = document.getElementById('modalDeviceTransferWaiting');
+  const statusTxt = document.getElementById('transferWaitingStatusText');
+  const btnCancel = document.getElementById('btnCancelDeviceTransfer');
+
+  if (modal) modal.classList.remove('hidden');
+  if (statusTxt) statusTxt.textContent = 'بانتظار موافقة صاحب الحساب بالبصمة على الهاتف الأصلي...';
+
+  if (btnCancel) {
+    btnCancel.onclick = () => {
+      if (transferPollTimer) clearInterval(transferPollTimer);
+      if (modal) modal.classList.add('hidden');
+    };
+  }
+
+  if (transferPollTimer) clearInterval(transferPollTimer);
+  transferPollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${SERVER_URL}/api/device-transfer/status/${transferId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.transfer && data.transfer.status === 'APPROVED') {
+        clearInterval(transferPollTimer);
+        if (modal) modal.classList.add('hidden');
+        playAudioChime();
+        playHaptic();
+        if (data.student) {
+          state.studentId = data.student.id;
+          state.boundStudentId = data.student.id;
+          state.fullName = data.student.full_name;
+          state.faculty = data.student.faculty;
+          state.level = data.student.level;
+          state.photoUrl = data.student.photo_url;
+          state.emergencyAccessKey = data.student.emergency_access_key;
+          saveState();
+
+          const authBioStudentName = document.getElementById('authBioStudentName');
+          const authBioStudentId = document.getElementById('authBioStudentId');
+          const authBioStudentFac = document.getElementById('authBioStudentFac');
+          const authBioStudentPhoto = document.getElementById('authBioStudentPhoto');
+          const authCardStep = document.getElementById('authCardStep');
+          const authBioStep = document.getElementById('authBioStep');
+
+          if (authBioStudentName) authBioStudentName.textContent = state.fullName;
+          if (authBioStudentId) authBioStudentId.textContent = `الرقم الجامعي: ${state.studentId}`;
+          if (authBioStudentFac) authBioStudentFac.textContent = `${state.faculty} • ${state.level}`;
+          if (authBioStudentPhoto && state.photoUrl) authBioStudentPhoto.src = state.photoUrl;
+
+          if (authCardStep) authCardStep.classList.add('hidden');
+          if (authBioStep) authBioStep.classList.remove('hidden');
+        }
+      } else if (data.transfer && data.transfer.status === 'REJECTED') {
+        clearInterval(transferPollTimer);
+        if (modal) modal.classList.add('hidden');
+        alert('تم رفض طلب نقل الحساب من قِبل الهاتف المعتمد الأصلي.');
+      }
+    } catch (e) {
+      console.warn('Transfer poll error:', e);
+    }
+  }, 2500);
+}
+
+function initDeviceTransferListener() {
+  const modalApproval = document.getElementById('modalDeviceTransferApproval');
+  const targetDeviceNameEl = document.getElementById('transferTargetDeviceName');
+  const btnApprove = document.getElementById('btnApproveDeviceTransfer');
+  const btnReject = document.getElementById('btnRejectDeviceTransfer');
+  const banner = document.getElementById('secPendingTransferBanner');
+  const bannerDeviceName = document.getElementById('pendingTransferDeviceName');
+  const bannerApprove = document.getElementById('btnBannerApproveTransfer');
+  const bannerReject = document.getElementById('btnBannerRejectTransfer');
+
+  let activePendingTransfer = null;
+
+  async function checkPendingTransfers() {
+    if (!state.isRegistered || !state.studentId) return;
+    try {
+      const res = await fetch(`${SERVER_URL}/api/device-transfer/pending/${state.studentId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.transfer && data.transfer.status === 'PENDING') {
+        activePendingTransfer = data.transfer;
+        const devName = data.transfer.to_device_name || 'هاتف محمول جديد';
+        if (targetDeviceNameEl) targetDeviceNameEl.textContent = devName;
+        if (bannerDeviceName) bannerDeviceName.textContent = devName;
+        if (banner) banner.classList.remove('hidden');
+        if (modalApproval && modalApproval.classList.contains('hidden')) {
+          modalApproval.classList.remove('hidden');
+          playHaptic();
+        }
+      } else {
+        activePendingTransfer = null;
+        if (modalApproval) modalApproval.classList.add('hidden');
+        if (banner) banner.classList.add('hidden');
+      }
+    } catch (e) {
+      // background poll silently ignores error
+    }
+  }
+
+  async function handleApprove() {
+    if (!activePendingTransfer) return;
+    try {
+      const res = await fetch(`${SERVER_URL}/api/device-transfer/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: activePendingTransfer.id,
+          authorizingDeviceUuid: state.deviceUuid
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (modalApproval) modalApproval.classList.add('hidden');
+        if (banner) banner.classList.add('hidden');
+        alert('تمت الموافقة ونقل الحساب إلى الهاتف الجديد بنجاح. سيتم إلغاء تفعيل هذا الهاتف الآن.');
+        state.isRegistered = false;
+        state.boundStudentId = null;
+        saveState();
+        showAuthGateOnly();
+      } else {
+        alert(data.error || 'تعذر اعتماد النقل');
+      }
+    } catch (e) {
+      alert('خطأ أثناء معالجة الطلب: ' + e.message);
+    }
+  }
+
+  async function handleReject() {
+    if (!activePendingTransfer) return;
+    try {
+      await fetch(`${SERVER_URL}/api/device-transfer/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: activePendingTransfer.id })
+      });
+      if (modalApproval) modalApproval.classList.add('hidden');
+      if (banner) banner.classList.add('hidden');
+      activePendingTransfer = null;
+    } catch (e) {
+      alert('خطأ أثناء الرفض: ' + e.message);
+    }
+  }
+
+  if (btnApprove) btnApprove.onclick = handleApprove;
+  if (btnReject) btnReject.onclick = handleReject;
+  if (bannerApprove) bannerApprove.onclick = handleApprove;
+  if (bannerReject) bannerReject.onclick = handleReject;
+
+  setInterval(checkPendingTransfers, 3000);
+  checkPendingTransfers();
 }
 
 function showAuthGateOnly() {
@@ -321,8 +490,8 @@ function renderCardOfficialQr(targetUrl) {
   if (!qrCanvas || !window.QRCode || typeof window.QRCode.toCanvas !== 'function') return;
   const url = targetUrl || state.cardUrl || (state.studentId ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214` : 'https://fue.edu.eg');
   window.QRCode.toCanvas(qrCanvas, url, {
-    width: 140,
-    margin: 1,
+    width: 100,
+    margin: 2,
     color: { dark: '#0F172A', light: '#FFFFFF' }
   }, (err) => {
     if (err) console.warn('Card QR render err:', err);
@@ -468,7 +637,7 @@ function initEmergencyVaultKey() {
     const key = state.emergencyAccessKey || '•••• •••• •••• ••••';
     if (!vaultText) return;
     vaultText.textContent = isRevealed ? (state.emergencyAccessKey || 'FUE-SEC-2026-KEY') : '•••• •••• •••• ••••';
-    if (btnToggle) btnToggle.textContent = isRevealed ? '🔒 إخفاء' : '👁️ إظهار';
+    if (btnToggle) btnToggle.textContent = isRevealed ? 'إخفاء' : 'إظهار';
   }
 
   if (btnToggle) {
@@ -484,10 +653,10 @@ function initEmergencyVaultKey() {
       const key = state.emergencyAccessKey || 'FUE-SEC-2026-KEY';
       try {
         await navigator.clipboard.writeText(key);
-        btnCopy.textContent = '✅ تم النسخ';
+        btnCopy.textContent = 'تم النسخ';
         playHaptic();
         setTimeout(() => {
-          btnCopy.textContent = '📋 نسخ';
+          btnCopy.textContent = 'نسخ';
         }, 2000);
       } catch (e) {
         alert('مفتاح الأمان الخاص بك: ' + key);
@@ -691,10 +860,10 @@ function showInstantAttendOverlay(stateType, payload = {}) {
     const timeEl = document.getElementById('instantSummaryTime');
 
     if (payload.alreadyAttended) {
-      if (headingEl) headingEl.textContent = 'أنت مسجل بالفعل في المحاضرة! 🎉';
+      if (headingEl) headingEl.textContent = 'أنت مسجل بالفعل في المحاضرة';
       if (msgEl) msgEl.textContent = payload.message || 'تم تسجيل حضورك مسبقاً ومعتمد رسمياً في السحابة الأكاديمية بنسبة دقة 100%.';
     } else {
-      if (headingEl) headingEl.textContent = 'تم إثبات الحضور بنجاح! 🎓';
+      if (headingEl) headingEl.textContent = 'تم إثبات الحضور بنجاح';
       if (msgEl) msgEl.textContent = payload.message || 'تم تفعيل حضورك في كشف المحاضر بالسحابة الأكاديمية فوراً بدون أخطاء.';
     }
 
@@ -1334,7 +1503,7 @@ async function executeBiometricVerification() {
     if (desc) desc.textContent = `طالب موثق: ${state.fullName || state.studentId || 'طالب مقيد'}`;
     if (status) {
       status.className = 'bio-scan-status success';
-      status.textContent = `✓ تم التحقق بنسبة 100% عبر ${authSource}`;
+      status.textContent = `تم التحقق بنسبة 100% عبر ${authSource}`;
     }
 
     playHaptic();

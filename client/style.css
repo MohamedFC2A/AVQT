@@ -1,7 +1,7 @@
 :root {
-  --primary-red: #B91C1C;
-  --primary-red-hover: #DC2626;
-  --crimson-dark: #8B0000;
+  --primary-red: #0B63E5; /* Replaced with e7dar brand blue */
+  --primary-red-hover: #084ECC;
+  --crimson-dark: #8A151B;
   --brand-blue: #0B63E5;
   --brand-blue-hover: #084ECC;
   --brand-teal: #10B981;
@@ -16,7 +16,7 @@
   --shadow-sm: 2px 2px 0px var(--neo-black);
   --shadow-lg: 6px 6px 0px var(--neo-black);
   
-  --color-emerald: #059669;
+  --color-emerald: #10B981;
   --color-amber: #D97706;
   --color-gray: #475569;
   --color-light-gray: #E2E8F0;
@@ -801,6 +801,8 @@ body {
   flex-direction: column;
   justify-content: space-between;
   background: #FFFFFF;
+  direction: ltr !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 /* Back Face */
@@ -829,103 +831,132 @@ body {
   z-index: 10;
 }
 
-/* Front Card Elements */
+/* Front Card Elements - Matching FUE Official Card Exactly */
 .fue-front-topbar {
-  background: #B91C1C;
+  background: #8A151B;
   color: #FFFFFF;
-  padding: 6px 12px;
+  padding: 6px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 48px;
+  height: 50px;
   box-sizing: border-box;
   position: relative;
+  direction: ltr !important;
 }
 
 .fue-topbar-left {
   display: flex;
-  flex-direction: column;
+  align-items: center;
 }
 
 .fue-year-txt {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 900;
   letter-spacing: 0.5px;
   color: #FFFFFF;
+  font-family: Arial, sans-serif;
 }
 
 .fue-topbar-right {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.fue-brand-header-wrap {
+  display: flex;
+  align-items: center;
   gap: 6px;
-  text-align: right;
+}
+
+.fue-shield-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 2px;
 }
 
 .fue-brand-text {
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
+  line-height: 1.05;
+  text-align: left;
 }
 
 .fue-brand-title {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.5px;
-  text-transform: uppercase;
+  color: #FFFFFF;
 }
 
 .fue-brand-sub {
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   font-weight: 700;
-  opacity: 0.95;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.fue-brand-ar {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.fue-level-badge-row {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
 }
 
 .fue-level-tag {
   background: #FFFFFF;
-  color: #B91C1C;
+  color: #8A151B;
   font-weight: 900;
   font-size: 0.72rem;
-  padding: 2px 6px;
+  padding: 3px 6px;
   border-radius: 3px;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
-.fue-shield-img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-}
-
-/* Card Center Details */
+/* Card Center Details: Photo Left, Info Center, QR Right */
 .fue-front-body {
   display: flex;
-  align-items: center;
+  flex-direction: row;
+  align-items: stretch;
   justify-content: space-between;
   padding: 6px 12px;
   flex: 1;
   background: #FFFFFF;
-  gap: 8px;
+  gap: 10px;
+  box-sizing: border-box;
+  direction: ltr !important;
 }
 
 .fue-photo-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 78px;
+  width: 88px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 5;
 }
 
 .fue-photo-frame {
-  width: 72px;
-  height: 82px;
-  border-radius: 36px 36px 4px 4px;
-  border: 2px solid #121212;
+  width: 82px;
+  height: 96px;
+  border-radius: 41px 41px 36px 36px;
+  border: 4px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2), 0 0 0 1.5px #CBD5E1;
   overflow: hidden;
   background: #E2E8F0;
+  margin-top: -18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 1px 1px 0px #121212;
 }
 
 .fue-photo-img {
@@ -935,12 +966,14 @@ body {
   object-position: top center;
 }
 
-.fue-serial-txt {
-  font-size: 0.85rem;
+.fue-serial-dots {
+  font-size: 1.1rem;
   font-weight: 900;
-  color: #B91C1C;
-  margin-top: 3px;
+  color: #8A151B;
+  margin-top: 4px;
+  letter-spacing: 1.5px;
   font-family: monospace;
+  line-height: 1;
 }
 
 .fue-info-col {
@@ -948,92 +981,157 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  text-align: right;
-  gap: 2px;
+  text-align: left;
+  gap: 4px;
+  padding-left: 2px;
+  direction: ltr !important;
 }
 
-.fue-student-name {
-  font-size: 0.86rem;
+.fue-info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.fue-lbl-bilingual {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #64748B;
+}
+
+.fue-val-name {
+  font-size: 0.88rem;
   font-weight: 900;
-  color: #121212;
-  line-height: 1.2;
+  color: #0F172A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 170px;
+  max-width: 155px;
+  line-height: 1.2;
 }
 
-.fue-student-faculty {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #334155;
+.fue-val-fac {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1E293B;
+  line-height: 1.2;
 }
 
-.fue-student-id-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.fue-id-block {
   margin-top: 2px;
 }
 
-.fue-id-lbl {
-  font-size: 0.85rem;
+.fue-id-txt {
+  font-size: 0.95rem;
   font-weight: 900;
-  color: #B91C1C;
-}
-
-.fue-id-val {
-  font-size: 1.05rem;
-  font-weight: 900;
-  color: #B91C1C;
-  font-family: monospace;
+  color: #8A151B;
+  font-family: 'Courier New', Courier, monospace;
   letter-spacing: 0.5px;
 }
 
+/* High-Contrast Unclipped QR Code Column */
 .fue-qr-col {
-  width: 76px;
-  height: 76px;
-  border: 2px solid #121212;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #FFFFFF;
+  width: 104px;
+  height: 104px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 2px 2px 0px #121212;
+  overflow: visible;
+  align-self: center;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 
-.fue-qr-col canvas, .fue-qr-col img {
-  width: 100%;
-  height: 100%;
+.fue-qr-canvas-wrapper {
+  width: 100px;
+  height: 100px;
+  padding: 2px;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 6px;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.fue-qr-canvas-wrapper canvas {
+  width: 96px !important;
+  height: 96px !important;
   display: block;
 }
 
 /* Card Bottom Bar */
 .fue-front-footer {
-  background: #B91C1C;
+  background: #8A151B;
   color: #FFFFFF;
-  padding: 4px 10px;
+  padding: 4px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 0.65rem;
   font-weight: 800;
+  box-sizing: border-box;
+  min-height: 28px;
+  direction: ltr !important;
 }
 
-.fue-footer-phone {
+.fue-footer-phone-col {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.fue-phone-line {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.fue-footer-badges {
+.fue-phone-num {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.fue-web-link {
+  font-size: 0.60rem;
+  opacity: 0.9;
+}
+
+.fue-footer-badges-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.fue-ranking-title {
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  opacity: 0.95;
+}
+
+.fue-ranking-badges {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.62rem;
-  opacity: 0.95;
+  gap: 3px;
+}
+
+.ranking-pill.pill-gold {
+  background: #F59E0B;
+  color: #000000;
+  font-size: 0.52rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 2px;
+  line-height: 1.1;
 }
 
 /* Back Card Elements */
@@ -1046,7 +1144,7 @@ body {
 .fue-back-title {
   font-size: 1.05rem;
   font-weight: 900;
-  color: #B91C1C;
+  color: #8A151B;
   line-height: 1.2;
 }
 
@@ -1063,8 +1161,8 @@ body {
   align-items: center;
   gap: 6px;
   background: #FEE2E2;
-  color: #B91C1C;
-  border: 1.5px solid #B91C1C;
+  color: #8A151B;
+  border: 1.5px solid #8A151B;
   border-radius: 20px;
   padding: 4px 14px;
   font-weight: 900;
@@ -1141,8 +1239,9 @@ body {
 
 .tutorial-qr-target {
   position: absolute;
-  top: 50px;
-  left: 12px;
+  top: 54px;
+  right: 14px;
+  left: auto;
   width: 66px;
   height: 66px;
   border: 2px dashed #059669;
@@ -1451,7 +1550,7 @@ body {
 }
 
 .dock-item.active {
-  background: var(--primary-red);
+  background: var(--brand-blue);
   color: var(--neo-white);
   border: 1px solid var(--neo-black);
 }
@@ -2050,5 +2149,270 @@ body {
 .summary-line strong {
   color: var(--neo-black);
   font-weight: 800;
+}
+
+/* ============================================================
+   MINIMALIST ONBOARDING STEP 2 & CHECKMARK ANIMATION
+   ============================================================ */
+.auth-success-box {
+  background: #FFFFFF;
+  border: 2.5px solid var(--neo-black);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auth-success-check-pulse {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkmark-circle-svg {
+  width: 56px;
+  height: 56px;
+  display: block;
+}
+
+.checkmark-circle-ring {
+  stroke: #10B981;
+  stroke-width: 3;
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: strokeRing 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check-path {
+  stroke: #10B981;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: strokeCheck 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+}
+
+@keyframes strokeRing {
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes strokeCheck {
+  100% { stroke-dashoffset: 0; }
+}
+
+.auth-step-tag {
+  background: #EFF6FF;
+  color: var(--brand-blue);
+  border: 1.5px solid var(--brand-blue);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.auth-success-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--neo-black);
+  margin: 0;
+}
+
+.auth-student-card-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #F8FAFC;
+  border: 2px solid #E2E8F0;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: right;
+}
+
+.auth-student-avatar-frame {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--neo-black);
+  overflow: hidden;
+  background: #E2E8F0;
+  flex-shrink: 0;
+}
+
+.auth-student-avatar-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-student-text-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.auth-student-name {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--neo-black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-student-id {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #64748B;
+  font-family: monospace;
+}
+
+.auth-student-fac {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0B63E5;
+}
+
+.auth-step2-hint {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ============================================================
+   CROSS-DEVICE SMART TRANSFER MODALS
+   ============================================================ */
+.device-transfer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.device-transfer-card {
+  background: #FFFFFF;
+  border: 3px solid var(--neo-black);
+  border-radius: var(--radius-lg);
+  box-shadow: 8px 8px 0px var(--neo-black);
+  padding: 28px 22px;
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.transfer-radar-icon, .transfer-alert-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EFF6FF;
+  border: 2.5px solid var(--brand-blue);
+  box-shadow: 3px 3px 0px var(--neo-black);
+}
+
+.transfer-alert-icon {
+  background: #FEF3C7;
+  border-color: #F59E0B;
+}
+
+.transfer-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--neo-black);
+  margin: 0;
+}
+
+.transfer-desc {
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.transfer-pulse-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.transfer-pulse-status .pulse-ring {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--brand-blue);
+  animation: radarPulse 1.5s infinite;
+  flex-shrink: 0;
+}
+
+/* Pending Transfer Banner in Security View */
+.pending-transfer-banner {
+  background: #FEF3C7;
+  border: 2px solid #F59E0B;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: right;
+}
+
+.pending-transfer-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+  color: #92400E;
+  font-size: 0.92rem;
+}
+
+.pending-transfer-body {
+  font-size: 0.82rem;
+  color: #78350F;
+  line-height: 1.4;
+}
+
+.pending-transfer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 }
 

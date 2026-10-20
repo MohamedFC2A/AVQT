@@ -17,6 +17,7 @@ class MemoryStore {
     students = new Map();
     credentials = new Map();
     sessions = new Map();
+    transfers = new Map();
     records = [];
     recordIdSeq = 1;
     constructor() {
@@ -28,6 +29,7 @@ class MemoryStore {
                 students: Array.from(this.students.entries()),
                 credentials: Array.from(this.credentials.entries()),
                 sessions: Array.from(this.sessions.entries()),
+                transfers: Array.from(this.transfers.entries()),
                 records: this.records,
                 recordIdSeq: this.recordIdSeq
             };
@@ -46,6 +48,8 @@ class MemoryStore {
                     this.credentials = new Map(parsed.credentials);
                 if (parsed.sessions)
                     this.sessions = new Map(parsed.sessions);
+                if (parsed.transfers)
+                    this.transfers = new Map(parsed.transfers);
                 if (parsed.records)
                     this.records = parsed.records;
                 if (parsed.recordIdSeq)
@@ -329,5 +333,48 @@ export const db = {
             return res.rows;
         }
         return memoryStore.records.filter(r => r.session_id === sessionId);
+    },
+    async createDeviceTransferRequest(studentId, fromDevice, toDevice, toDeviceName) {
+        const id = 'TRF-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+        const trf = {
+            id,
+            student_id: studentId,
+            from_device_uuid: fromDevice,
+            to_device_uuid: toDevice,
+            to_device_name: toDeviceName || 'هاتف ذكي جديد',
+            status: 'PENDING',
+            created_at: new Date().toISOString()
+        };
+        memoryStore.transfers.set(id, trf);
+        memoryStore.save();
+        return trf;
+    },
+    async getPendingTransferRequest(studentId) {
+        for (const trf of memoryStore.transfers.values()) {
+            if (trf.student_id === studentId && trf.status === 'PENDING') {
+                return trf;
+            }
+        }
+        return null;
+    },
+    async getTransferRequest(requestId) {
+        return memoryStore.transfers.get(requestId) || null;
+    },
+    async resolveTransferRequest(requestId, status) {
+        const trf = memoryStore.transfers.get(requestId);
+        if (!trf)
+            return null;
+        trf.status = status;
+        trf.resolved_at = new Date().toISOString();
+        if (status === 'APPROVED') {
+            const student = memoryStore.students.get(trf.student_id);
+            if (student) {
+                student.device_uuid = trf.to_device_uuid;
+                memoryStore.students.set(student.id, student);
+            }
+        }
+        memoryStore.transfers.set(requestId, trf);
+        memoryStore.save();
+        return trf;
     }
 };
