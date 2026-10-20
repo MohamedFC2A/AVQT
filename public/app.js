@@ -140,14 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // -------------------------------------------------------------
 function initAuthGateFlow() {
   const btnStartCardScan = document.getElementById('btnStartCardScan');
-  const btnQuickCardAuth = document.getElementById('btnQuickCardAuth');
-  const cardFileInput = document.getElementById('cardFileInput');
   const authCardStep = document.getElementById('authCardStep');
   const authBioStep = document.getElementById('authBioStep');
   const btnConfirmBio = document.getElementById('btnConfirmBiometricAuth');
   const authBioStudentName = document.getElementById('authBioStudentName');
   const authBioStudentId = document.getElementById('authBioStudentId');
-  const btnStartCardScan = document.getElementById('btnStartCardScan');
 
   // Gate Check: If not registered, show ONLY auth gate and hide bottom dock
   if (!state.isRegistered) {
