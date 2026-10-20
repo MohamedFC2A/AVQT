@@ -12,6 +12,47 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- ==========================================================================
+       AVQR CINEMATIC SMART LOADING SPLASH SCREEN (VIDEO & BRAND SHOWCASE)
+       ========================================================================== -->
+  <div id="avqrSmartSplash" class="avqr-smart-splash" dir="rtl">
+    <div class="splash-inner-content">
+      <!-- CENTER: ANIMATING CHECKMARK & LOGO REVEAL VIDEO -->
+      <div class="splash-video-container">
+        <video id="splashVideo" class="splash-video-element" playsinline muted autoplay preload="auto">
+          <source src="assets/avqr-splash-intro.mp4" type="video/mp4">
+        </video>
+      </div>
+
+      <!-- BOTTOM: PARTNER CAROUSEL (WITH -> FUE -> MOODLE -> MATANY GROUP) -->
+      <div class="splash-bottom-bar" dir="ltr">
+        <span class="splash-with-label">With</span>
+        <div class="splash-partner-slider">
+          <!-- 1. FUE -->
+          <div class="splash-partner-slide active" id="splashSlideFue">
+            <img src="assets/fue-logo-red.jpg" class="partner-img-fue" alt="Future University in Egypt">
+          </div>
+
+          <!-- 2. MOODLE -->
+          <div class="splash-partner-slide" id="splashSlideMoodle">
+            <img src="assets/moodle-logo.png" class="partner-img-moodle" alt="Moodle LMS">
+          </div>
+
+          <!-- 3. MATANY GROUP (HERO PARTNER) -->
+          <div class="splash-partner-slide hero-slide" id="splashSlideMatany">
+            <div class="matany-hero-box">
+              <img src="assets/matany-logo.svg" class="partner-img-matany" alt="Matany Group">
+              <div class="matany-meta-text">
+                <span class="matany-brand-title">Matany Group</span>
+                <span class="matany-tech-subtitle">Sovereign Academic Technologies</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- NEUBRUTALISM TOPBAR -->
   <header class="smart-topbar">
     <div class="topbar-container">
@@ -93,12 +134,7 @@
                 </div>
                 <div class="fue-topbar-right">
                   <div class="fue-brand-header-wrap">
-                    <img src="assets/fue-shield-logo.svg" class="fue-shield-img" alt="FUE Logo">
-                    <div class="fue-brand-text">
-                      <span class="fue-brand-title">FUTURE</span>
-                      <span class="fue-brand-sub">UNIVERSITY IN EGYPT</span>
-                      <span class="fue-brand-ar">جامعة المستقبل</span>
-                    </div>
+                    <img src="assets/fue-official-logo.png" class="fue-official-logo-img" alt="Future University in Egypt - جامعة المستقبل">
                   </div>
                   <div class="fue-level-badge-row">
                     <span class="fue-level-tag">LEVEL 01</span>
@@ -306,12 +342,7 @@
               </div>
               <div class="fue-topbar-right">
                 <div class="fue-brand-header-wrap">
-                  <img src="assets/fue-shield-logo.svg" class="fue-shield-img" alt="FUE Logo">
-                  <div class="fue-brand-text">
-                    <span class="fue-brand-title">FUTURE</span>
-                    <span class="fue-brand-sub">UNIVERSITY IN EGYPT</span>
-                    <span class="fue-brand-ar">جامعة المستقبل</span>
-                  </div>
+                  <img src="assets/fue-official-logo.png" class="fue-official-logo-img" alt="Future University in Egypt - جامعة المستقبل">
                 </div>
                 <div class="fue-level-badge-row">
                   <span class="fue-level-tag" id="cardLevelTag">LEVEL 01</span>
@@ -370,7 +401,7 @@
           <!-- BACK FACE (AUTHENTIC UNIVERSITY NOTICES) -->
           <div class="card-face card-face-back">
             <div class="card-glare" id="cardGlareBack"></div>
-            <img src="assets/fue-shield-logo.svg" class="fue-back-crest" alt="FUE Crest">
+            <img src="assets/fue-shield-official.png" class="fue-back-crest" alt="FUE Official Crest">
             <div class="fue-back-title">
               جامعة المستقبل في مصر
               <div style="font-size:0.75rem; color:#475569; font-weight:700;">FUTURE UNIVERSITY IN EGYPT</div>
@@ -852,6 +883,43 @@
         <button id="btnDismissInstantError" class="neo-btn btn-subtle-dark btn-full mt-2">
           إغلاق ومحاولة يدوية
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERMANENT RIOT / MULTI-DEVICE TAMPER LOCKDOWN SCREEN (STRICTLY NO BUTTONS, NO LINKS, ZERO ESCAPE) -->
+  <div id="screenPermanentRiotBan" class="screen-permanent-riot-ban hidden" dir="rtl">
+    <div class="riot-ban-card">
+      <div class="riot-ban-shield-wrap">
+        <img src="assets/fue-official-logo.png" class="riot-ban-fue-logo" alt="FUE Official Logo">
+      </div>
+      <div class="riot-ban-icon-circle">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+        </svg>
+      </div>
+      <div class="riot-ban-badge">إشعار أمني إلزامي • الإدارة المركزية</div>
+      <h1 class="riot-ban-title">تم الحظر بسبب الاشتباه في أعمال الشغب</h1>
+      <p class="riot-ban-message">
+        توجه للدعم والادمشن
+      </p>
+      <div class="riot-ban-details">
+        <div class="riot-meta-item">
+          <span class="meta-lbl">الجهة المختصة:</span>
+          <strong class="meta-val">مكتب القبول والتسجيل (Admission) & إدارة أمن المنظومة</strong>
+        </div>
+        <div class="riot-meta-item">
+          <span class="meta-lbl">سبب الإيقاف:</span>
+          <strong class="meta-val text-red">محاولة نقل أو فتح الحساب على أجهزة متعددة بالمخالفة للائحة</strong>
+        </div>
+        <div class="riot-meta-item">
+          <span class="meta-lbl">حالة القيد بالسحابة:</span>
+          <strong class="meta-val text-red">موقوف نهائياً (Neon.tech Locked)</strong>
+        </div>
+      </div>
+      <div class="riot-security-notice">
+        تم إغلاق وتجميد هذا الحساب بالكامل للاشتباه في أعمال الشغب والتلاعب ببيانات الحضور. لا يمكن استخدام النظام إطلاقاً إلا بقرار رسمي بعد مراجعة شؤون الطلاب شخصياً.
       </div>
     </div>
   </div>

@@ -469,3 +469,185 @@ html, body {
 .hidden {
   display: none !important;
 }
+
+/* ==========================================================================
+   AVQR CINEMATIC SMART LOADING SPLASH (POPUP OPTIMIZED)
+   ========================================================================== */
+.avqr-smart-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 12px 24px 12px;
+  box-sizing: border-box;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s ease;
+  user-select: none;
+  overflow: hidden;
+}
+
+.avqr-smart-splash.dismissed {
+  opacity: 0;
+  transform: scale(1.02);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-inner-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.splash-video-container {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 220px;
+}
+
+.splash-video-element {
+  width: 100%;
+  max-width: 260px;
+  max-height: 280px;
+  object-fit: contain;
+  background-color: #FFFFFF;
+  display: block;
+}
+
+.splash-bottom-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding-bottom: 4px;
+}
+
+.splash-with-label {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #94A3B8;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.splash-with-label::before,
+.splash-with-label::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 1.5px;
+  background: #E2E8F0;
+}
+
+.splash-with-label::before {
+  right: 100%;
+  margin-right: 10px;
+}
+
+.splash-with-label::after {
+  left: 100%;
+  margin-left: 10px;
+}
+
+.splash-partner-slider {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-partner-slide {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.splash-partner-slide.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.partner-img-fue {
+  height: 34px;
+  max-width: 130px;
+  object-fit: contain;
+}
+
+.partner-img-moodle {
+  height: 32px;
+  max-width: 135px;
+  object-fit: contain;
+}
+
+.splash-partner-slide.hero-slide.active {
+  animation: matanyHeroPopPopup 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes matanyHeroPopPopup {
+  0% { opacity: 0; transform: translateY(12px) scale(0.92); }
+  60% { opacity: 1; transform: translateY(-2px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.matany-hero-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #09090B;
+  color: #FFFFFF;
+  border: 2px solid #18181B;
+  box-shadow: 3px 3px 0px #000000;
+  border-radius: 10px;
+  padding: 6px 14px 6px 10px;
+}
+
+.partner-img-matany {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.matany-meta-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.matany-brand-title {
+  font-size: 0.96rem;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+
+.matany-tech-subtitle {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #A1A1AA;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}

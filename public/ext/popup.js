@@ -16,7 +16,87 @@ const TOTAL_AUTOSAVE_SECONDS = 180;
 let isSessionActive = false;
 let activeServerUrl = SERVER_URL;
 
+function initCinematicSmartSplash() {
+  const splash = document.getElementById('avqrSmartSplash');
+  if (!splash) return;
+
+  const video = document.getElementById('splashVideo');
+  const slideFue = document.getElementById('splashSlideFue');
+  const slideMoodle = document.getElementById('splashSlideMoodle');
+  const slideMatany = document.getElementById('splashSlideMatany');
+
+  let dismissed = false;
+
+  // Force reset splash visibility on every single execution
+  splash.classList.remove('dismissed');
+  splash.style.display = 'flex';
+  splash.style.opacity = '1';
+  splash.style.visibility = 'visible';
+
+  if (slideFue) slideFue.classList.add('active');
+  if (slideMoodle) slideMoodle.classList.remove('active');
+  if (slideMatany) slideMatany.classList.remove('active');
+
+  function dismissSplash() {
+    if (dismissed) return;
+    dismissed = true;
+    splash.classList.add('dismissed');
+    setTimeout(() => {
+      splash.style.display = 'none';
+      if (video) {
+        try { video.pause(); } catch (e) {}
+      }
+    }, 400);
+  }
+
+  // 1. Play video and freeze precisely on the settled full logo frame (at ~3.68s)
+  if (video) {
+    video.currentTime = 0;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {});
+    }
+
+    video.addEventListener('timeupdate', () => {
+      if (video.currentTime >= 3.68) {
+        video.pause();
+      }
+    });
+
+    video.addEventListener('ended', () => {
+      video.pause();
+    });
+  }
+
+  // 2. Partner Carousel (With: FUE -> Moodle -> Matany Group)
+  if (slideFue) slideFue.classList.add('active');
+  if (slideMoodle) slideMoodle.classList.remove('active');
+  if (slideMatany) slideMatany.classList.remove('active');
+
+  setTimeout(() => {
+    if (dismissed) return;
+    if (slideFue) slideFue.classList.remove('active');
+    if (slideMoodle) slideMoodle.classList.add('active');
+  }, 1100);
+
+  setTimeout(() => {
+    if (dismissed) return;
+    if (slideMoodle) slideMoodle.classList.remove('active');
+    if (slideMatany) slideMatany.classList.add('active');
+  }, 2200);
+
+  setTimeout(() => {
+    dismissSplash();
+  }, 4100);
+
+  setTimeout(() => {
+    dismissSplash();
+  }, 4800);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  initCinematicSmartSplash();
+
   const idleSection = document.getElementById('idleSection');
   const activeSection = document.getElementById('activeSection');
   const sessionIdInput = document.getElementById('sessionIdInput');
