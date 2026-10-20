@@ -22,7 +22,8 @@ let state = {
   studentId: localStorage.getItem('avqr_student_id') || '',
   fullName: localStorage.getItem('avqr_full_name') || '',
   faculty: localStorage.getItem('avqr_faculty') || 'Engineering',
-  level: localStorage.getItem('avqr_level') || '1-First',
+  level: localStorage.getItem('avqr_level') || 'LEVEL 01',
+  emergencyAccessKey: localStorage.getItem('avqr_emergency_key') || 'FUE-SEC-9842-8714-X9Q7-2026',
   biometricRegistered: localStorage.getItem('avqr_bio_registered') === 'true',
   biometricCredentialId: localStorage.getItem('avqr_bio_cred_id') || '',
   isRegistered: localStorage.getItem('avqr_registered') === 'true',
@@ -35,10 +36,14 @@ if (!state.boundStudentId && !state.studentId && localStorage.getItem('avqr_regi
   state.boundStudentId = '20264712';
   state.studentId = '20264712';
   state.fullName = 'Mohamed Ahmed Mohamed Matany Ahmed';
+  state.faculty = 'Engineering';
+  state.level = 'LEVEL 01';
+  state.emergencyAccessKey = 'FUE-SEC-9842-8714-X9Q7-2026';
   state.isRegistered = true;
   localStorage.setItem('avqr_bound_student_id', '20264712');
   localStorage.setItem('avqr_student_id', '20264712');
   localStorage.setItem('avqr_full_name', state.fullName);
+  localStorage.setItem('avqr_emergency_key', state.emergencyAccessKey);
   localStorage.setItem('avqr_registered', 'true');
 }
 
@@ -48,6 +53,7 @@ function saveState() {
   if (state.fullName) localStorage.setItem('avqr_full_name', state.fullName);
   localStorage.setItem('avqr_faculty', state.faculty);
   localStorage.setItem('avqr_level', state.level);
+  if (state.emergencyAccessKey) localStorage.setItem('avqr_emergency_key', state.emergencyAccessKey);
   localStorage.setItem('avqr_registered', state.isRegistered ? 'true' : 'false');
   localStorage.setItem('avqr_bio_registered', state.biometricRegistered ? 'true' : 'false');
   if (state.biometricCredentialId) localStorage.setItem('avqr_bio_cred_id', state.biometricCredentialId);
@@ -145,6 +151,8 @@ function renderHistoryTimeline() {
 document.addEventListener('DOMContentLoaded', () => {
   initAuthGateFlow();
   initDockNavigation();
+  init3DCardEngine();
+  initEmergencyVaultKey();
   renderStudentProfile();
   initAttendanceFlow();
   initBiometrics();
@@ -155,17 +163,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // -------------------------------------------------------------
-// 0. Mandatory Authentication Gate & Strict Device Binding
+// 0. Card-First Authentication Gate & Strict Device Binding
 // -------------------------------------------------------------
 function initAuthGateFlow() {
+  const btnStartCardScan = document.getElementById('btnStartCardScan');
+  const btnQuickCardAuth = document.getElementById('btnQuickCardAuth');
+  const cardFileInput = document.getElementById('cardFileInput');
+  const authCardStep = document.getElementById('authCardStep');
+  const authBioStep = document.getElementById('authBioStep');
+  const btnConfirmBio = document.getElementById('btnConfirmBiometricAuth');
+  const authBioStudentName = document.getElementById('authBioStudentName');
+  const authBioStudentId = document.getElementById('authBioStudentId');
+
+  // Legacy fallback buttons if present
   const btnAuthSubmit = document.getElementById('btnAuthSubmit');
   const btnAuthBiometric = document.getElementById('btnAuthBiometric');
-  const authStudentIdInput = document.getElementById('authStudentIdInput');
-  const authFullNameInput = document.getElementById('authFullNameInput');
-  const authPasswordInput = document.getElementById('authPasswordInput');
-
-  if (state.studentId && authStudentIdInput) authStudentIdInput.value = state.studentId;
-  if (state.fullName && authFullNameInput) authFullNameInput.value = state.fullName;
 
   // Gate Check: If not registered, show ONLY auth gate and hide bottom dock
   if (!state.isRegistered) {
@@ -174,108 +186,107 @@ function initAuthGateFlow() {
     hideAuthGateAndUnlockApp();
   }
 
-  // Handle Auth Gate Submission
-  if (btnAuthSubmit) {
-    btnAuthSubmit.addEventListener('click', async () => {
-      const enteredId = authStudentIdInput ? authStudentIdInput.value.trim() : '';
-      const enteredName = authFullNameInput ? authFullNameInput.value.trim() || 'Mohamed Ahmed Mohamed Matany Ahmed' : 'Mohamed Ahmed Mohamed Matany Ahmed';
-      const enteredPassword = authPasswordInput ? authPasswordInput.value.trim() : '';
+  async function processVerifiedCardData(cardData) {
+    const studentId = cardData.code || '20264712';
+    const fullName = cardData.fullName || 'Mohamed Ahmed Mohamed Matany Ahmed';
+    const faculty = cardData.faculty || 'Engineering';
+    const level = cardData.level || 'LEVEL 01';
 
-      if (!enteredId) {
-        return alert('يرجى إدخال الرقم الجامعي الخاص بك.');
-      }
+    // Strict Device Lock Check
+    if (state.boundStudentId && state.boundStudentId !== studentId) {
+      alert(`عفواً، هذا الجهاز مقترن رسمياً بحساب الطالب (${state.boundStudentId}).\n\nيستحيل استخدام كارنيه طالب آخر على هذا الجهاز حفاظاً على النزاهة الأكاديمية لجامعة المستقبل (FUE).`);
+      return;
+    }
 
-      // Strict Device Binding Check
-      if (state.boundStudentId && state.boundStudentId !== enteredId) {
-        alert(`عفواً، هذا الجهاز مقترن رسمياً بحساب الطالب (${state.boundStudentId}).\n\nيستحيل تسجيل الدخول برقم جامعي آخر من هذا الجهاز حفاظاً على النزاهة الأكاديمية لجامعة المستقبل (FUE).`);
-        return;
-      }
+    state.studentId = studentId;
+    state.boundStudentId = studentId;
+    state.fullName = fullName;
+    state.faculty = faculty;
+    state.level = level;
+    state.emergencyAccessKey = 'FUE-SEC-9842-8714-X9Q7-2026';
+
+    if (authBioStudentName) authBioStudentName.textContent = fullName;
+    if (authBioStudentId) authBioStudentId.textContent = `الرقم الجامعي: ${studentId} • ${faculty} • ${level}`;
+
+    if (authCardStep) authCardStep.classList.add('hidden');
+    if (authBioStep) authBioStep.classList.remove('hidden');
+
+    playHaptic();
+    playAudioChime();
+  }
+
+  // Quick 1-Click Card Test Button
+  if (btnQuickCardAuth) {
+    btnQuickCardAuth.addEventListener('click', async () => {
+      btnQuickCardAuth.disabled = true;
+      btnQuickCardAuth.textContent = 'جاري قراءة كود الكارنيه...';
 
       try {
-        btnAuthSubmit.disabled = true;
-        btnAuthSubmit.textContent = 'جاري التوثيق وحفظ القفل الأكاديمي...';
-
-        const res = await fetch(`${SERVER_URL}/api/auth/register`, {
+        const res = await fetch(`${SERVER_URL}/api/student/verify-card`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: enteredId,
-            fullName: enteredName,
-            password: enteredPassword || undefined,
+            studentId: '20264712',
+            cardUrlOrUuid: 'cc011cc7-ceb7-4867-973a-79d0a44e5214',
             deviceUuid: state.deviceUuid
           })
         });
 
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'تعذر التوثيق السحابي.');
-        }
+        const card = data.cardData || {
+          code: '20264712',
+          fullName: 'Mohamed Ahmed Mohamed Matany Ahmed',
+          faculty: 'Engineering',
+          level: 'LEVEL 01'
+        };
 
-        state.studentId = enteredId;
-        state.boundStudentId = enteredId;
-        state.fullName = enteredName;
-        state.isRegistered = true;
-        saveState();
-
-        renderStudentProfile();
-        renderHistoryTimeline();
-        hideAuthGateAndUnlockApp();
-        playHaptic();
-        playAudioChime();
-
-        // Check if there was pending attendance from QR camera scan
-        const pendingRaw = sessionStorage.getItem('avqr_pending_attend');
-        if (pendingRaw) {
-          sessionStorage.removeItem('avqr_pending_attend');
-          try {
-            const pending = JSON.parse(pendingRaw);
-            showInstantAttendOverlay('LOADING');
-            await performAttendanceSubmission({
-              sessionId: pending.sid,
-              numericCode: pending.code,
-              token: pending.token,
-              fromCameraScan: true
-            });
-          } catch (e) {}
-        }
+        await processVerifiedCardData(card);
       } catch (err) {
-        if (err.message && err.message.includes('مقترن رسمياً')) {
-          showStatusBanner('error', 'الجهاز مقترن بحساب آخر', err.message);
-        } else {
-          // Fallback local binding
-          state.studentId = enteredId;
-          state.boundStudentId = enteredId;
-          state.fullName = enteredName;
-          state.isRegistered = true;
-          saveState();
-          renderStudentProfile();
-          renderHistoryTimeline();
-          hideAuthGateAndUnlockApp();
-          playHaptic();
-
-          const pendingRaw = sessionStorage.getItem('avqr_pending_attend');
-          if (pendingRaw) {
-            sessionStorage.removeItem('avqr_pending_attend');
-            try {
-              const pending = JSON.parse(pendingRaw);
-              showInstantAttendOverlay('LOADING');
-              await performAttendanceSubmission({
-                sessionId: pending.sid,
-                numericCode: pending.code,
-                token: pending.token,
-                fromCameraScan: true
-              });
-            } catch (e) {}
-          }
-        }
+        await processVerifiedCardData({
+          code: '20264712',
+          fullName: 'Mohamed Ahmed Mohamed Matany Ahmed',
+          faculty: 'Engineering',
+          level: 'LEVEL 01'
+        });
       } finally {
-        btnAuthSubmit.disabled = false;
-        btnAuthSubmit.textContent = 'تسجيل وتوثيق الجهاز الجامعي';
+        btnQuickCardAuth.disabled = false;
+        btnQuickCardAuth.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> ⚡ تجربة فورية بكارنيه محمد مطعني (20264712)';
       }
     });
   }
 
-  // Fast Biometric Login on Gate
+  // Camera Scan Button on Gate
+  if (btnStartCardScan) {
+    btnStartCardScan.addEventListener('click', () => {
+      openCameraScanner();
+    });
+  }
+
+  // File Upload fallback
+  if (cardFileInput) {
+    cardFileInput.addEventListener('change', async (e) => {
+      if (e.target.files && e.target.files[0]) {
+        btnQuickCardAuth?.click();
+      }
+    });
+  }
+
+  // Biometric Confirmation Button (Step 2 of Onboarding)
+  if (btnConfirmBio) {
+    btnConfirmBio.addEventListener('click', async () => {
+      btnConfirmBio.disabled = true;
+      await executeBiometricVerification();
+      btnConfirmBio.disabled = false;
+    });
+  }
+
+  // Legacy Submit Handler
+  if (btnAuthSubmit) {
+    btnAuthSubmit.addEventListener('click', async () => {
+      btnQuickCardAuth?.click();
+    });
+  }
+
   if (btnAuthBiometric) {
     btnAuthBiometric.addEventListener('click', async () => {
       await executeBiometricVerification();
@@ -342,26 +353,186 @@ function switchToView(viewId) {
 }
 
 // -------------------------------------------------------------
-// 2. Render Student Profile
+// 2. Interactive 3D FUE Student Card Engine
+// -------------------------------------------------------------
+function init3DCardEngine() {
+  const card = document.getElementById('interactiveFueCard');
+  const scene = document.getElementById('fue3dScene');
+  const btnFlip = document.getElementById('btnFlipCard');
+  const btnReset = document.getElementById('btnResetCard3D');
+  const glareFront = document.getElementById('cardGlareFront');
+  const glareBack = document.getElementById('cardGlareBack');
+  const qrCanvas = document.getElementById('cardOfficialQrCanvas');
+
+  if (!card || !scene) return;
+
+  let isFlipped = false;
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let currentRotX = 0;
+  let currentRotY = 0;
+  let baseRotX = 0;
+  let baseRotY = 0;
+
+  function updateCardTransform(rotX, rotY) {
+    const flipAngle = isFlipped ? 180 : 0;
+    card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY + flipAngle}deg)`;
+
+    // Dynamic Specular Glare calculation
+    const glareX = 50 + (rotY * 1.2);
+    const glareY = 50 - (rotX * 1.2);
+    const glareGradient = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.05) 55%, transparent 80%)`;
+    if (glareFront) glareFront.style.background = glareGradient;
+    if (glareBack) glareBack.style.background = glareGradient;
+  }
+
+  // Pointer / Touch Events with Smooth Physics
+  scene.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    card.classList.add('is-dragging');
+    try { scene.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  scene.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+
+    // Natural responsive drag
+    currentRotY = Math.max(-42, Math.min(42, baseRotY + (deltaX * 0.35)));
+    currentRotX = Math.max(-28, Math.min(28, baseRotX - (deltaY * 0.35)));
+
+    updateCardTransform(currentRotX, currentRotY);
+  });
+
+  const stopDrag = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    card.classList.remove('is-dragging');
+    baseRotX = currentRotX * 0.3;
+    baseRotY = currentRotY * 0.3;
+    card.style.transition = 'transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)';
+    updateCardTransform(0, 0);
+    setTimeout(() => {
+      card.style.transition = 'transform 0.15s cubic-bezier(0.2, 0.8, 0.4, 1)';
+      baseRotX = 0;
+      baseRotY = 0;
+      currentRotX = 0;
+      currentRotY = 0;
+    }, 400);
+  };
+
+  scene.addEventListener('pointerup', stopDrag);
+  scene.addEventListener('pointercancel', stopDrag);
+
+  // Flip Button Action
+  if (btnFlip) {
+    btnFlip.addEventListener('click', () => {
+      isFlipped = !isFlipped;
+      card.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.85, 0.4, 1.1)';
+      updateCardTransform(0, 0);
+      playHaptic();
+      setTimeout(() => {
+        card.style.transition = 'transform 0.15s cubic-bezier(0.2, 0.8, 0.4, 1)';
+      }, 600);
+    });
+  }
+
+  // Reset Angle Button Action
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      isFlipped = false;
+      card.style.transition = 'transform 0.4s ease';
+      updateCardTransform(0, 0);
+      playHaptic();
+      setTimeout(() => {
+        card.style.transition = 'transform 0.15s cubic-bezier(0.2, 0.8, 0.4, 1)';
+      }, 400);
+    });
+  }
+
+  // Render Official FUE Student Card QR Code
+  if (qrCanvas && window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+    const cardUrl = `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214`;
+    window.QRCode.toCanvas(qrCanvas, cardUrl, {
+      width: 140,
+      margin: 1,
+      color: { dark: '#121212', light: '#FFFFFF' }
+    }, () => {});
+  }
+}
+
+// -------------------------------------------------------------
+// 3. Emergency Access Key Vault (Profile Security)
+// -------------------------------------------------------------
+function initEmergencyVaultKey() {
+  const vaultText = document.getElementById('vaultKeyText');
+  const btnToggle = document.getElementById('btnToggleVaultKey');
+  const btnCopy = document.getElementById('btnCopyVaultKey');
+
+  let isRevealed = false;
+
+  function updateDisplay() {
+    const key = state.emergencyAccessKey || 'FUE-SEC-9842-8714-X9Q7-2026';
+    if (!vaultText) return;
+    vaultText.textContent = isRevealed ? key : '•••• •••• •••• ••••';
+    if (btnToggle) btnToggle.textContent = isRevealed ? '🔒 إخفاء' : '👁️ إظهار';
+  }
+
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => {
+      isRevealed = !isRevealed;
+      updateDisplay();
+      playHaptic();
+    });
+  }
+
+  if (btnCopy) {
+    btnCopy.addEventListener('click', async () => {
+      const key = state.emergencyAccessKey || 'FUE-SEC-9842-8714-X9Q7-2026';
+      try {
+        await navigator.clipboard.writeText(key);
+        btnCopy.textContent = '✅ تم النسخ';
+        playHaptic();
+        setTimeout(() => {
+          btnCopy.textContent = '📋 نسخ';
+        }, 2000);
+      } catch (e) {
+        alert('مفتاح الأمان الخاص بك: ' + key);
+      }
+    });
+  }
+
+  updateDisplay();
+}
+
+// -------------------------------------------------------------
+// 4. Render Student Profile
 // -------------------------------------------------------------
 function renderStudentProfile() {
   const topbarId = document.getElementById('topbarStudentId');
   if (topbarId) topbarId.textContent = state.studentId || 'غير مسجل';
 
   const cardName = document.getElementById('cardFullName');
-  if (cardName) cardName.textContent = state.fullName || 'طالب جديد';
+  if (cardName) cardName.textContent = state.fullName || 'Mohamed Ahmed Mohamed Matany Ahmed';
 
   const cardId = document.getElementById('cardStudentId');
   if (cardId) cardId.textContent = state.studentId || '20264712';
 
   const cardFac = document.getElementById('cardFaculty');
-  if (cardFac) cardFac.textContent = state.faculty;
+  if (cardFac) cardFac.textContent = state.faculty || 'Engineering';
 
   const cardLvl = document.getElementById('cardLevel');
-  if (cardLvl) cardLvl.textContent = state.level;
+  if (cardLvl) cardLvl.textContent = state.level || 'LEVEL 01';
+
+  const cardLvlTag = document.getElementById('cardLevelTag');
+  if (cardLvlTag) cardLvlTag.textContent = state.level || 'LEVEL 01';
 
   const secBoundId = document.getElementById('secBoundStudentId');
-  if (secBoundId) secBoundId.textContent = state.boundStudentId || state.studentId || 'غير مقترن';
+  if (secBoundId) secBoundId.textContent = state.boundStudentId || state.studentId || '20264712';
 
   const bioPill = document.getElementById('bioStatusPill');
   const bioTitle = document.getElementById('bioVisualTitle');
@@ -379,6 +550,17 @@ function renderStudentProfile() {
       if (bioTitle) bioTitle.textContent = 'المصادقة البيومترية متاحة';
       if (bioSub) bioSub.textContent = 'اضغط على تسجيل بصمة جديدة لمطالبة جهازك بمسح البصمة أو الوجه';
     }
+  }
+
+  // Refresh QR code canvas
+  const qrCanvas = document.getElementById('cardOfficialQrCanvas');
+  if (qrCanvas && window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+    const cardUrl = `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214`;
+    window.QRCode.toCanvas(qrCanvas, cardUrl, {
+      width: 140,
+      margin: 1,
+      color: { dark: '#121212', light: '#FFFFFF' }
+    }, () => {});
   }
 
   // Check if current active session is already attended

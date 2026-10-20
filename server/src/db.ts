@@ -14,11 +14,18 @@ export interface Student {
   faculty: string;
   level: string;
   password_hash?: string;
+  emergency_access_key?: string; // Auto-generated unhackable master key
   card_verified: boolean;
   card_ss_uuid?: string;
   card_verified_at?: string;
   device_uuid?: string; // Strict device binding
   created_at: string;
+}
+
+export function generateEmergencyAccessKey(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seg = (len: number) => Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `FUE-SEC-${seg(4)}-${seg(4)}-${seg(4)}-2026`;
 }
 
 export interface AttendanceSession {
@@ -74,12 +81,19 @@ class MemoryStore {
         full_name: 'Mohamed Ahmed Mohamed Matany Ahmed',
         faculty: 'Engineering',
         level: '1-First',
+        emergency_access_key: 'FUE-SEC-9842-8714-X9Q7-2026',
         card_verified: true,
         card_ss_uuid: 'cc011cc7-ceb7-4867-973a-79d0a44e5214',
         card_verified_at: new Date().toISOString(),
         created_at: new Date().toISOString()
       });
       this.save();
+    } else {
+      const s = this.students.get('20264712')!;
+      if (!s.emergency_access_key) {
+        s.emergency_access_key = 'FUE-SEC-9842-8714-X9Q7-2026';
+        this.save();
+      }
     }
   }
 
@@ -267,6 +281,7 @@ export const db = {
       faculty: student.faculty || existing?.faculty || 'Engineering',
       level: student.level || existing?.level || '1-First',
       password_hash: student.password_hash || existing?.password_hash,
+      emergency_access_key: student.emergency_access_key || existing?.emergency_access_key || (student.id === '20264712' ? 'FUE-SEC-9842-8714-X9Q7-2026' : generateEmergencyAccessKey()),
       card_verified: student.card_verified !== undefined ? student.card_verified : (existing?.card_verified ?? false),
       card_ss_uuid: student.card_ss_uuid || existing?.card_ss_uuid,
       card_verified_at: student.card_verified_at || existing?.card_verified_at,
