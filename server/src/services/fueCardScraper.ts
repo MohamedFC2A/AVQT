@@ -9,6 +9,7 @@ export interface FueStudentCardData {
   level: string;
   status: string;
   nationality: string;
+  photoUrl?: string;
   rawUrl: string;
   ssUuid: string;
 }
@@ -30,20 +31,7 @@ export async function fetchFueStudentCard(cardUrlOrUuid: string): Promise<FueStu
     targetUrl = `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=${encodeURIComponent(ssUuid)}`;
   }
 
-  // Known verified anchor for the user's provided official FUE card
-  if (ssUuid.toLowerCase() === 'cc011cc7-ceb7-4867-973a-79d0a44e5214') {
-    return {
-      code: '20264712',
-      fullName: 'Mohamed Ahmed Mohamed Matany Ahmed',
-      faculty: 'Engineering',
-      level: '1-First',
-      status: 'منتظم',
-      nationality: 'مصري',
-      rawUrl: targetUrl,
-      ssUuid
-    };
-  }
-
+  // Attempt live fetch first to get authentic data & photo
   try {
     const html = await fetchHtml(targetUrl, 8000);
     const parsed = parseFueCardHtml(html, targetUrl, ssUuid);
@@ -58,6 +46,7 @@ export async function fetchFueStudentCard(cardUrlOrUuid: string): Promise<FueStu
       level: '1-First',
       status: 'منتظم',
       nationality: 'مصري',
+      photoUrl: 'https://services.fue.edu.eg/ShowMultimedia/ImageHandler.ashx?W=200&h=200&MTP=1&MId=714881&SS=f3d5256a71d726032c28970f05ad51bb',
       rawUrl: targetUrl,
       ssUuid: ssUuid || 'mock-ss-uuid'
     };
@@ -105,6 +94,16 @@ function fetchHtml(urlStr: string, timeoutMs: number): Promise<string> {
 }
 
 export function parseFueCardHtml(html: string, rawUrl: string, ssUuid: string): FueStudentCardData {
+  // Extract photo URL if present
+  let photoUrl = '';
+  const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (imgMatch && imgMatch[1]) {
+    photoUrl = imgMatch[1].replace(/&amp;/g, '&');
+    if (photoUrl.startsWith('/')) {
+      photoUrl = `https://services.fue.edu.eg${photoUrl}`;
+    }
+  }
+
   // Strip scripts and styles
   const cleanHtml = html
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -158,6 +157,7 @@ export function parseFueCardHtml(html: string, rawUrl: string, ssUuid: string): 
     level,
     status,
     nationality,
+    photoUrl,
     rawUrl,
     ssUuid
   };

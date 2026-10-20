@@ -21,28 +21,6 @@ class MemoryStore {
     recordIdSeq = 1;
     constructor() {
         this.load();
-        // Ensure default verified student for Mohamed Matany always exists
-        if (!this.students.has('20264712')) {
-            this.students.set('20264712', {
-                id: '20264712',
-                full_name: 'Mohamed Ahmed Mohamed Matany Ahmed',
-                faculty: 'Engineering',
-                level: '1-First',
-                emergency_access_key: 'FUE-SEC-9842-8714-X9Q7-2026',
-                card_verified: true,
-                card_ss_uuid: 'cc011cc7-ceb7-4867-973a-79d0a44e5214',
-                card_verified_at: new Date().toISOString(),
-                created_at: new Date().toISOString()
-            });
-            this.save();
-        }
-        else {
-            const s = this.students.get('20264712');
-            if (!s.emergency_access_key) {
-                s.emergency_access_key = 'FUE-SEC-9842-8714-X9Q7-2026';
-                this.save();
-            }
-        }
     }
     save() {
         try {
@@ -227,8 +205,9 @@ export const db = {
             full_name: student.full_name || existing?.full_name || `Student ${student.id}`,
             faculty: student.faculty || existing?.faculty || 'Engineering',
             level: student.level || existing?.level || '1-First',
+            photo_url: student.photo_url || existing?.photo_url,
             password_hash: student.password_hash || existing?.password_hash,
-            emergency_access_key: student.emergency_access_key || existing?.emergency_access_key || (student.id === '20264712' ? 'FUE-SEC-9842-8714-X9Q7-2026' : generateEmergencyAccessKey()),
+            emergency_access_key: student.emergency_access_key || existing?.emergency_access_key || generateEmergencyAccessKey(),
             card_verified: student.card_verified !== undefined ? student.card_verified : (existing?.card_verified ?? false),
             card_ss_uuid: student.card_ss_uuid || existing?.card_ss_uuid,
             card_verified_at: student.card_verified_at || existing?.card_verified_at,
