@@ -524,9 +524,11 @@ function initAuthGateFlow() {
   const authBioStudentFac = document.getElementById('authBioStudentFac');
   const authBioStudentPhoto = document.getElementById('authBioStudentPhoto');
 
-  // Ensure 3D rotating card video plays seamlessly with muted loop
+  // 3D Rotating Card Video: Auto-play + Press-to-Pause / Release-to-Resume
   const cardVid = document.getElementById('cardRotatingVideo');
-  if (cardVid) {
+  const cardStage = document.getElementById('auth3DCardStage');
+  const cardScanStatusText = document.getElementById('cardScanStatusText');
+  if (cardVid && cardStage) {
     try {
       cardVid.muted = true;
       cardVid.playsInline = true;
@@ -535,6 +537,43 @@ function initAuthGateFlow() {
         playP.catch(() => {});
       }
     } catch (e) {}
+
+    let isCardHold = false;
+    const pauseCardRotation = (e) => {
+      if (isCardHold) return;
+      isCardHold = true;
+      try {
+        cardVid.pause();
+      } catch (err) {}
+      cardStage.classList.add('is-paused');
+      if (cardScanStatusText) {
+        cardScanStatusText.textContent = 'تم تثبيت الكارنيه ⏸️ (أفلت للمتابعة)';
+      }
+    };
+
+    const resumeCardRotation = (e) => {
+      if (!isCardHold) return;
+      isCardHold = false;
+      try {
+        const p = cardVid.play();
+        if (p !== undefined) p.catch(() => {});
+      } catch (err) {}
+      cardStage.classList.remove('is-paused');
+      if (cardScanStatusText) {
+        cardScanStatusText.textContent = 'مسح ضوئي للكارنيه • اضغط للتثبيت';
+      }
+    };
+
+    // Unified pointer events for desktop mouse and mobile touch
+    cardStage.addEventListener('pointerdown', pauseCardRotation);
+    window.addEventListener('pointerup', resumeCardRotation);
+    window.addEventListener('pointercancel', resumeCardRotation);
+    cardStage.addEventListener('pointerleave', resumeCardRotation);
+
+    // Touch events fallback for older Safari / mobile WebKit
+    cardStage.addEventListener('touchstart', pauseCardRotation, { passive: true });
+    window.addEventListener('touchend', resumeCardRotation);
+    window.addEventListener('touchcancel', resumeCardRotation);
   }
 
   // Gate Check: If not registered, show ONLY auth gate and hide bottom dock

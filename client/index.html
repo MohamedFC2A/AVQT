@@ -101,8 +101,11 @@
           <p class="auth-desc">وجه الكاميرا نحو كود QR بكارنيه جامعة المستقبل للتعرف الفوري على بياناتك</p>
         </div>
 
-        <!-- 3D ROTATING CARD SHOWCASE (CLEAN, SEAMLESS PURE WHITE, ZERO CLUTTER) -->
-        <div class="auth-3d-card-stage" id="auth3DCardStage" oncontextmenu="return false;">
+        <!-- 3D ROTATING CARD SHOWCASE (CLEAN, SEAMLESS PURE WHITE, INTERACTIVE PAUSE & SCAN BEAM) -->
+        <div class="auth-3d-card-stage" id="auth3DCardStage" oncontextmenu="return false;" title="اضغط مع التثبيت لإيقاف الدوران">
+          <!-- Active Scanning Laser Beam -->
+          <div class="card-scan-laser-beam" aria-hidden="true"></div>
+
           <video id="cardRotatingVideo" 
                  class="card-rotating-video" 
                  src="assets/id-card-3d-purewhite.mp4" 
@@ -110,6 +113,12 @@
                  autoplay loop muted playsinline webkit-playsinline
                  disablePictureInPicture controlsList="nodownload noplaybackrate nofullscreen">
           </video>
+
+          <!-- Interactive Live Scan Status Pill -->
+          <div class="card-scan-status-pill" id="cardScanStatusPill">
+            <span class="scan-live-dot"></span>
+            <span class="scan-status-text" id="cardScanStatusText">مسح ضوئي للكارنيه • اضغط للتثبيت</span>
+          </div>
         </div>
 
         <!-- AUTH STEP 1: CAMERA SCAN BUTTON -->
