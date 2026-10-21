@@ -3145,6 +3145,7 @@ body {
   letter-spacing: 2.5px;
   text-transform: uppercase;
   position: relative;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .splash-with-label::before,
@@ -3201,9 +3202,10 @@ body {
 }
 
 .partner-img-fue {
-  height: 42px;
-  max-width: 150px;
+  height: 48px;
+  max-width: 175px;
   object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(196, 18, 48, 0.15));
 }
 
 .partner-img-moodle {
@@ -3212,52 +3214,37 @@ body {
   object-fit: contain;
 }
 
-/* HERO SLIDE: MATANY GROUP */
-.splash-partner-slide.hero-slide.active {
-  animation: matanyHeroPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes matanyHeroPop {
-  0% { opacity: 0; transform: translateY(14px) scale(0.92); }
-  60% { opacity: 1; transform: translateY(-2px) scale(1.03); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.matany-hero-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #09090B;
-  color: #FFFFFF;
-  border: 2.5px solid #18181B;
-  box-shadow: 4px 4px 0px #000000, 0 4px 20px rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  padding: 8px 18px 8px 14px;
-}
-
-.partner-img-matany {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 5px rgba(255, 255, 255, 0.25));
-}
-
-.matany-meta-text {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-  line-height: 1.15;
-}
-
-.matany-brand-title {
-  font-size: 1.1rem;
+/* 3. MATANY GROUP (CLEAN TYPOGRAPHY) */
+.partner-text-matany {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  font-size: 1.55rem;
   font-weight: 900;
-  letter-spacing: 0.5px;
-  color: #FFFFFF;
+  color: #0F172A;
+  letter-spacing: -0.5px;
+  display: inline-block;
 }
 
-.matany-tech-subtitle {
-  font-size: 0.62rem;
+/* 4. UPSTORE.ONE */
+.partner-upstore-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.partner-img-upstore {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.partner-text-upstore {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #0F172A;
+  letter-spacing: -0.5px;
+}
   font-weight: 800;
   color: #A1A1AA;
   text-transform: uppercase;

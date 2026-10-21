@@ -21,11 +21,24 @@ function initCinematicSmartSplash() {
   if (!splash) return;
 
   const video = document.getElementById('splashVideo');
+  const withLabel = document.getElementById('splashWithLabel');
   const slideFue = document.getElementById('splashSlideFue');
   const slideMoodle = document.getElementById('splashSlideMoodle');
   const slideMatany = document.getElementById('splashSlideMatany');
+  const slideUpstore = document.getElementById('splashSlideUpstore');
 
   let dismissed = false;
+
+  function setWithLabel(text) {
+    if (!withLabel) return;
+    withLabel.style.opacity = '0';
+    withLabel.style.transform = 'translateY(-4px)';
+    setTimeout(() => {
+      withLabel.textContent = text;
+      withLabel.style.opacity = '1';
+      withLabel.style.transform = 'translateY(0)';
+    }, 150);
+  }
 
   // Force reset splash visibility on every single execution
   splash.classList.remove('dismissed');
@@ -37,6 +50,12 @@ function initCinematicSmartSplash() {
     dismissSplash();
   };
 
+  if (withLabel) {
+    withLabel.textContent = 'With';
+    withLabel.style.opacity = '1';
+    withLabel.style.transform = 'translateY(0)';
+  }
+
   if (slideFue) {
     slideFue.classList.remove('exit');
     slideFue.classList.add('active');
@@ -46,6 +65,9 @@ function initCinematicSmartSplash() {
   }
   if (slideMatany) {
     slideMatany.classList.remove('active', 'exit');
+  }
+  if (slideUpstore) {
+    slideUpstore.classList.remove('active', 'exit');
   }
 
   function dismissSplash() {
@@ -81,12 +103,14 @@ function initCinematicSmartSplash() {
     });
   }
 
-  // 2. Partner Carousel (With: FUE -> Moodle -> Matany Group)
+  // 2. Partner Carousel
+  // Stage 1: FUE (0s - 1.2s)
   if (slideFue) {
     slideFue.classList.remove('exit');
     slideFue.classList.add('active');
   }
 
+  // Stage 2: Moodle (1.2s - 2.4s)
   setTimeout(() => {
     if (dismissed) return;
     if (slideFue) {
@@ -99,8 +123,10 @@ function initCinematicSmartSplash() {
     }
   }, 1200);
 
+  // Stage 3: Matany Group (2.4s - 3.8s) -> Label: 'Built By'
   setTimeout(() => {
     if (dismissed) return;
+    setWithLabel('Built By');
     if (slideMoodle) {
       slideMoodle.classList.remove('active');
       slideMoodle.classList.add('exit');
@@ -111,13 +137,29 @@ function initCinematicSmartSplash() {
     }
   }, 2400);
 
+  // Stage 4: upstore.one (3.8s - 5.2s) -> Label: 'With'
   setTimeout(() => {
-    dismissSplash();
-  }, 4600);
+    if (dismissed) return;
+    setWithLabel('With');
+    if (slideMatany) {
+      slideMatany.classList.remove('active');
+      slideMatany.classList.add('exit');
+    }
+    if (slideUpstore) {
+      slideUpstore.classList.remove('exit');
+      slideUpstore.classList.add('active');
+    }
+  }, 3800);
 
+  // Stage 5: Cinematic Exit (5.2s)
   setTimeout(() => {
     dismissSplash();
   }, 5200);
+
+  // Safety fallback
+  setTimeout(() => {
+    dismissSplash();
+  }, 6000);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

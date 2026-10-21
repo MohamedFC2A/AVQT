@@ -542,6 +542,7 @@ html, body {
   letter-spacing: 2px;
   text-transform: uppercase;
   position: relative;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .splash-with-label::before,
@@ -598,8 +599,8 @@ html, body {
 }
 
 .partner-img-fue {
-  height: 34px;
-  max-width: 130px;
+  height: 38px;
+  max-width: 140px;
   object-fit: contain;
 }
 
@@ -609,50 +610,37 @@ html, body {
   object-fit: contain;
 }
 
-.splash-partner-slide.hero-slide.active {
-  animation: matanyHeroPopPopup 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes matanyHeroPopPopup {
-  0% { opacity: 0; transform: translateY(12px) scale(0.92); }
-  60% { opacity: 1; transform: translateY(-2px) scale(1.03); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.matany-hero-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #09090B;
-  color: #FFFFFF;
-  border: 2px solid #18181B;
-  box-shadow: 3px 3px 0px #000000;
-  border-radius: 10px;
-  padding: 6px 14px 6px 10px;
-}
-
-.partner-img-matany {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-
-.matany-meta-text {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-  line-height: 1.15;
-}
-
-.matany-brand-title {
-  font-size: 0.96rem;
+/* 3. MATANY GROUP (CLEAN TYPOGRAPHY) */
+.partner-text-matany {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  font-size: 1.25rem;
   font-weight: 900;
-  color: #FFFFFF;
+  color: #0F172A;
+  letter-spacing: -0.5px;
+  display: inline-block;
 }
 
-.matany-tech-subtitle {
-  font-size: 0.58rem;
-  font-weight: 800;
+/* 4. UPSTORE.ONE */
+.partner-upstore-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.partner-img-upstore {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.partner-text-upstore {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #0F172A;
+  letter-spacing: -0.5px;
+}
   color: #A1A1AA;
   text-transform: uppercase;
   letter-spacing: 0.8px;
