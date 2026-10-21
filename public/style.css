@@ -1208,29 +1208,15 @@ body {
 /* ============================================================
    10/10 ULTRA-HIGH-TECH CARD SCAN SIMULATOR & HUD ANIMATION
    ============================================================ */
-.auth-tutorial-scene {
-  perspective: 1200px;
-  width: 100%;
-  max-width: 320px;
-  margin: 12px auto 16px auto;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 /* ============================================================
-   NEUBRUTALISM 3D CARD SHOWCASE ROTATING VIEWPORT
+   SEAMLESS 3D CARD SHOWCASE (CLEAN PURE WHITE, ZERO CLUTTER)
    ============================================================ */
 .auth-3d-card-stage {
   width: 100%;
-  max-width: 320px;
-  height: 250px;
-  margin: 4px auto 14px auto;
-  background: #EAEAEB;
-  border: 3px solid #000000;
-  border-radius: 18px;
-  box-shadow: 4px 4px 0px #000000;
+  max-width: 330px;
+  height: 240px;
+  margin: 6px auto 16px auto;
+  background: #FFFFFF;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -1239,98 +1225,18 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  mix-blend-mode: multiply;
 }
 
 .card-rotating-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center center;
   display: block;
   pointer-events: none;
-  border-radius: 14px;
-}
-
-/* Corner Reticle Brackets */
-.card-stage-bracket {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border-color: #000000;
-  border-style: solid;
-  border-width: 0;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.csb-tl {
-  top: 10px;
-  left: 10px;
-  border-top-width: 3.5px;
-  border-left-width: 3.5px;
-  border-top-left-radius: 6px;
-}
-
-.csb-tr {
-  top: 10px;
-  right: 10px;
-  border-top-width: 3.5px;
-  border-right-width: 3.5px;
-  border-top-right-radius: 6px;
-}
-
-.csb-bl {
-  bottom: 10px;
-  left: 10px;
-  border-bottom-width: 3.5px;
-  border-left-width: 3.5px;
-  border-bottom-left-radius: 6px;
-}
-
-.csb-br {
-  bottom: 10px;
-  right: 10px;
-  border-bottom-width: 3.5px;
-  border-right-width: 3.5px;
-  border-bottom-right-radius: 6px;
-}
-
-/* Holographic Badge Overlay */
-.card-stage-badge {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #FFFFFF;
-  border: 1.5px solid #334155;
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 6;
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-.csb-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10B981;
-  box-shadow: 0 0 8px #10B981;
-  animation: csbPulse 1.8s infinite;
-}
-
-@keyframes csbPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+  background: #FFFFFF;
+  filter: contrast(1.04) brightness(1.02);
 }
 
 /* Status HUD Pill above card */
