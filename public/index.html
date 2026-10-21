@@ -17,14 +17,15 @@
        ========================================================================== -->
   <div id="avqrSmartSplash" class="avqr-smart-splash" dir="rtl">
     <div class="splash-inner-content">
-      <!-- CENTER: ANIMATING CHECKMARK & LOGO REVEAL VIDEO -->
-      <div class="splash-video-container">
-        <video id="splashVideo" class="splash-video-element" playsinline muted autoplay preload="auto">
+      <!-- CENTER: SEAMLESS CANVAS ANIMATION (ZERO SEAMS, ZERO BLACK GLITCH, IMPOSSIBLE TO DOWNLOAD) -->
+      <div class="splash-video-container" oncontextmenu="return false;">
+        <canvas id="splashCanvas" class="splash-canvas-element" width="1080" height="1920"></canvas>
+        <video id="splashVideo" class="splash-hidden-video" playsinline webkit-playsinline muted autoplay preload="auto" disablePictureInPicture controlsList="nodownload noplaybackrate nofullscreen">
           <source src="assets/avqr-splash-intro.mp4" type="video/mp4">
         </video>
       </div>
 
-      <!-- BOTTOM: PARTNER CAROUSEL (WITH -> FUE -> MOODLE -> BUILT BY MATANY GROUP -> UPSTORE.ONE) -->
+      <!-- BOTTOM: PARTNER CAROUSEL (WITH -> FUE -> MOODLE -> BUILT BY MATANY GROUP -> DESIGN BY UPSTORE.ONE) -->
       <div class="splash-bottom-bar" dir="ltr">
         <span class="splash-with-label" id="splashWithLabel">With</span>
         <div class="splash-partner-slider">
@@ -40,10 +41,17 @@
 
           <!-- 3. MATANY GROUP (BUILT BY) -->
           <div class="splash-partner-slide" id="splashSlideMatany">
-            <span class="partner-text-matany">Matany Group</span>
+            <div class="partner-matany-box">
+              <svg class="partner-img-matany-m" viewBox="0 0 128 128" width="22" height="22" fill="none">
+                <polygon points="26,94 42,94 42,32 26,32" fill="#0F172A" />
+                <polygon points="86,94 102,94 102,32 86,32" fill="#0F172A" />
+                <polygon points="42,32 64,68 86,32" fill="#475569" />
+              </svg>
+              <span class="partner-text-matany">Matany Group</span>
+            </div>
           </div>
 
-          <!-- 4. UPSTORE.ONE -->
+          <!-- 4. UPSTORE.ONE (DESIGN BY) -->
           <div class="splash-partner-slide" id="splashSlideUpstore">
             <div class="partner-upstore-box">
               <img src="assets/upstore-logo.png" class="partner-img-upstore" alt="UpStore">

@@ -3118,15 +3118,35 @@ body {
   justify-content: center;
   position: relative;
   min-height: 260px;
+  background-color: #FFFFFF;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
-.splash-video-element {
+.splash-canvas-element {
   width: 100%;
-  max-width: 340px;
-  max-height: 58vh;
+  max-width: 320px;
+  max-height: 56vh;
   object-fit: contain;
   background-color: #FFFFFF;
   display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  mix-blend-mode: multiply;
+  filter: contrast(1.02) brightness(1.02);
+}
+
+.splash-hidden-video {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  z-index: -1;
 }
 
 .splash-bottom-bar {
@@ -3214,10 +3234,22 @@ body {
   object-fit: contain;
 }
 
-/* 3. MATANY GROUP (CLEAN TYPOGRAPHY) */
+/* 3. MATANY GROUP (CLEAN TYPOGRAPHY WITH MONOGRAM) */
+.partner-matany-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.partner-img-matany-m {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
 .partner-text-matany {
   font-family: 'Cairo', system-ui, -apple-system, sans-serif;
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   font-weight: 900;
   color: #0F172A;
   letter-spacing: -0.5px;
@@ -3244,11 +3276,6 @@ body {
   font-weight: 900;
   color: #0F172A;
   letter-spacing: -0.5px;
-}
-  font-weight: 800;
-  color: #A1A1AA;
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
 

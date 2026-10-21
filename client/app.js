@@ -309,6 +309,7 @@ function initCinematicSmartSplash() {
   const splash = document.getElementById('avqrSmartSplash');
   if (!splash) return;
 
+  const canvas = document.getElementById('splashCanvas');
   const video = document.getElementById('splashVideo');
   const withLabel = document.getElementById('splashWithLabel');
   const slideFue = document.getElementById('splashSlideFue');
@@ -316,7 +317,13 @@ function initCinematicSmartSplash() {
   const slideMatany = document.getElementById('splashSlideMatany');
   const slideUpstore = document.getElementById('splashSlideUpstore');
 
+  const ctx = canvas ? canvas.getContext('2d') : null;
   let dismissed = false;
+  let rafId = null;
+
+  // Prevent right-click / context menu completely (anti-download, native look)
+  splash.addEventListener('contextmenu', (e) => e.preventDefault());
+  if (canvas) canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // Helper to transition label smoothly
   function setWithLabel(text) {
@@ -364,6 +371,7 @@ function initCinematicSmartSplash() {
   function dismissSplash() {
     if (dismissed) return;
     dismissed = true;
+    if (rafId) cancelAnimationFrame(rafId);
     splash.classList.add('dismissed');
     setTimeout(() => {
       splash.style.display = 'none';
@@ -373,7 +381,37 @@ function initCinematicSmartSplash() {
     }, 450);
   }
 
-  // 1. Play video and freeze precisely on the settled full logo frame (around 3.68s)
+  // 1. Instant fallback / poster rendering on Frame 0 (Zero-delay, works on 2G/offline, zero black glitch)
+  const posterImg = new Image();
+  posterImg.src = 'assets/splash-poster.png';
+  posterImg.onload = () => {
+    if (ctx && (!video || video.paused || video.currentTime === 0)) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(posterImg, 0, 0, canvas.width, canvas.height);
+    }
+  };
+  if (posterImg.complete && ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(posterImg, 0, 0, canvas.width, canvas.height);
+  }
+
+  // 2. Seamless Canvas Renderer from offscreen video
+  function renderFrame() {
+    if (dismissed || !ctx || !video) return;
+
+    if (video.readyState >= 2) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+
+    if (video.currentTime >= 3.68) {
+      try { video.pause(); } catch (e) {}
+      return;
+    }
+
+    rafId = requestAnimationFrame(renderFrame);
+  }
+
   if (video) {
     try {
       video.muted = true;
@@ -385,12 +423,15 @@ function initCinematicSmartSplash() {
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // Autoplay policy prevented playback, proceed with partner timeline
+        // Autoplay policy prevented playback, poster remains cleanly on canvas
       });
     }
 
+    video.addEventListener('play', () => {
+      renderFrame();
+    });
+
     video.addEventListener('timeupdate', () => {
-      // Freeze exactly on the full logo
       if (video.currentTime >= 3.68) {
         video.pause();
       }
@@ -399,9 +440,11 @@ function initCinematicSmartSplash() {
     video.addEventListener('ended', () => {
       video.pause();
     });
+
+    renderFrame();
   }
 
-  // 2. Partner Showcase Carousel
+  // 3. Partner Showcase Carousel
   // Stage 1: FUE (0s - 1.2s) -> Label: 'With'
   if (slideFue) {
     slideFue.classList.remove('exit');
@@ -421,7 +464,7 @@ function initCinematicSmartSplash() {
     }
   }, 1200);
 
-  // Stage 3: Matany Group (2.4s - 3.8s) -> Label: 'Built By' (plain text, no complex 3D box)
+  // Stage 3: Matany Group (2.4s - 3.8s) -> Label: 'Built By' (clean typography with monogram)
   setTimeout(() => {
     if (dismissed) return;
     setWithLabel('Built By');
@@ -436,10 +479,10 @@ function initCinematicSmartSplash() {
     try { playHaptic(); } catch (e) {}
   }, 2400);
 
-  // Stage 4: upstore.one (3.8s - 5.2s) -> Label: 'With' (yellow Up logo + upstore.one)
+  // Stage 4: upstore.one (3.8s - 5.2s) -> Label: 'Design By' (yellow Up logo + upstore.one)
   setTimeout(() => {
     if (dismissed) return;
-    setWithLabel('With');
+    setWithLabel('Design By');
     if (slideMatany) {
       slideMatany.classList.remove('active');
       slideMatany.classList.add('exit');

@@ -20,6 +20,7 @@ function initCinematicSmartSplash() {
   const splash = document.getElementById('avqrSmartSplash');
   if (!splash) return;
 
+  const canvas = document.getElementById('splashCanvas');
   const video = document.getElementById('splashVideo');
   const withLabel = document.getElementById('splashWithLabel');
   const slideFue = document.getElementById('splashSlideFue');
@@ -27,7 +28,12 @@ function initCinematicSmartSplash() {
   const slideMatany = document.getElementById('splashSlideMatany');
   const slideUpstore = document.getElementById('splashSlideUpstore');
 
+  const ctx = canvas ? canvas.getContext('2d') : null;
   let dismissed = false;
+  let rafId = null;
+
+  splash.addEventListener('contextmenu', (e) => e.preventDefault());
+  if (canvas) canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
   function setWithLabel(text) {
     if (!withLabel) return;
@@ -73,6 +79,7 @@ function initCinematicSmartSplash() {
   function dismissSplash() {
     if (dismissed) return;
     dismissed = true;
+    if (rafId) cancelAnimationFrame(rafId);
     splash.classList.add('dismissed');
     setTimeout(() => {
       splash.style.display = 'none';
@@ -82,7 +89,37 @@ function initCinematicSmartSplash() {
     }, 400);
   }
 
-  // 1. Play video and freeze precisely on the settled full logo frame (at ~3.68s)
+  // 1. Instant poster fallback (0ms latency, zero black flash)
+  const posterImg = new Image();
+  posterImg.src = 'assets/splash-poster.png';
+  posterImg.onload = () => {
+    if (ctx && (!video || video.paused || video.currentTime === 0)) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(posterImg, 0, 0, canvas.width, canvas.height);
+    }
+  };
+  if (posterImg.complete && ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(posterImg, 0, 0, canvas.width, canvas.height);
+  }
+
+  // 2. Smooth Canvas Render Loop
+  function renderFrame() {
+    if (dismissed || !ctx || !video) return;
+
+    if (video.readyState >= 2) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+
+    if (video.currentTime >= 3.68) {
+      try { video.pause(); } catch (e) {}
+      return;
+    }
+
+    rafId = requestAnimationFrame(renderFrame);
+  }
+
   if (video) {
     video.muted = true;
     video.playsInline = true;
@@ -91,6 +128,10 @@ function initCinematicSmartSplash() {
     if (playPromise !== undefined) {
       playPromise.catch(() => {});
     }
+
+    video.addEventListener('play', () => {
+      renderFrame();
+    });
 
     video.addEventListener('timeupdate', () => {
       if (video.currentTime >= 3.68) {
@@ -101,9 +142,11 @@ function initCinematicSmartSplash() {
     video.addEventListener('ended', () => {
       video.pause();
     });
+
+    renderFrame();
   }
 
-  // 2. Partner Carousel
+  // 3. Partner Carousel
   // Stage 1: FUE (0s - 1.2s)
   if (slideFue) {
     slideFue.classList.remove('exit');
@@ -137,10 +180,10 @@ function initCinematicSmartSplash() {
     }
   }, 2400);
 
-  // Stage 4: upstore.one (3.8s - 5.2s) -> Label: 'With'
+  // Stage 4: upstore.one (3.8s - 5.2s) -> Label: 'Design By'
   setTimeout(() => {
     if (dismissed) return;
-    setWithLabel('With');
+    setWithLabel('Design By');
     if (slideMatany) {
       slideMatany.classList.remove('active');
       slideMatany.classList.add('exit');
