@@ -524,6 +524,19 @@ function initAuthGateFlow() {
   const authBioStudentFac = document.getElementById('authBioStudentFac');
   const authBioStudentPhoto = document.getElementById('authBioStudentPhoto');
 
+  // Ensure 3D rotating card video plays seamlessly with muted loop
+  const cardVid = document.getElementById('cardRotatingVideo');
+  if (cardVid) {
+    try {
+      cardVid.muted = true;
+      cardVid.playsInline = true;
+      const playP = cardVid.play();
+      if (playP !== undefined) {
+        playP.catch(() => {});
+      }
+    } catch (e) {}
+  }
+
   // Gate Check: If not registered, show ONLY auth gate and hide bottom dock
   if (!state.isRegistered) {
     showAuthGateOnly();
