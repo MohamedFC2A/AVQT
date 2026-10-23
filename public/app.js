@@ -309,7 +309,6 @@ function initCinematicSmartSplash() {
   const splash = document.getElementById('avqrSmartSplash');
   if (!splash) return;
 
-  const canvas = document.getElementById('splashCanvas');
   const video = document.getElementById('splashVideo');
   const withLabel = document.getElementById('splashWithLabel');
   const slideFue = document.getElementById('splashSlideFue');
@@ -317,13 +316,11 @@ function initCinematicSmartSplash() {
   const slideMatany = document.getElementById('splashSlideMatany');
   const slideUpstore = document.getElementById('splashSlideUpstore');
 
-  const ctx = canvas ? canvas.getContext('2d') : null;
   let dismissed = false;
-  let rafId = null;
 
   // Prevent right-click / context menu completely (anti-download, native look)
   splash.addEventListener('contextmenu', (e) => e.preventDefault());
-  if (canvas) canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  if (video) video.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // Helper to transition label smoothly
   function setWithLabel(text) {
@@ -371,7 +368,6 @@ function initCinematicSmartSplash() {
   function dismissSplash() {
     if (dismissed) return;
     dismissed = true;
-    if (rafId) cancelAnimationFrame(rafId);
     splash.classList.add('dismissed');
     setTimeout(() => {
       splash.style.display = 'none';
@@ -381,67 +377,27 @@ function initCinematicSmartSplash() {
     }, 450);
   }
 
-  // 1. Instant fallback / poster rendering on Frame 0 (Zero-delay, works on 2G/offline, zero black glitch)
-  const posterImg = new Image();
-  posterImg.src = 'assets/splash-poster.png';
-  posterImg.onload = () => {
-    if (ctx && (!video || video.paused || video.currentTime === 0)) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(posterImg, 0, 0, canvas.width, canvas.height);
-    }
-  };
-  if (posterImg.complete && ctx) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(posterImg, 0, 0, canvas.width, canvas.height);
-  }
-
-  // 2. Seamless Canvas Renderer from offscreen video
-  function renderFrame() {
-    if (dismissed || !ctx || !video) return;
-
-    if (video.readyState >= 2) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    }
-
-    if (video.currentTime >= 3.68) {
-      try { video.pause(); } catch (e) {}
-      return;
-    }
-
-    rafId = requestAnimationFrame(renderFrame);
-  }
-
+  // Hardware-accelerated direct video playback (zero canvas lag, zero dropped frames, zero glitches)
   if (video) {
     try {
       video.muted = true;
       video.playsInline = true;
       video.currentTime = 0;
-      video.load();
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
     } catch (e) {}
 
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Autoplay policy prevented playback, poster remains cleanly on canvas
-      });
-    }
-
-    video.addEventListener('play', () => {
-      renderFrame();
-    });
-
     video.addEventListener('timeupdate', () => {
-      if (video.currentTime >= 3.68) {
-        video.pause();
+      if (video.currentTime >= 3.9) {
+        try { video.pause(); } catch (e) {}
       }
     });
 
     video.addEventListener('ended', () => {
-      video.pause();
+      try { video.pause(); } catch (e) {}
     });
-
-    renderFrame();
   }
 
   // 3. Partner Showcase Carousel
@@ -527,7 +483,6 @@ function initAuthGateFlow() {
   // 3D Rotating Card Video: Auto-play + Press-to-Pause / Release-to-Resume
   const cardVid = document.getElementById('cardRotatingVideo');
   const cardStage = document.getElementById('auth3DCardStage');
-  const cardScanStatusText = document.getElementById('cardScanStatusText');
   if (cardVid && cardStage) {
     try {
       cardVid.muted = true;
@@ -546,9 +501,6 @@ function initAuthGateFlow() {
         cardVid.pause();
       } catch (err) {}
       cardStage.classList.add('is-paused');
-      if (cardScanStatusText) {
-        cardScanStatusText.textContent = 'تم تثبيت الكارنيه ⏸️ (أفلت للمتابعة)';
-      }
     };
 
     const resumeCardRotation = (e) => {
@@ -559,9 +511,6 @@ function initAuthGateFlow() {
         if (p !== undefined) p.catch(() => {});
       } catch (err) {}
       cardStage.classList.remove('is-paused');
-      if (cardScanStatusText) {
-        cardScanStatusText.textContent = 'مسح ضوئي للكارنيه • اضغط للتثبيت';
-      }
     };
 
     // Unified pointer events for desktop mouse and mobile touch
@@ -679,10 +628,13 @@ function initAuthGateFlow() {
     }
   };
 
-  // Camera Scan Button on Gate (Explicit CARD Mode)
+  // Card Photo Selection Button (Opens Phone Gallery / File Picker Directly - ZERO CAMERA)
   if (btnStartCardScan) {
     btnStartCardScan.addEventListener('click', () => {
-      openCameraScanner('CARD');
+      const fileInput = document.getElementById('cardImageFileInput');
+      if (fileInput) {
+        fileInput.click();
+      }
     });
   }
 
@@ -1886,46 +1838,89 @@ function initPhotoUploadFallbackEngine() {
   }
 
   if (fileInput) {
-    fileInput.addEventListener('change', (e) => {
+    fileInput.addEventListener('change', async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
 
       const permModal = document.getElementById('cameraPermissionModal');
       const cameraModal = document.getElementById('cameraModal');
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const offCanvas = document.createElement('canvas');
-          offCanvas.width = img.width;
-          offCanvas.height = img.height;
-          const offCtx = offCanvas.getContext('2d');
-          offCtx.drawImage(img, 0, 0);
+      showStatusBanner('info', 'جاري فحص صورة الكارنيه واستخراج البيانات...', 'يرجى الانتظار لحظات للتعرف الذكي على الكارنيه...');
 
-          const imgData = offCtx.getImageData(0, 0, img.width, img.height);
-          let decoded = null;
+      try {
+        let decodedText = null;
+
+        // 1. Ultra-fast native BarcodeDetector if supported (iOS 17+, Android Chrome)
+        if ('BarcodeDetector' in window) {
+          try {
+            const imageBitmap = await createImageBitmap(file);
+            const detector = new BarcodeDetector({ formats: ['qr_code'] });
+            const barcodes = await detector.detect(imageBitmap);
+            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+              decodedText = barcodes[0].rawValue;
+            }
+          } catch (detErr) {}
+        }
+
+        // 2. High-precision multi-scale jsQR fallback
+        if (!decodedText) {
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          const img = new Image();
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = dataUrl;
+          });
+
+          // Scale image smartly if oversized (optimal for jsQR)
+          const maxDim = 1600;
+          let targetW = img.width;
+          let targetH = img.height;
+          if (targetW > maxDim || targetH > maxDim) {
+            const scale = maxDim / Math.max(targetW, targetH);
+            targetW = Math.round(targetW * scale);
+            targetH = Math.round(targetH * scale);
+          }
+
+          const offCanvas = document.createElement('canvas');
+          offCanvas.width = targetW;
+          offCanvas.height = targetH;
+          const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+          offCtx.drawImage(img, 0, 0, targetW, targetH);
+
+          const imgData = offCtx.getImageData(0, 0, targetW, targetH);
           if (window.jsQR) {
-            decoded = window.jsQR(imgData.data, imgData.width, imgData.height, {
+            const qrResult = window.jsQR(imgData.data, imgData.width, imgData.height, {
               inversionAttempts: 'attemptBoth'
             });
+            if (qrResult && qrResult.data) {
+              decodedText = qrResult.data;
+            }
           }
+        }
 
-          if (decoded && decoded.data) {
-            if (permModal) permModal.classList.add('hidden');
-            if (cameraModal) cameraModal.classList.add('hidden');
-            closeCameraScanner();
-            playAudioChime();
-            playHaptic();
-            handleScannedQrContent(decoded.data);
-          } else {
-            alert('لم يتم العثور على رمز QR واضح في الصورة المختارة.\n\nيرجى التأكد من اختيار صورة ذات إضاءة جيدة يظهر فيها كود QR الكارنيه بوضوح.');
-          }
-          fileInput.value = '';
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
+        if (decodedText) {
+          if (permModal) permModal.classList.add('hidden');
+          if (cameraModal) cameraModal.classList.add('hidden');
+          closeCameraScanner();
+          playAudioChime();
+          playHaptic();
+          handleScannedQrContent(decodedText);
+        } else {
+          alert('لم يتم العثور على رمز QR واضح في الصورة المختارة.\n\nيرجى التأكد من اختيار صورة واضحة ومضاءة جيداً يظهر فيها كود QR الكارنيه بالكامل.');
+        }
+      } catch (err) {
+        console.error('Error decoding card image:', err);
+        alert('حدث خطأ أثناء قراءة الصورة. يرجى اختيار صورة أخرى واضحة للكارنيه.');
+      } finally {
+        fileInput.value = '';
+      }
     });
   }
 }

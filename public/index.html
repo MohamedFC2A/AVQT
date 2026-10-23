@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="assets/ehdar-icon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=2.4.0">
+  <link rel="stylesheet" href="style.css?v=2.5.0">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -17,10 +17,12 @@
        ========================================================================== -->
   <div id="avqrSmartSplash" class="avqr-smart-splash" dir="rtl">
     <div class="splash-inner-content">
-      <!-- CENTER: SEAMLESS CANVAS ANIMATION (ZERO SEAMS, ZERO BLACK GLITCH, IMPOSSIBLE TO DOWNLOAD) -->
+      <!-- CENTER: SEAMLESS INTRO VIDEO (HARDWARE-ACCELERATED, PURE WHITE, ZERO GLITCH, IMPOSSIBLE TO DOWNLOAD) -->
       <div class="splash-video-container" oncontextmenu="return false;">
-        <canvas id="splashCanvas" class="splash-canvas-element" width="1080" height="1920"></canvas>
-        <video id="splashVideo" class="splash-hidden-video" playsinline webkit-playsinline muted autoplay preload="auto" disablePictureInPicture controlsList="nodownload noplaybackrate nofullscreen">
+        <video id="splashVideo" class="splash-video-element" 
+               playsinline webkit-playsinline muted autoplay preload="auto" 
+               poster="assets/splash-poster.webp"
+               disablePictureInPicture controlsList="nodownload noplaybackrate nofullscreen">
           <source src="assets/avqr-splash-intro.mp4" type="video/mp4">
         </video>
       </div>
@@ -98,12 +100,12 @@
             <img src="assets/ehdar-logo-full.svg" alt="e7dar QR ATTD Logo" class="auth-matany-img">
           </div>
           <h2 class="auth-title">توثيق الطالب ومسح الكارنيه</h2>
-          <p class="auth-desc">وجه الكاميرا نحو كود QR بكارنيه جامعة المستقبل للتعرف الفوري على بياناتك</p>
+          <p class="auth-desc">اختر صورة الكارنيه من هاتفك للتعرف الفوري على بياناتك وتوثيق الحساب</p>
         </div>
 
-        <!-- 3D ROTATING CARD SHOWCASE (CLEAN, SEAMLESS PURE WHITE, INTERACTIVE PAUSE & SCAN BEAM) -->
+        <!-- 3D ROTATING CARD SHOWCASE (CLEAN, SEAMLESS PURE WHITE, INTERACTIVE PAUSE & CLEAN SCAN LINE) -->
         <div class="auth-3d-card-stage" id="auth3DCardStage" oncontextmenu="return false;" title="اضغط مع التثبيت لإيقاف الدوران">
-          <!-- Active Scanning Laser Beam -->
+          <!-- Active Scanning Clean Line (No Glow) -->
           <div class="card-scan-laser-beam" aria-hidden="true"></div>
 
           <video id="cardRotatingVideo" 
@@ -113,19 +115,13 @@
                  autoplay loop muted playsinline webkit-playsinline
                  disablePictureInPicture controlsList="nodownload noplaybackrate nofullscreen">
           </video>
-
-          <!-- Interactive Live Scan Status Pill -->
-          <div class="card-scan-status-pill" id="cardScanStatusPill">
-            <span class="scan-live-dot"></span>
-            <span class="scan-status-text" id="cardScanStatusText">مسح ضوئي للكارنيه • اضغط للتثبيت</span>
-          </div>
         </div>
 
-        <!-- AUTH STEP 1: CAMERA SCAN BUTTON -->
+        <!-- AUTH STEP 1: SELECT CARD IMAGE FROM PHOTOS -->
         <div id="authCardStep" class="auth-form-wrap">
           <button id="btnStartCardScan" class="neo-btn btn-primary-blue btn-full btn-large">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-            فتح الكاميرا وتصوير الكارنيه فوراً
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            اختيار صورة الكارنيه من الصور
           </button>
         </div>
 
@@ -586,8 +582,8 @@
     </div>
   </div>
 
-  <!-- HIDDEN PHOTO PICKER INPUT FOR ZERO-FRICTION FALLBACK -->
-  <input type="file" id="cardImageFileInput" accept="image/*" capture="environment" style="display:none;">
+  <!-- PHOTO PICKER INPUT (DIRECT GALLERY ACCESS, ZERO CAMERA FORCING) -->
+  <input type="file" id="cardImageFileInput" accept="image/*" style="display:none;">
 
   <!-- CAMERA PERMISSION ASSISTANT MODAL (FOR USERS WHO BLOCKED CAMERA) -->
   <div id="cameraPermissionModal" class="camera-permission-overlay hidden">
@@ -858,6 +854,6 @@
 
   <script src="qrcode.min.js"></script>
   <script src="jsQR.min.js"></script>
-  <script src="app.js?v=2.4.0"></script>
+  <script src="app.js?v=2.5.0"></script>
 </body>
 </html>
