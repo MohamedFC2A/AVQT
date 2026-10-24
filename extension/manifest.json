@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AVQR - ATT Vision QR Tool | Matany Group x FUE",
-  "version": "1.0.5",
-  "description": "أداة الحضور الذكية المعتمدة للجامعات من Matany Group بتصميم Neubrutalism وأتمتة الـ Checkboxes مع Auto-Save بنسبة خطأ 0%",
+  "name": "e7dar.com - منظومة الحضور الذكية | Matany Group x FUE",
+  "version": "1.1.0",
+  "description": "منظومة إحضر (e7dar.com) المعتمدة للجامعات من Matany Group x FUE بربط مباشر مع قاعدة بيانات Neon.tech وأتمتة الـ Checkboxes مع Auto-Save",
   "permissions": [
     "storage",
     "activeTab",
