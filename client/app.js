@@ -60,12 +60,14 @@ function getOrCreateDeviceUuid() {
 
 const deviceUuid = getOrCreateDeviceUuid();
 
+const isRegisteredStored = localStorage.getItem('avqr_registered') === 'true';
+
 // Student State
 let state = {
   deviceUuid: deviceUuid,
   boundStudentId: localStorage.getItem('avqr_bound_student_id') || '',
-  studentId: localStorage.getItem('avqr_student_id') || '',
-  fullName: localStorage.getItem('avqr_full_name') || '',
+  studentId: isRegisteredStored ? (localStorage.getItem('avqr_student_id') || '') : '',
+  fullName: isRegisteredStored ? (localStorage.getItem('avqr_full_name') || '') : '',
   faculty: localStorage.getItem('avqr_faculty') || 'Engineering',
   level: localStorage.getItem('avqr_level') || 'LEVEL 01',
   emergencyAccessKey: localStorage.getItem('avqr_emergency_key') || '',
@@ -73,7 +75,7 @@ let state = {
   photoUrl: localStorage.getItem('avqr_photo_url') || '',
   biometricRegistered: localStorage.getItem('avqr_bio_registered') === 'true',
   biometricCredentialId: localStorage.getItem('avqr_bio_cred_id') || '',
-  isRegistered: localStorage.getItem('avqr_registered') === 'true',
+  isRegistered: isRegisteredStored,
   token: localStorage.getItem('avqr_token') || '',
   sessionToken: localStorage.getItem('avqr_session_token') || '',
   activeSessionId: 'AVQR-2026'
@@ -134,13 +136,20 @@ function hidePermanentBanScreen() {
 // Force immediate complete logout & deactivation on concurrent login or device switch
 function forceLogoutAndDeactivate(reasonMessage) {
   state.isRegistered = false;
+  state.studentId = '';
+  state.fullName = '';
+  state.photoUrl = '';
   state.token = '';
   state.sessionToken = '';
   state.boundStudentId = '';
   localStorage.removeItem('avqr_registered');
+  localStorage.removeItem('avqr_student_id');
+  localStorage.removeItem('avqr_full_name');
+  localStorage.removeItem('avqr_photo_url');
   localStorage.removeItem('avqr_token');
   localStorage.removeItem('avqr_session_token');
   localStorage.removeItem('avqr_bound_student_id');
+  localStorage.removeItem('avqr_emergency_key');
 
   if (cameraStream) {
     try {
@@ -149,6 +158,7 @@ function forceLogoutAndDeactivate(reasonMessage) {
     } catch (e) {}
   }
 
+  renderStudentProfile();
   showAuthGateOnly();
   if (reasonMessage) {
     alert(reasonMessage);
@@ -285,6 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
     showPermanentBanScreen();
   }
   startSessionHeartbeatMonitor();
+
+  // Instant Auth Gate check: Registered students unlock instantly, unverified stay on Auth Gate
+  if (state.isRegistered && state.studentId) {
+    hideAuthGateAndUnlockApp();
+  } else {
+    showAuthGateOnly();
+  }
 
   initAuthGateFlow();
   initDockNavigation();
@@ -472,13 +489,10 @@ window.addEventListener('pageshow', (event) => {
 // -------------------------------------------------------------
 function initAuthGateFlow() {
   const btnStartCardScan = document.getElementById('btnStartCardScan');
+  const btnPickCardGallery = document.getElementById('btnPickCardGallery');
   const authCardStep = document.getElementById('authCardStep');
   const authBioStep = document.getElementById('authBioStep');
-  const btnConfirmBio = document.getElementById('btnConfirmBiometricAuth');
-  const authBioStudentName = document.getElementById('authBioStudentName');
-  const authBioStudentId = document.getElementById('authBioStudentId');
-  const authBioStudentFac = document.getElementById('authBioStudentFac');
-  const authBioStudentPhoto = document.getElementById('authBioStudentPhoto');
+  const btnConfirmAuthGate = document.getElementById('btnConfirmAuthGate');
 
   // 3D Rotating Card Video: Auto-play + Press-to-Pause / Release-to-Resume
   const cardVid = document.getElementById('cardRotatingVideo');
@@ -525,39 +539,42 @@ function initAuthGateFlow() {
     window.addEventListener('touchcancel', resumeCardRotation);
   }
 
-  // Gate Check: If not registered, show ONLY auth gate and hide bottom dock
-  if (!state.isRegistered) {
+  // Gate Check: If not registered or no studentId, show ONLY auth gate and hide bottom dock
+  if (!state.isRegistered || !state.studentId) {
     showAuthGateOnly();
   } else {
     hideAuthGateAndUnlockApp();
   }
 
-  async function processVerifiedCardData(cardData) {
+  // Display 3D Card on Step 2
+  window.display3DCardVerificationStep = async function(cardData) {
     const studentId = cardData.code || cardData.id || '';
     const fullName = cardData.fullName || cardData.full_name || '';
     const faculty = cardData.faculty || 'Engineering';
     const level = cardData.level || 'LEVEL 01';
     const photoUrl = cardData.photoUrl || cardData.photo_url || '';
-    const cardUrl = cardData.rawUrl || cardData.cardUrl || (cardData.ssUuid ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=${cardData.ssUuid}` : '');
+    const cardUrl = cardData.cardUrl || (cardData.ssUuid ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=${cardData.ssUuid}` : '');
 
     if (!studentId) {
       alert('تعذر استخراج بيانات الطالب من كود الكارنيه. يرجى مسح كود QR الكارنيه بوضوح.');
       return;
     }
 
-    // Strict Device Lock Check
+    // Strict Device Lock Check: Impossible to register 2 IDs on the same device
     if (state.boundStudentId && state.boundStudentId !== studentId) {
-      alert(`عفواً، هذا الجهاز مقترن رسمياً بحساب الطالب (${state.boundStudentId}).\n\nيستحيل استخدام كارنيه طالب آخر على هذا الجهاز حفاظاً على النزاهة الأكاديمية لجامعة المستقبل (FUE).`);
+      alert(`عفواً، هذا الجهاز مقترن رسمياً بحساب الطالب (${state.boundStudentId}).\n\nيستحيل تسجيل أكثر من ID على نفس الجهاز وفقاً لقواعد جامعة المستقبل FUE.`);
       return;
     }
 
     state.studentId = studentId;
-    state.boundStudentId = studentId;
     state.fullName = fullName;
     state.faculty = faculty;
     state.level = level;
     state.photoUrl = photoUrl;
     state.cardUrl = cardUrl;
+    if (cardData.sessionToken) {
+      state.sessionToken = cardData.sessionToken;
+    }
     if (cardData.emergency_access_key) {
       state.emergencyAccessKey = cardData.emergency_access_key;
     } else if (!state.emergencyAccessKey) {
@@ -566,21 +583,40 @@ function initAuthGateFlow() {
       state.emergencyAccessKey = `FUE-SEC-${seg(4)}-${seg(4)}-${seg(4)}-2026`;
     }
 
-    saveState();
+    // Populate Step 2 3D Card
+    const authFullName = document.getElementById('authCardFullName');
+    if (authFullName) authFullName.textContent = formatBinaryName(fullName);
 
-    if (authBioStudentName) authBioStudentName.textContent = fullName;
-    if (authBioStudentId) authBioStudentId.textContent = `الرقم الجامعي: ${studentId}`;
-    if (authBioStudentFac) authBioStudentFac.textContent = `${faculty} • ${level}`;
-    if (authBioStudentPhoto && photoUrl) authBioStudentPhoto.src = photoUrl;
+    const authStudentId = document.getElementById('authCardStudentId');
+    if (authStudentId) authStudentId.textContent = studentId;
+
+    const authFaculty = document.getElementById('authCardFaculty');
+    if (authFaculty) authFaculty.textContent = faculty;
+
+    const authLevelTag = document.getElementById('authCardLevelTag');
+    if (authLevelTag) authLevelTag.textContent = level;
+
+    const authPhoto = document.getElementById('authCardStudentPhoto');
+    if (authPhoto && photoUrl) authPhoto.src = photoUrl;
+
+    // Render QR Code on Step 2 3D Card Canvas
+    renderCardOfficialQr(cardUrl || `https://services.fue.edu.eg/FueCards/StudentCard.aspx?id=${studentId}`, 'authCardOfficialQrCanvas');
+
+    // Hide Step 1 & 3D video, reveal Step 2 3D interactive card
+    const auth3DCardStage = document.getElementById('auth3DCardStage');
+    if (auth3DCardStage) auth3DCardStage.classList.add('hidden');
 
     if (authCardStep) authCardStep.classList.add('hidden');
     if (authBioStep) authBioStep.classList.remove('hidden');
 
+    // Initialize 3D interaction physics for Step 2 card
+    initStep2Auth3DCard();
+
     playHaptic();
     playAudioChime();
-  }
+  };
 
-  // Allow camera scanner to route card QR codes directly to verification flow
+  // Allow camera scanner & gallery to route card QR codes directly to verification flow
   window.processVerifiedCardFromQr = async function(val) {
     showStatusBanner('info', 'جاري مطابقة وتوثيق الكارنيه مع قاعدة بيانات FUE...', 'جاري استخراج بيانات الطالب والصورة الرسمية من نظام الجامعة...');
     try {
@@ -604,6 +640,10 @@ function initAuthGateFlow() {
           showDeviceTransferWaitingModal(data.studentId, data.transferId);
           return;
         }
+        if (data.error === 'DEVICE_BOUND_TO_OTHER_STUDENT') {
+          alert(data.message || 'عفواً، هذا الجهاز مقترن رسمياً بحساب طالب آخر. يستحيل تسجيل 2 ID على نفس الجهاز.');
+          return;
+        }
       }
       if (res.ok && (data.student || data.cardData)) {
         if (data.sessionToken) {
@@ -611,7 +651,7 @@ function initAuthGateFlow() {
         }
         const studentInfo = data.student || {};
         const cardInfo = data.cardData || {};
-        await processVerifiedCardData({
+        await window.display3DCardVerificationStep({
           code: studentInfo.id || cardInfo.code,
           fullName: studentInfo.full_name || cardInfo.fullName,
           faculty: studentInfo.faculty || cardInfo.faculty,
@@ -628,9 +668,16 @@ function initAuthGateFlow() {
     }
   };
 
-  // Card Photo Selection Button (Opens Phone Gallery / File Picker Directly - ZERO CAMERA)
+  // Primary Action Button: Open Camera Scanner
   if (btnStartCardScan) {
     btnStartCardScan.addEventListener('click', () => {
+      openCameraScanner('CARD');
+    });
+  }
+
+  // Secondary Fallback Button: Pick Card from Phone Gallery
+  if (btnPickCardGallery) {
+    btnPickCardGallery.addEventListener('click', () => {
       const fileInput = document.getElementById('cardImageFileInput');
       if (fileInput) {
         fileInput.click();
@@ -638,12 +685,19 @@ function initAuthGateFlow() {
     });
   }
 
-  // Biometric Confirmation Button (Step 2 of Onboarding)
-  if (btnConfirmBio) {
-    btnConfirmBio.addEventListener('click', async () => {
-      btnConfirmBio.disabled = true;
-      await executeBiometricVerification();
-      btnConfirmBio.disabled = false;
+  // Step 2 Continue Button: Confirm Card and Unlock App
+  if (btnConfirmAuthGate) {
+    btnConfirmAuthGate.addEventListener('click', () => {
+      state.isRegistered = true;
+      state.boundStudentId = state.studentId;
+      state.biometricRegistered = true;
+      saveState();
+
+      renderStudentProfile();
+      playAudioChime();
+      playHaptic();
+
+      hideAuthGateAndUnlockApp();
     });
   }
 }
@@ -829,7 +883,18 @@ function showAuthGateOnly() {
   if (viewAuthGate) viewAuthGate.classList.add('active');
 
   const smartBottomDock = document.getElementById('smartBottomDock');
-  if (smartBottomDock) smartBottomDock.classList.add('dock-hidden');
+  if (smartBottomDock) {
+    smartBottomDock.classList.add('dock-hidden');
+    smartBottomDock.style.display = 'none';
+  }
+
+  const topbarChip = document.getElementById('topbarStudentChip');
+  if (topbarChip) {
+    topbarChip.style.display = 'none';
+    topbarChip.classList.add('hidden');
+    const topbarId = document.getElementById('topbarStudentId');
+    if (topbarId) topbarId.textContent = '';
+  }
 }
 
 function hideAuthGateAndUnlockApp() {
@@ -837,7 +902,18 @@ function hideAuthGateAndUnlockApp() {
   if (viewAuthGate) viewAuthGate.classList.remove('active');
 
   const smartBottomDock = document.getElementById('smartBottomDock');
-  if (smartBottomDock) smartBottomDock.classList.remove('dock-hidden');
+  if (smartBottomDock) {
+    smartBottomDock.classList.remove('dock-hidden');
+    smartBottomDock.style.display = 'flex';
+  }
+
+  const topbarChip = document.getElementById('topbarStudentChip');
+  if (topbarChip && state.isRegistered && state.studentId) {
+    topbarChip.style.display = 'flex';
+    topbarChip.classList.remove('hidden');
+    const topbarId = document.getElementById('topbarStudentId');
+    if (topbarId) topbarId.textContent = state.studentId;
+  }
 
   switchToView('viewAttendance');
 }
@@ -888,8 +964,8 @@ function formatBinaryName(fullName) {
 }
 
 // Helper: Render Official FUE Student Card QR Code on Canvas
-function renderCardOfficialQr(targetUrl) {
-  const qrCanvas = document.getElementById('cardOfficialQrCanvas');
+function renderCardOfficialQr(targetUrl, canvasId = 'cardOfficialQrCanvas') {
+  const qrCanvas = document.getElementById(canvasId);
   if (!qrCanvas || !window.QRCode || typeof window.QRCode.toCanvas !== 'function') return;
   const url = targetUrl || state.cardUrl || (state.studentId ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214` : 'https://fue.edu.eg');
   window.QRCode.toCanvas(qrCanvas, url, {
@@ -904,13 +980,7 @@ function renderCardOfficialQr(targetUrl) {
 // -------------------------------------------------------------
 // 2. Interactive 3D FUE Student Card Engine
 // -------------------------------------------------------------
-function init3DCardEngine() {
-  const card = document.getElementById('interactiveFueCard');
-  const scene = document.getElementById('fue3dScene');
-  const glareFront = document.getElementById('cardGlareFront');
-  const glareBack = document.getElementById('cardGlareBack');
-  const hintOverlay = document.getElementById('cardFlipHintOverlay');
-
+function setup3DCardInteractions({ card, scene, glareFront, glareBack, hintOverlay, autoHint = true }) {
   if (!card || !scene) return;
 
   let isFlipped = false;
@@ -931,20 +1001,21 @@ function init3DCardEngine() {
     if (hintHideTimeout) clearTimeout(hintHideTimeout);
   }
 
-  // Smart 7-Second Flip Hint Timer
-  setInterval(() => {
-    const cardView = document.getElementById('viewCard');
-    const isCardViewActive = cardView && cardView.classList.contains('active');
-    if (!isCardViewActive) return;
+  if (autoHint) {
+    setInterval(() => {
+      const cardView = document.getElementById('viewCard');
+      const isCardViewActive = cardView && cardView.classList.contains('active');
+      if (!isCardViewActive) return;
 
-    const timeSinceLast = Date.now() - lastCardInteraction;
-    if (timeSinceLast >= 7000 && hintOverlay && !hintOverlay.classList.contains('active')) {
-      hintOverlay.classList.add('active');
-      hintHideTimeout = setTimeout(() => {
-        hintOverlay.classList.remove('active');
-      }, 2500);
-    }
-  }, 7000);
+      const timeSinceLast = Date.now() - lastCardInteraction;
+      if (timeSinceLast >= 7000 && hintOverlay && !hintOverlay.classList.contains('active')) {
+        hintOverlay.classList.add('active');
+        hintHideTimeout = setTimeout(() => {
+          hintOverlay.classList.remove('active');
+        }, 2500);
+      }
+    }, 7000);
+  }
 
   function updateCardTransform(rotX, rotY) {
     const flipAngle = isFlipped ? 180 : 0;
@@ -1020,9 +1091,30 @@ function init3DCardEngine() {
 
   scene.addEventListener('pointerup', stopDrag);
   scene.addEventListener('pointercancel', stopDrag);
+}
 
-  // Initial QR code render
-  renderCardOfficialQr(state.cardUrl);
+function init3DCardEngine() {
+  setup3DCardInteractions({
+    card: document.getElementById('interactiveFueCard'),
+    scene: document.getElementById('fue3dScene'),
+    glareFront: document.getElementById('cardGlareFront'),
+    glareBack: document.getElementById('cardGlareBack'),
+    hintOverlay: document.getElementById('cardFlipHintOverlay'),
+    autoHint: true
+  });
+
+  renderCardOfficialQr(state.cardUrl, 'cardOfficialQrCanvas');
+}
+
+function initStep2Auth3DCard() {
+  setup3DCardInteractions({
+    card: document.getElementById('authInteractiveCard'),
+    scene: document.getElementById('auth3dScene'),
+    glareFront: document.getElementById('authCardGlareFront'),
+    glareBack: document.getElementById('authCardGlareBack'),
+    hintOverlay: document.getElementById('authCardFlipHintOverlay'),
+    autoHint: false
+  });
 }
 
 // -------------------------------------------------------------
@@ -1110,8 +1202,22 @@ function initEmergencyVaultKey() {
 // 4. Render Student Profile
 // -------------------------------------------------------------
 function renderStudentProfile() {
+  const topbarChip = document.getElementById('topbarStudentChip');
   const topbarId = document.getElementById('topbarStudentId');
-  if (topbarId) topbarId.textContent = state.studentId || 'غير مسجل';
+
+  if (!state.isRegistered || !state.studentId) {
+    if (topbarChip) {
+      topbarChip.style.display = 'none';
+      topbarChip.classList.add('hidden');
+    }
+    if (topbarId) topbarId.textContent = '';
+  } else {
+    if (topbarChip) {
+      topbarChip.style.display = 'flex';
+      topbarChip.classList.remove('hidden');
+    }
+    if (topbarId) topbarId.textContent = state.studentId;
+  }
 
   const cardName = document.getElementById('cardFullName');
   if (cardName) cardName.textContent = formatBinaryName(state.fullName);
@@ -1122,7 +1228,7 @@ function renderStudentProfile() {
   }
 
   const cardId = document.getElementById('cardStudentId');
-  if (cardId) cardId.textContent = state.studentId || 'غير مسجل';
+  if (cardId) cardId.textContent = state.studentId || '--------';
 
   const cardFac = document.getElementById('cardFaculty');
   if (cardFac) cardFac.textContent = state.faculty || 'Engineering';
@@ -1580,9 +1686,15 @@ function formatArabicTime(dateInput) {
 let cameraStream = null;
 let cameraScanInterval = null;
 let currentScanMode = 'CARD'; // 'CARD' | 'ATTENDANCE'
+let cameraCardScanStartTime = 0;
+let isCardScanProcessing = false;
 
 async function openCameraScanner(mode = 'CARD') {
   currentScanMode = mode;
+  if (mode === 'CARD') {
+    cameraCardScanStartTime = Date.now();
+    isCardScanProcessing = false;
+  }
   const modal = document.getElementById('cameraModal');
   const video = document.getElementById('scannerVideo');
   const title = document.getElementById('cameraModalTitle');
@@ -1709,9 +1821,14 @@ async function openCameraScanner(mode = 'CARD') {
           const codes = await barcodeDetector.detect(video);
           if (codes && codes.length > 0 && codes[0].rawValue) {
             const rawVal = codes[0].rawValue;
-            closeCameraScanner();
-            handleScannedQrContent(rawVal);
-            return;
+            if (currentScanMode === 'CARD') {
+              handleScannedCardQrWith4sRule(rawVal);
+              return;
+            } else {
+              closeCameraScanner();
+              handleScannedQrContent(rawVal);
+              return;
+            }
           }
         } catch (e) {}
       }
@@ -1738,8 +1855,7 @@ async function openCameraScanner(mode = 'CARD') {
             });
 
             if (decodedRoi && decodedRoi.data) {
-              closeCameraScanner();
-              handleScannedQrContent(decodedRoi.data);
+              handleScannedCardQrWith4sRule(decodedRoi.data);
               return;
             }
           }
@@ -1760,9 +1876,14 @@ async function openCameraScanner(mode = 'CARD') {
           });
 
           if (decoded && decoded.data) {
-            closeCameraScanner();
-            handleScannedQrContent(decoded.data);
-            return;
+            if (currentScanMode === 'CARD') {
+              handleScannedCardQrWith4sRule(decoded.data);
+              return;
+            } else {
+              closeCameraScanner();
+              handleScannedQrContent(decoded.data);
+              return;
+            }
           }
         } catch (err) {}
       }
@@ -1911,7 +2032,11 @@ function initPhotoUploadFallbackEngine() {
           closeCameraScanner();
           playAudioChime();
           playHaptic();
-          handleScannedQrContent(decodedText);
+          if (window.processVerifiedCardFromQr) {
+            window.processVerifiedCardFromQr(decodedText);
+          } else {
+            handleScannedQrContent(decodedText);
+          }
         } else {
           alert('لم يتم العثور على رمز QR واضح في الصورة المختارة.\n\nيرجى التأكد من اختيار صورة واضحة ومضاءة جيداً يظهر فيها كود QR الكارنيه بالكامل.');
         }
@@ -1925,6 +2050,91 @@ function initPhotoUploadFallbackEngine() {
   }
 }
 
+async function handleScannedCardQrWith4sRule(val) {
+  if (isCardScanProcessing) return;
+  isCardScanProcessing = true;
+
+  if (cameraScanInterval) {
+    clearInterval(cameraScanInterval);
+    cameraScanInterval = null;
+  }
+
+  // Visual feedback inside camera HUD
+  const hintEl = document.getElementById('cameraModalHint');
+  if (hintEl) {
+    hintEl.innerHTML = '<span style="color:#10B981; font-weight:800;">✓ تم التقاط رمز الكارنيه • جاري فحص وتوثيق الشفرة الجامعية...</span>';
+  }
+  const reticleEl = document.getElementById('cameraCardQrReticle');
+  if (reticleEl) {
+    reticleEl.classList.add('reticle-success');
+  }
+
+  // 1. Immediately initiate database registration in background (milliseconds)
+  const devName = navigator.userAgent.includes('iPhone') ? 'Apple iPhone' : (navigator.userAgent.includes('Android') ? 'Android Device' : 'متصفح ويب');
+  const dbPromise = fetch(`${SERVER_URL}/api/student/verify-card`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cardUrlOrUuid: val,
+      deviceUuid: state.deviceUuid,
+      deviceName: devName
+    })
+  }).then(async res => {
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  }).catch(err => ({ ok: false, status: 500, data: { error: err.message } }));
+
+  // 2. Minimum 4 seconds rule from camera start
+  const elapsed = Date.now() - (cameraCardScanStartTime || Date.now());
+  const waitMs = Math.max(0, 4000 - elapsed);
+  const timerPromise = new Promise(resolve => setTimeout(resolve, waitMs));
+
+  const [verifyResult] = await Promise.all([dbPromise, timerPromise]);
+
+  if (!verifyResult.ok) {
+    isCardScanProcessing = false;
+    if (reticleEl) reticleEl.classList.remove('reticle-success');
+    closeCameraScanner();
+    const data = verifyResult.data || {};
+    if (verifyResult.status === 403) {
+      if (data.error === 'ACCOUNT_BANNED' || data.banned) {
+        showPermanentBanScreen(data.message);
+        return;
+      }
+      if (data.error === 'DEVICE_LOCKED') {
+        showDeviceTransferWaitingModal(data.studentId, data.transferId);
+        return;
+      }
+      if (data.error === 'DEVICE_BOUND_TO_OTHER_STUDENT') {
+        alert(data.message || 'عفواً، هذا الجهاز مقترن رسمياً بحساب طالب آخر. يستحيل تسجيل 2 ID على نفس الجهاز.');
+        return;
+      }
+    }
+    alert(data.error || 'تعذر التحقق من كود الكارنيه عبر بوابة الجامعة. يرجى مسح الرمز بوضوح.');
+    return;
+  }
+
+  // Verification succeeded!
+  closeCameraScanner();
+  playAudioChime();
+  playHaptic();
+  isCardScanProcessing = false;
+
+  const data = verifyResult.data;
+  const studentInfo = data.student || {};
+  const cardInfo = data.cardData || {};
+  await window.display3DCardVerificationStep({
+    code: studentInfo.id || cardInfo.code,
+    fullName: studentInfo.full_name || cardInfo.fullName,
+    faculty: studentInfo.faculty || cardInfo.faculty,
+    level: studentInfo.level || cardInfo.level,
+    photoUrl: studentInfo.photo_url || cardInfo.photoUrl,
+    cardUrl: cardInfo.rawUrl || (cardInfo.ssUuid ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=${cardInfo.ssUuid}` : val),
+    sessionToken: data.sessionToken,
+    emergency_access_key: studentInfo.emergency_access_key
+  });
+}
+
 function closeCameraScanner() {
   const modal = document.getElementById('cameraModal');
   if (modal) modal.classList.add('hidden');
@@ -1936,6 +2146,9 @@ function closeCameraScanner() {
     cameraStream.getTracks().forEach(t => t.stop());
     cameraStream = null;
   }
+  const reticle = document.getElementById('cameraCardQrReticle');
+  if (reticle) reticle.classList.remove('reticle-success');
+  isCardScanProcessing = false;
 }
 
 function handleScannedQrContent(val) {

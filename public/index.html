@@ -69,18 +69,14 @@
           <img src="assets/ehdar-icon.svg" alt="e7dar Emblem" class="matany-top-img">
         </div>
         <div class="topbar-titles">
-          <div class="topbar-row">
-            <span class="topbar-brand-name">e7dar QR</span>
-            <span class="topbar-fue-pill">FUE</span>
-          </div>
-          <span class="topbar-sub">جامعة المستقبل في مصر • Future University in Egypt</span>
+          <span class="topbar-brand-name">e7dar</span>
         </div>
       </div>
 
       <div class="topbar-right">
-        <div class="student-chip" id="topbarStudentChip">
+        <div class="student-chip hidden" id="topbarStudentChip" style="display: none;">
           <span class="chip-dot"></span>
-          <span id="topbarStudentId">غير مسجل</span>
+          <span id="topbarStudentId"></span>
         </div>
       </div>
     </div>
@@ -93,10 +89,10 @@
       <div class="auth-gate-card">
         <div class="auth-header">
           <div class="auth-logo-center">
-            <img src="assets/ehdar-logo-full.svg" alt="e7dar QR ATTD Logo" class="auth-matany-img">
+            <img src="assets/ehdar-logo-full.svg" alt="e7dar ATTD Logo" class="auth-matany-img">
           </div>
           <h2 class="auth-title">توثيق الطالب ومسح الكارنيه</h2>
-          <p class="auth-desc">اختر صورة الكارنيه من هاتفك للتعرف الفوري على بياناتك وتوثيق الحساب</p>
+          <p class="auth-desc">امسح الكارنيه بالكاميرا مباشرة أو اختر الصورة لتوثيق الهوية وقفل الجهاز</p>
         </div>
 
         <!-- 3D ROTATING CARD SHOWCASE (CLEAN, SEAMLESS PURE WHITE, INTERACTIVE PAUSE & CLEAN SCAN LINE) -->
@@ -113,44 +109,133 @@
           </video>
         </div>
 
-        <!-- AUTH STEP 1: SELECT CARD IMAGE FROM PHOTOS -->
+        <!-- AUTH STEP 1: SCAN CAMERA OR SELECT FROM PHOTOS -->
         <div id="authCardStep" class="auth-form-wrap">
           <button id="btnStartCardScan" class="neo-btn btn-primary-blue btn-full btn-large">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-            اختيار صورة الكارنيه من الصور
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            مسح وتوثيق الكارنيه بالكاميرا
+          </button>
+          
+          <button id="btnPickCardGallery" class="neo-btn btn-subtle-white btn-full mt-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            أو اختيار صورة الكارنيه من الصور
           </button>
         </div>
 
-        <!-- AUTH STEP 2: MINIMALIST CLEAN BIOMETRIC STEP (IMAGE 4 REPLACEMENT) -->
+        <!-- AUTH STEP 2: 3D INTERACTIVE CARD SHOWCASE & VERIFICATION -->
         <div id="authBioStep" class="auth-form-wrap hidden">
           <div class="auth-success-box">
-            <div class="auth-success-check-pulse">
-              <svg class="checkmark-circle-svg" width="56" height="56" viewBox="0 0 52 52">
-                <circle class="checkmark-circle-ring" cx="26" cy="26" r="23" fill="none"/>
-                <path class="checkmark-check-path" fill="none" d="M14 27l7 7 17-17"/>
-              </svg>
+            <div class="auth-success-badge-row">
+              <span class="auth-step-pill">تم التحقق والتوثيق المعتمد</span>
             </div>
-            <span class="auth-step-tag">الخطوة 2: اعتماد البصمة</span>
-            <h3 class="auth-success-title">تم التعرف على الكارنيه بنجاح</h3>
+            <h3 class="auth-success-title">تم توثيق الكارنيه بنجاح</h3>
+            <p class="auth-3d-hint">هويتك الجامعية ثلاثية الأبعاد • اسحب للتدوير وانقر للقلب</p>
             
-            <div class="auth-student-card-preview">
-              <div class="auth-student-avatar-frame">
-                <img id="authBioStudentPhoto" src="assets/avatar-silhouette.svg" alt="Student Photo">
-              </div>
-              <div class="auth-student-text-col">
-                <strong id="authBioStudentName" class="auth-student-name">طالب المستقبل</strong>
-                <span id="authBioStudentId" class="auth-student-id">الرقم الجامعي: ----</span>
-                <span id="authBioStudentFac" class="auth-student-fac">Engineering • Level 01</span>
+            <!-- 3D INTERACTIVE CARD PREVIEW (EXACT SAME AS CARD PAGE) -->
+            <div class="fue-3d-scene auth-3d-preview-scene" id="auth3dScene">
+              <div class="interactive-fue-card" id="authInteractiveCard" title="اسحب للتدوير ثلاثي الأبعاد • انقر لقلب الكارنيه">
+                
+                <!-- GLASSMORPHISM FLIP HINT -->
+                <div class="card-flip-hint-overlay active" id="authCardFlipHintOverlay">
+                  <div class="hint-flip-badge">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+                    <span>اسحب للتدوير • انقر للقلب</span>
+                  </div>
+                </div>
+
+                <!-- FRONT FACE -->
+                <div class="card-face card-face-front" dir="ltr">
+                  <div class="card-glare" id="authCardGlareFront"></div>
+                  
+                  <!-- Top Maroon Header Band -->
+                  <div class="fue-front-topbar">
+                    <div class="fue-topbar-left">
+                      <span class="fue-year-txt">2026/2027</span>
+                    </div>
+                    <div class="fue-topbar-right">
+                      <div class="fue-brand-header-wrap">
+                        <img src="assets/fue-official-logo.png" class="fue-official-logo-img" alt="Future University in Egypt - جامعة المستقبل">
+                      </div>
+                      <div class="fue-level-badge-row">
+                        <span class="fue-level-tag" id="authCardLevelTag">LEVEL 01</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Card Body -->
+                  <div class="fue-front-body">
+                    <!-- Left Column: Student Photo -->
+                    <div class="fue-photo-col">
+                      <div class="fue-photo-frame">
+                        <img src="assets/avatar-silhouette.svg" id="authCardStudentPhoto" class="fue-photo-img" alt="Student Photo">
+                      </div>
+                      <div class="fue-serial-dots" id="authCardSerialDots">******</div>
+                    </div>
+
+                    <!-- Center Column: Info -->
+                    <div class="fue-info-col">
+                      <div class="fue-info-block">
+                        <div class="fue-lbl-bilingual">الاسم / Name</div>
+                        <div class="fue-val-name" id="authCardFullName">طالب المستقبل</div>
+                      </div>
+                      <div class="fue-info-block">
+                        <div class="fue-lbl-bilingual">التخصص / Faculty</div>
+                        <div class="fue-val-fac" id="authCardFaculty">Engineering</div>
+                      </div>
+                      <div class="fue-id-block">
+                        <span class="fue-id-txt">ID: <span id="authCardStudentId">--------</span></span>
+                      </div>
+                    </div>
+
+                    <!-- Right Column: High-Contrast QR Canvas -->
+                    <div class="fue-qr-col">
+                      <div class="fue-qr-canvas-wrapper">
+                        <canvas id="authCardOfficialQrCanvas"></canvas>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Bottom Maroon Footer Band -->
+                  <div class="fue-front-footer">
+                    <div class="fue-footer-phone-col">
+                      <div class="fue-phone-line">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        <span class="fue-phone-num">16383</span>
+                      </div>
+                      <div class="fue-web-link">www.fue.edu.eg</div>
+                    </div>
+                    <div class="fue-footer-badges-col">
+                      <img src="assets/fue-rankings-badge.png" class="fue-rankings-badge-img" alt="QS World University Rankings">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- BACK FACE -->
+                <div class="card-face card-face-back">
+                  <div class="card-glare" id="authCardGlareBack"></div>
+                  <img src="assets/fue-shield-official.png" class="fue-back-crest" alt="FUE Official Crest">
+                  <div class="fue-back-title">
+                    جامعة المستقبل في مصر
+                    <div style="font-size:0.75rem; color:#475569; font-weight:700;">FUTURE UNIVERSITY IN EGYPT</div>
+                  </div>
+                  <p class="fue-back-notice">
+                    If found, please send it to FUE-STUDENT Affairs Dept.
+                    <br>
+                    في حالة العثور على الكارنيه يرجى تسليمه لشؤون الطلاب
+                  </p>
+                  <div class="fue-back-phone-pill">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    <span>الخط الساخن: 16383 • www.fue.edu.eg</span>
+                  </div>
+                </div>
+
               </div>
             </div>
 
-            <p class="auth-step2-hint">
-              لحماية حسابك ومنع تكرار الحضور، يتم قفل هذا الحساب بجهازك الحالي عبر البصمة أو Face ID.
-            </p>
-
-            <button id="btnConfirmBiometricAuth" class="neo-btn btn-primary-blue btn-full btn-large">
-              <span id="authBioIconWrap" class="btn-icon-inline"></span>
-              <span id="authBioConfirmText">المصادقة ببصمة الجهاز / Face ID</span>
+            <!-- PRIMARY CONTINUE BUTTON BELOW 3D CARD -->
+            <button id="btnConfirmAuthGate" class="neo-btn btn-primary-blue btn-full btn-large mt-3">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              اعتماد الكارنيه والدخول للنظام
             </button>
           </div>
         </div>

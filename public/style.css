@@ -2729,6 +2729,48 @@ body {
   margin: 0;
 }
 
+.auth-3d-preview-scene {
+  max-width: 330px;
+  margin: 10px auto 14px auto;
+}
+
+.auth-3d-hint {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #475569;
+  margin: 2px 0 10px 0;
+  text-align: center;
+}
+
+.auth-step-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #E0E7FF;
+  color: #1D4ED8;
+  border: 1.5px solid #1E40AF;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 12px;
+  border-radius: 999px;
+}
+
+.btn-subtle-white {
+  background: var(--neo-white);
+  color: var(--neo-black);
+  border: var(--border-main);
+  box-shadow: var(--shadow-sm);
+  font-weight: 800;
+}
+
+.btn-subtle-white:hover {
+  background: #F8FAFC;
+}
+
+.reticle-success {
+  border-color: #10B981 !important;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.45) !important;
+}
+
 .auth-student-card-preview {
   display: flex;
   align-items: center;

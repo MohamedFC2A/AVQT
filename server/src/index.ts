@@ -406,7 +406,18 @@ app.post('/api/student/verify-card', async (req: Request, res: Response) => {
       });
     }
 
-    // 2. Strict 1:1 Device Binding & Single Transfer Limit Check
+    // 2. Prevent 2 IDs on the Same Device (Strict 1-Device = 1-Student ID)
+    if (deviceUuid) {
+      const boundStudent = await db.getStudentByDevice(deviceUuid);
+      if (boundStudent && boundStudent.id !== targetStudentId) {
+        return res.status(403).json({
+          error: 'DEVICE_BOUND_TO_OTHER_STUDENT',
+          message: `عفواً، هذا الجهاز مقترن رسمياً بحساب الطالب (${boundStudent.id}). يستحيل تسجيل حسابين أو كارنيهين على نفس الجهاز كلياً وفقاً لقواعد جامعة المستقبل FUE.`
+        });
+      }
+    }
+
+    // 2.1 Strict 1:1 Device Binding & Single Transfer Limit Check
     if (existingStudent && existingStudent.device_uuid && deviceUuid && existingStudent.device_uuid !== deviceUuid) {
       if ((existingStudent.device_transfers_count || 0) >= 1) {
         // SECOND TRANSFER ATTEMPT -> BAN IMMEDIATELY
