@@ -3,6 +3,13 @@
 
 const SERVER_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001' : '';
 
+// Strictly prevent mobile browser pinch-to-zoom and gesture zooming
+if (typeof document !== 'undefined') {
+  document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+}
+
 // Deterministic Universal Hardware Fingerprint Generator
 function generateHardwareFingerprint() {
   try {
@@ -359,10 +366,19 @@ function initCinematicSmartSplash() {
   splash.style.opacity = '1';
   splash.style.visibility = 'visible';
 
-  // Allow student to tap anywhere to dismiss if desired
-  splash.onclick = () => {
-    dismissSplash();
-  };
+  // Require double-tap on screen to skip loading screen smoothly
+  let lastSplashTap = 0;
+  function handleSplashDoubleTap(e) {
+    const now = Date.now();
+    if (now - lastSplashTap < 450) {
+      dismissSplash();
+    } else {
+      lastSplashTap = now;
+    }
+  }
+
+  splash.onclick = handleSplashDoubleTap;
+  splash.addEventListener('touchend', handleSplashDoubleTap, { passive: true });
 
   if (withLabel) {
     withLabel.textContent = 'With';
