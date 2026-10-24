@@ -104,6 +104,9 @@ function initCinematicSmartSplash() {
   splash.onclick = () => {
     dismissSplash();
   };
+  splash.ontouchstart = () => {
+    dismissSplash();
+  };
 
   if (withLabel) {
     withLabel.textContent = 'With';
@@ -140,7 +143,7 @@ function initCinematicSmartSplash() {
 
   // 1. Instant poster fallback (0ms latency, zero black flash)
   const posterImg = new Image();
-  posterImg.src = 'assets/splash-poster.png';
+  posterImg.src = '/1/assets/splash-poster.png';
   posterImg.onload = () => {
     if (ctx && (!video || video.paused || video.currentTime === 0)) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -190,6 +193,10 @@ function initCinematicSmartSplash() {
 
     video.addEventListener('ended', () => {
       video.pause();
+    });
+
+    video.addEventListener('error', () => {
+      dismissSplash();
     });
 
     renderFrame();
@@ -283,10 +290,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openFullPresenter(sid) {
     const effectiveSid = sid || currentSessionId || 'AVQR-2026';
-    const url = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
+    const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
+    const url = isExtension
       ? chrome.runtime.getURL(`presenter.html?sid=${encodeURIComponent(effectiveSid)}`)
-      : `presenter.html?sid=${encodeURIComponent(effectiveSid)}`;
-    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+      : `/1/presenter.html?sid=${encodeURIComponent(effectiveSid)}`;
+    if (isExtension && chrome.tabs && chrome.tabs.create) {
       chrome.tabs.create({ url });
     } else {
       window.open(url, '_blank');

@@ -8,7 +8,14 @@
     { "source": "/portal/(.*)", "destination": "/portal/$1" },
     { "source": "/portal", "destination": "/portal/index.html" },
     { "source": "/1", "destination": "/1/index.html" },
+    { "source": "/1/", "destination": "/1/index.html" },
     { "source": "/1/(.*)", "destination": "/1/$1" },
+    { "source": "/popup.css", "destination": "/1/popup.css" },
+    { "source": "/popup.js", "destination": "/1/popup.js" },
+    { "source": "/presenter.html", "destination": "/1/presenter.html" },
+    { "source": "/presenter.js", "destination": "/1/presenter.js" },
+    { "source": "/ehdar-icon.svg", "destination": "/1/ehdar-icon.svg" },
+    { "source": "/ehdar-logo-full.svg", "destination": "/1/ehdar-logo-full.svg" },
     { "source": "/ext/(.*)", "destination": "/ext/$1" }
   ]
 }
