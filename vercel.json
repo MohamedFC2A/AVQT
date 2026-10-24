@@ -7,6 +7,8 @@
     { "source": "/attend/(.*)", "destination": "/index.html" },
     { "source": "/portal/(.*)", "destination": "/portal/$1" },
     { "source": "/portal", "destination": "/portal/index.html" },
+    { "source": "/1", "destination": "/1/index.html" },
+    { "source": "/1/(.*)", "destination": "/1/$1" },
     { "source": "/ext/(.*)", "destination": "/ext/$1" }
   ]
 }

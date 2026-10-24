@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>e7dar.com - لوحة تحكم أداة الحضور | Matany Group x FUE</title>
+  <link rel="icon" type="image/svg+xml" href="ehdar-icon.svg">
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- CINEMATIC SMART LOADING SPLASH (CHECKMARK VIDEO & BRAND CAROUSEL) -->
+  <div id="avqrSmartSplash" class="avqr-smart-splash" dir="rtl">
+    <div class="splash-inner-content">
+      <div class="splash-video-container" oncontextmenu="return false;">
+        <canvas id="splashCanvas" class="splash-canvas-element" width="1080" height="1920"></canvas>
+        <video id="splashVideo" class="splash-hidden-video" playsinline webkit-playsinline muted autoplay preload="auto" disablePictureInPicture controlsList="nodownload noplaybackrate nofullscreen">
+          <source src="assets/avqr-splash-intro.mp4" type="video/mp4">
+        </video>
+      </div>
+
+      <div class="splash-bottom-bar" dir="ltr">
+        <span class="splash-with-label" id="splashWithLabel">With</span>
+        <div class="splash-partner-slider">
+          <div class="splash-partner-slide active" id="splashSlideFue">
+            <img src="assets/fue-logo-red.png" class="partner-img-fue" alt="Future University in Egypt">
+          </div>
+          <div class="splash-partner-slide" id="splashSlideMoodle">
+            <img src="assets/moodle-logo.png" class="partner-img-moodle" alt="Moodle LMS">
+          </div>
+          <div class="splash-partner-slide" id="splashSlideMatany">
+            <div class="partner-matany-box">
+              <img src="assets/matany-group-logo.svg" class="partner-img-matany-m" alt="Matany Group">
+              <span class="partner-text-matany">Matany Group</span>
+            </div>
+          </div>
+          <div class="splash-partner-slide" id="splashSlideUpstore">
+            <div class="partner-upstore-box">
+              <img src="assets/upstore-logo.png" class="partner-img-upstore" alt="UpStore">
+              <span class="partner-text-upstore">upstore.one</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="avqr-neo-app">
+    <!-- NEUBRUTALISM TOP HEADER -->
+    <header class="neo-header">
+      <div class="brand-cluster">
+        <div class="matany-logo-wrap">
+          <img src="ehdar-icon.svg" alt="Ehdar Emblem" class="matany-emblem-img">
+        </div>
+        <div class="brand-titles">
+          <div class="brand-headline">
+            <span class="company-name">e7dar.com</span>
+            <span class="partner-tag">FUE</span>
+          </div>
+          <span class="university-sub">جامعة المستقبل في مصر • Matany Group</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN VIEW CONTAINER (420X580PX - ZERO SCROLL) -->
+    <main class="neo-main-body">
+      <!-- STATE 1: IDLE / START CARD -->
+      <section id="idleSection" class="neo-card idle-card">
+        <div class="idle-card-head">
+          <div class="badge-fue-red">نظام رصد الحضور الذكي</div>
+          <h2>بدء جلسة المحاضرة</h2>
+          <p>عرض كود الحضور اللحظي والرمز المباشر للطلاب</p>
+        </div>
+
+        <div class="form-group-neo">
+          <label class="neo-label">معرف جلسة المحاضرة:</label>
+          <input type="text" id="sessionIdInput" class="neo-input" value="AVQR-2026" placeholder="AVQR-2026">
+        </div>
+
+        <button id="btnStartSession" class="neo-btn btn-primary-red btn-large">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          بدء بث كود الحضور اللحظي
+        </button>
+
+        <div class="security-guarantee-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>تحديث أمني تلقائي وحفظ آلي بـ 0% خطأ</span>
+        </div>
+      </section>
+
+      <!-- STATE 2: ACTIVE SESSION CARD (COMPACT NEUBRUTALISM - ZERO SCROLL) -->
+      <section id="activeSection" class="neo-card active-card hidden">
+        <!-- TOP STATS & TIMER ROW -->
+        <div class="active-meta-bar">
+          <div class="meta-stat-pill">
+            <span class="meta-lbl">الطلاب الحاضرون:</span>
+            <strong id="livePresentCount" class="meta-val-green">0</strong>
+          </div>
+          <div class="meta-stat-pill">
+            <span class="meta-lbl">المهلة المتبقية:</span>
+            <strong id="timerCountdown" class="meta-val-red">03:00</strong>
+          </div>
+          <div class="meta-session-tag" id="activeSessionBadge">AVQR-2026</div>
+        </div>
+
+        <!-- QR CODE & NUMERIC CODE GRID -->
+        <div class="qr-and-code-grid">
+          <!-- QR Canvas Box (Click to open full page presenter) -->
+          <div class="qr-frame-neo" id="btnOpenPresenterMode" style="cursor: pointer;" title="اضغط للتكبير وعرض ملء الشاشة">
+            <canvas id="qrCanvas" width="160" height="160"></canvas>
+          </div>
+
+          <!-- 8-Digit Code Col -->
+          <div class="code-and-timer-col">
+            <div class="code-box-neo">
+              <span class="code-box-lbl">رمز الحضور اليدوي المؤقت</span>
+              <div id="numericCodeDisplay" class="code-digits-large">--------</div>
+              <span class="code-box-sub">إدخال مباشر بديل للمسح</span>
+            </div>
+
+            <div class="auto-sync-status-box">
+              <span class="auto-sync-dot"></span>
+              <span>الرصد التلقائي لكشوف الطلاب نشط</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS ROW -->
+        <div class="action-btn-row">
+          <button id="btnOpenPresenterFull" class="neo-btn btn-primary-red">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+            عرض شاشة البث الكاملة
+          </button>
+          <button id="btnStopSession" class="neo-btn btn-subtle-dark">
+            إنهاء الجلسة
+          </button>
+        </div>
+
+        <!-- LIVE TICKER (COMPACT ONE-LINE ATTENDEE STRIP) -->
+        <div class="live-strip-wrap">
+          <span class="strip-tag">الرصد:</span>
+          <div class="strip-content" id="liveTickerText">بانتظار تسجيل أول حضور...</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- NEUBRUTALISM FOOTER -->
+    <footer class="neo-footer">
+      <span>Matany Group • جامعة المستقبل في مصر FUE</span>
+    </footer>
+  </div>
+
+  <script src="qrcode.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
