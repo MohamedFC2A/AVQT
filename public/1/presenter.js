@@ -65,6 +65,15 @@ let autoSaveSeconds = 180; // 3 Minutes countdown
 let autoSaveInterval = null;
 let sseSource = null;
 let pollRecordsInterval = null;
+let currentAttendeeCount = 0;
+
+function updateAttendeeCounter(count) {
+  currentAttendeeCount = count;
+  const countEl = document.getElementById('qrAttendeeCount');
+  if (countEl) {
+    countEl.textContent = String(count);
+  }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   const sessionTag = document.getElementById('sessionTag');
@@ -80,6 +89,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (resLocal.ok) activeServerUrl = LOCAL_FALLBACK_URL;
     } catch (e2) {}
   }
+
+  // Initial attendee count from Neon DB
+  try {
+    fetch(`${activeServerUrl}/api/session/${sessionId}/records`)
+      .then(r => r.json())
+      .then(records => {
+        if (Array.isArray(records)) updateAttendeeCounter(records.length);
+      })
+      .catch(() => {});
+  } catch (e) {}
 
   // Check synced start time
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -143,7 +162,8 @@ function renderLargeQr(text) {
   if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
     window.QRCode.toCanvas(canvas, text, {
       width: 320,
-      margin: 1,
+      margin: 2,
+      errorCorrectionLevel: 'H',
       color: {
         dark: '#121212',
         light: '#FFFFFF'
@@ -193,6 +213,7 @@ function startPresenterSync() {
     sseSource.addEventListener('STUDENT_ATTENDED', (e) => {
       try {
         const student = JSON.parse(e.data);
+        updateAttendeeCounter(currentAttendeeCount + 1);
         broadcastStudentToTabs(student);
       } catch (err) {}
     });
@@ -209,6 +230,7 @@ function startPresenterSync() {
       .then(r => r.json())
       .then(records => {
         if (Array.isArray(records)) {
+          updateAttendeeCounter(records.length);
           records.forEach(rec => {
             broadcastStudentToTabs({
               studentId: rec.student_id,

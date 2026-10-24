@@ -376,6 +376,7 @@ function renderStandardQr(text) {
     window.QRCode.toCanvas(canvas, text, {
       width: 160,
       margin: 1,
+      errorCorrectionLevel: 'H',
       color: {
         dark: '#121212',
         light: '#FFFFFF'
@@ -544,12 +545,15 @@ function refreshSessionRecords(sessionId) {
 
 function updateLiveAttendee(student, count) {
   const livePresentCount = document.getElementById('livePresentCount');
+  const popupQrCenterCount = document.getElementById('popupQrCenterCount');
   if (livePresentCount) {
     if (count !== undefined) {
       livePresentCount.textContent = count;
+      if (popupQrCenterCount) popupQrCenterCount.textContent = count;
     } else {
       const current = parseInt(livePresentCount.textContent, 10) || 0;
       livePresentCount.textContent = current + 1;
+      if (popupQrCenterCount) popupQrCenterCount.textContent = current + 1;
     }
   }
 

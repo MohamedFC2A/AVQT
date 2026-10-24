@@ -787,16 +787,16 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
     }
 
     // Extract token if raw qrString or URL was passed
-    let effectiveToken = token;
-    let effectiveSessionId = sessionId;
-    let effectiveNumericCode = numericCode;
+    let effectiveToken = (token && String(token).trim()) ? String(token).trim() : undefined;
+    let effectiveSessionId = (sessionId && String(sessionId).trim()) ? String(sessionId).trim() : 'AVQR-2026';
+    let effectiveNumericCode = (numericCode && String(numericCode).trim()) ? String(numericCode).trim() : undefined;
 
     if (qrString) {
       if (qrString.startsWith('AVQR:')) {
         const parts = qrString.split(':');
-        effectiveSessionId = parts[1] || sessionId;
-        effectiveToken = parts[2] || token;
-        effectiveNumericCode = parts[3] || numericCode;
+        effectiveSessionId = parts[1] || effectiveSessionId;
+        effectiveToken = parts[2] || effectiveToken;
+        effectiveNumericCode = parts[3] || effectiveNumericCode;
       } else if (qrString.includes('?') || qrString.startsWith('http://') || qrString.startsWith('https://')) {
         try {
           const urlObj = new URL(qrString.startsWith('http') ? qrString : `https://dummy.com/${qrString}`);

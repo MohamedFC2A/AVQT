@@ -103,9 +103,13 @@
 
         <!-- QR CODE & NUMERIC CODE GRID -->
         <div class="qr-and-code-grid">
-          <!-- QR Canvas Box (Click to open full page presenter) -->
-          <div class="qr-frame-neo" id="btnOpenPresenterMode" style="cursor: pointer;" title="اضغط للتكبير وعرض ملء الشاشة">
+          <!-- QR Canvas Box with Smart Center Attendee Counter (Click to open full page presenter) -->
+          <div class="qr-frame-neo" id="btnOpenPresenterMode" style="cursor: pointer; position: relative;" title="اضغط للتكبير وعرض ملء الشاشة">
             <canvas id="qrCanvas" width="160" height="160"></canvas>
+            <div class="qr-center-badge-sm" id="popupQrCenterBadge" title="عدد الطلاب الحاضرين">
+              <span class="qr-badge-pulse"></span>
+              <span class="qr-badge-num" id="popupQrCenterCount">0</span>
+            </div>
           </div>
 
           <!-- 8-Digit Code Col -->

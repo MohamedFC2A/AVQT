@@ -2183,10 +2183,10 @@ function handleScannedQrContent(val) {
   if (val.includes('?') || val.startsWith('http://') || val.startsWith('https://')) {
     try {
       const url = new URL(val.startsWith('http') ? val : `https://dummy.com/${val}`);
-      const sid = url.searchParams.get('sid') || state.activeSessionId;
-      const code = url.searchParams.get('code') || '';
-      const token = url.searchParams.get('token') || '';
-      performAttendanceSubmission({ sessionId: sid, numericCode: code, token, fromCameraScan: true });
+      const sid = url.searchParams.get('s') || url.searchParams.get('sid') || state.activeSessionId || 'AVQR-2026';
+      const code = url.searchParams.get('c') || url.searchParams.get('code') || '';
+      const token = url.searchParams.get('k') || url.searchParams.get('token') || '';
+      performAttendanceSubmission({ sessionId: sid, numericCode: code, token, qrString: val, fromCameraScan: true });
       return;
     } catch (e) {}
   }
