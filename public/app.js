@@ -209,7 +209,9 @@ function startSessionHeartbeatMonitor() {
         }
       } else if (res.status === 401) {
         const data = await res.json();
-        forceLogoutAndDeactivate(data.message || 'تم نقل الحساب أو تسجيل الدخول من جهاز آخر. تم تسجيل خروجك بالكامل.');
+        if (data.reason === 'DEVICE_TRANSFERRED' || data.reason === 'DEVICE_MISMATCH' || data.reason === 'SESSION_REVOKED') {
+          forceLogoutAndDeactivate(data.message || 'تم نقل الحساب أو تسجيل الدخول من جهاز آخر. تم تسجيل خروجك بالكامل.');
+        }
       }
     } catch (e) {}
   }, 2500);
@@ -969,8 +971,8 @@ function renderCardOfficialQr(targetUrl, canvasId = 'cardOfficialQrCanvas') {
   if (!qrCanvas || !window.QRCode || typeof window.QRCode.toCanvas !== 'function') return;
   const url = targetUrl || state.cardUrl || (state.studentId ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214` : 'https://fue.edu.eg');
   window.QRCode.toCanvas(qrCanvas, url, {
-    width: 74,
-    margin: 2,
+    width: 58,
+    margin: 1,
     color: { dark: '#0F172A', light: '#FFFFFF' }
   }, (err) => {
     if (err) console.warn('Card QR render err:', err);
@@ -2084,9 +2086,9 @@ async function handleScannedCardQrWith4sRule(val) {
     return { ok: res.ok, status: res.status, data };
   }).catch(err => ({ ok: false, status: 500, data: { error: err.message } }));
 
-  // 2. Minimum 4 seconds rule from camera start
+  // 2. Minimum 2 seconds rule from camera start (fast intelligent feedback)
   const elapsed = Date.now() - (cameraCardScanStartTime || Date.now());
-  const waitMs = Math.max(0, 4000 - elapsed);
+  const waitMs = Math.max(0, 2000 - elapsed);
   const timerPromise = new Promise(resolve => setTimeout(resolve, waitMs));
 
   const [verifyResult] = await Promise.all([dbPromise, timerPromise]);

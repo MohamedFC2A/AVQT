@@ -717,7 +717,9 @@ body {
 
 .interactive-fue-card {
   width: 100%;
-  height: 226px;
+  aspect-ratio: 1.586 / 1;
+  height: auto;
+  max-height: 220px;
   position: relative;
   transform-style: preserve-3d;
   transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.4, 1);
@@ -835,11 +837,11 @@ body {
 .fue-front-topbar {
   background: #8A151B;
   color: #FFFFFF;
-  padding: 6px 14px;
+  padding: 4px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 50px;
+  height: 42px;
   box-sizing: border-box;
   position: relative;
   direction: ltr !important;
@@ -871,9 +873,9 @@ body {
 }
 
 .fue-official-logo-img {
-  height: 38px;
+  height: 32px;
   width: auto;
-  max-width: 150px;
+  max-width: 140px;
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45));
@@ -949,21 +951,21 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 76px;
+  width: 66px;
   flex-shrink: 0;
   position: relative;
   z-index: 5;
 }
 
 .fue-photo-frame {
-  width: 72px;
-  height: 86px;
-  border-radius: 36px 36px 30px 30px;
-  border: 3.5px solid #FFFFFF;
+  width: 64px;
+  height: 76px;
+  border-radius: 32px 32px 26px 26px;
+  border: 3px solid #FFFFFF;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), 0 0 0 1px #CBD5E1;
   overflow: hidden;
   background: #E2E8F0;
-  margin-top: -16px;
+  margin-top: -12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1012,13 +1014,12 @@ body {
 }
 
 .fue-val-name {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 900;
   color: #0F172A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 135px;
   line-height: 1.2;
 }
 
@@ -1043,8 +1044,8 @@ body {
 
 /* High-Contrast Unclipped QR Code Column */
 .fue-qr-col {
-  width: 86px;
-  height: 86px;
+  width: 66px;
+  height: 66px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1057,9 +1058,9 @@ body {
 }
 
 .fue-qr-canvas-wrapper {
-  width: 82px;
-  height: 82px;
-  padding: 4px;
+  width: 62px;
+  height: 62px;
+  padding: 2px;
   background: #FFFFFF;
   border: 1.5px solid #CBD5E1;
   border-radius: 6px;
@@ -1072,8 +1073,8 @@ body {
 }
 
 .fue-qr-canvas-wrapper canvas {
-  width: 74px !important;
-  height: 74px !important;
+  width: 58px !important;
+  height: 58px !important;
   display: block;
 }
 
@@ -1940,9 +1941,9 @@ body {
 .camera-card-qr-reticle {
   position: absolute;
   top: 50%;
-  right: 12px;
+  right: 8px;
   transform: translateY(-50%);
-  width: 31%;
+  width: 25%;
   aspect-ratio: 1 / 1;
   border: 2px solid #FFFFFF;
   border-radius: 8px;
