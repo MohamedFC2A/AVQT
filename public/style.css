@@ -3292,9 +3292,11 @@ body {
 }
 
 .partner-img-matany-m {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
+  border-radius: 6px;
+  object-fit: contain;
 }
 
 .partner-text-matany {
