@@ -337,6 +337,10 @@ function renderHistoryTimeline() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 1. Initialize Dock Navigation FIRST so click listeners exist
+  initDockNavigation();
+
+  // 2. Initialize Splash Screen
   initCinematicSmartSplash();
 
   if (localStorage.getItem('avqr_permanent_banned') === 'true') {
@@ -344,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   startSessionHeartbeatMonitor();
 
-  // Instant Auth Gate check: Registered students unlock instantly, unverified stay on Auth Gate
+  // 3. Instant Auth Gate check: Registered students unlock instantly, unverified stay on Auth Gate
   if (state.isRegistered && state.studentId) {
     hideAuthGateAndUnlockApp();
   } else {
@@ -352,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initAuthGateFlow();
-  initDockNavigation();
   init3DCardEngine();
   initEmergencyVaultKey();
   renderStudentProfile();
@@ -376,14 +379,6 @@ function initCinematicSmartSplash() {
   const splash = document.getElementById('avqrSmartSplash');
   if (!splash) return;
 
-  // On page reload or revisit within same session, bypass splash completely to eliminate white screen / waiting
-  if (sessionStorage.getItem('e7dar_splash_viewed')) {
-    splash.classList.add('dismissed');
-    splash.style.display = 'none';
-    return;
-  }
-  sessionStorage.setItem('e7dar_splash_viewed', 'true');
-
   const video = document.getElementById('splashVideo');
   const withLabel = document.getElementById('splashWithLabel');
   const slideFue = document.getElementById('splashSlideFue');
@@ -393,11 +388,10 @@ function initCinematicSmartSplash() {
 
   let dismissed = false;
 
-  // Prevent right-click / context menu completely (anti-download, native look)
+  // Prevent right-click / context menu
   splash.addEventListener('contextmenu', (e) => e.preventDefault());
   if (video) video.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  // Helper to transition label smoothly
   function setWithLabel(text) {
     if (!withLabel) return;
     withLabel.style.opacity = '0';
@@ -409,19 +403,25 @@ function initCinematicSmartSplash() {
     }, 120);
   }
 
-  // Force reset splash visibility on first execution
+  // Always display splash cleanly on load/refresh
   splash.classList.remove('dismissed');
   splash.style.display = 'flex';
   splash.style.opacity = '1';
   splash.style.visibility = 'visible';
 
-  // Single tap / double tap on screen skips loading screen instantly
-  function handleSplashDismiss() {
-    dismissSplash();
+  // Double Click / Double Tap skips loading screen cleanly
+  let lastTapTime = 0;
+  function handleDoubleTapSkip(e) {
+    const now = Date.now();
+    if (now - lastTapTime < 380) {
+      dismissSplash();
+    } else {
+      lastTapTime = now;
+    }
   }
 
-  splash.onclick = handleSplashDismiss;
-  splash.addEventListener('touchend', handleSplashDismiss, { passive: true });
+  splash.addEventListener('dblclick', () => dismissSplash());
+  splash.addEventListener('touchend', handleDoubleTapSkip, { passive: true });
 
   if (withLabel) {
     withLabel.textContent = 'With';
@@ -433,15 +433,9 @@ function initCinematicSmartSplash() {
     slideFue.classList.remove('exit');
     slideFue.classList.add('active');
   }
-  if (slideMoodle) {
-    slideMoodle.classList.remove('active', 'exit');
-  }
-  if (slideMatany) {
-    slideMatany.classList.remove('active', 'exit');
-  }
-  if (slideUpstore) {
-    slideUpstore.classList.remove('active', 'exit');
-  }
+  if (slideMoodle) slideMoodle.classList.remove('active', 'exit');
+  if (slideMatany) slideMatany.classList.remove('active', 'exit');
+  if (slideUpstore) slideUpstore.classList.remove('active', 'exit');
 
   function dismissSplash() {
     if (dismissed) return;
@@ -452,10 +446,15 @@ function initCinematicSmartSplash() {
       if (video) {
         try { video.pause(); } catch (e) {}
       }
-    }, 300);
+      // Guaranteed view rendering check when splash closes
+      if (state.isRegistered && state.studentId) {
+        hideAuthGateAndUnlockApp();
+      } else {
+        showAuthGateOnly();
+      }
+    }, 380);
   }
 
-  // Hardware-accelerated direct video playback (zero canvas lag, zero dropped frames, zero glitches)
   if (video) {
     try {
       video.muted = true;
@@ -468,7 +467,7 @@ function initCinematicSmartSplash() {
     } catch (e) {}
 
     video.addEventListener('timeupdate', () => {
-      if (video.currentTime >= 1.6) {
+      if (video.currentTime >= 2.8) {
         try { video.pause(); } catch (e) {}
       }
     });
@@ -477,18 +476,19 @@ function initCinematicSmartSplash() {
       dismissSplash();
     });
 
-    video.onerror = () => dismissSplash();
-    video.onstalled = () => dismissSplash();
+    video.onerror = () => {
+      // Fallback is visible, slides proceed
+    };
   }
 
-  // 3. Ultra-Fast Partner Showcase Carousel (Total 1.6s, 400ms per slide)
-  // Stage 1: FUE (0s - 0.4s) -> Label: 'With'
+  // Smooth cadence (~700ms per slide, total ~2.8s) so it takes its time intelligently
+  // Stage 1: FUE (0s - 0.7s) -> Label: 'With'
   if (slideFue) {
     slideFue.classList.remove('exit');
     slideFue.classList.add('active');
   }
 
-  // Stage 2: Moodle (0.4s - 0.8s) -> Label: 'With'
+  // Stage 2: Moodle (0.7s - 1.4s) -> Label: 'With'
   setTimeout(() => {
     if (dismissed) return;
     if (slideFue) {
@@ -499,9 +499,9 @@ function initCinematicSmartSplash() {
       slideMoodle.classList.remove('exit');
       slideMoodle.classList.add('active');
     }
-  }, 400);
+  }, 700);
 
-  // Stage 3: Matany Group (0.8s - 1.2s) -> Label: 'Built By'
+  // Stage 3: Matany Group (1.4s - 2.1s) -> Label: 'Built By'
   setTimeout(() => {
     if (dismissed) return;
     setWithLabel('Built By');
@@ -514,9 +514,9 @@ function initCinematicSmartSplash() {
       slideMatany.classList.add('active');
     }
     try { playHaptic(); } catch (e) {}
-  }, 800);
+  }, 1400);
 
-  // Stage 4: upstore.one (1.2s - 1.6s) -> Label: 'Design By'
+  // Stage 4: upstore.one (2.1s - 2.8s) -> Label: 'Design By'
   setTimeout(() => {
     if (dismissed) return;
     setWithLabel('Design By');
@@ -529,17 +529,17 @@ function initCinematicSmartSplash() {
       slideUpstore.classList.add('active');
     }
     try { playHaptic(); } catch (e) {}
-  }, 1200);
+  }, 2100);
 
-  // Stage 5: Cinematic Exit (1.6s)
+  // Stage 5: Smooth Exit (2.8s)
   setTimeout(() => {
     dismissSplash();
-  }, 1600);
+  }, 2800);
 
-  // Emergency safety timeout in case of any stall
+  // Failsafe timeout in case of any extreme mobile stall (3.8s)
   setTimeout(() => {
     dismissSplash();
-  }, 2000);
+  }, 3800);
 }
 
 // -------------------------------------------------------------
@@ -919,10 +919,15 @@ function initDeviceTransferListener() {
 
 function showAuthGateOnly() {
   const views = document.querySelectorAll('.app-view');
-  views.forEach(v => v.classList.remove('active'));
-
-  const viewAuthGate = document.getElementById('viewAuthGate');
-  if (viewAuthGate) viewAuthGate.classList.add('active');
+  views.forEach(v => {
+    if (v.id === 'viewAuthGate') {
+      v.classList.add('active');
+      v.style.display = 'block';
+    } else {
+      v.classList.remove('active');
+      v.style.display = 'none';
+    }
+  });
 
   const smartBottomDock = document.getElementById('smartBottomDock');
   if (smartBottomDock) {
@@ -937,11 +942,16 @@ function showAuthGateOnly() {
     const topbarId = document.getElementById('topbarStudentId');
     if (topbarId) topbarId.textContent = '';
   }
+
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 function hideAuthGateAndUnlockApp() {
   const viewAuthGate = document.getElementById('viewAuthGate');
-  if (viewAuthGate) viewAuthGate.classList.remove('active');
+  if (viewAuthGate) {
+    viewAuthGate.classList.remove('active');
+    viewAuthGate.style.display = 'none';
+  }
 
   const smartBottomDock = document.getElementById('smartBottomDock');
   if (smartBottomDock) {
@@ -957,6 +967,7 @@ function hideAuthGateAndUnlockApp() {
     if (topbarId) topbarId.textContent = state.studentId;
   }
 
+  // Directly, deterministically activate viewAttendance
   switchToView('viewAttendance');
 }
 
@@ -965,36 +976,60 @@ function hideAuthGateAndUnlockApp() {
 // -------------------------------------------------------------
 function initDockNavigation() {
   const dockItems = document.querySelectorAll('.dock-item');
-  const views = document.querySelectorAll('.app-view');
 
   dockItems.forEach(item => {
-    item.addEventListener('click', () => {
-      if (!state.isRegistered) {
+    // Avoid double attaching if called multiple times
+    if (item.dataset.boundNav) return;
+    item.dataset.boundNav = 'true';
+
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!state.isRegistered || !state.studentId) {
         showAuthGateOnly();
         return;
       }
 
       const targetViewId = item.getAttribute('data-view');
-
-      dockItems.forEach(d => d.classList.remove('active'));
-      item.classList.add('active');
-
-      views.forEach(v => {
-        if (v.id === targetViewId) {
-          v.classList.add('active');
-        } else {
-          v.classList.remove('active');
-        }
-      });
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      switchToView(targetViewId);
     });
   });
 }
 
 function switchToView(viewId) {
-  const targetItem = document.querySelector(`.dock-item[data-view="${viewId}"]`);
-  if (targetItem) targetItem.click();
+  const targetViewId = viewId || 'viewAttendance';
+  const views = document.querySelectorAll('.app-view');
+  let activated = false;
+
+  views.forEach(v => {
+    if (v.id === targetViewId) {
+      v.classList.add('active');
+      v.style.display = 'block';
+      activated = true;
+    } else {
+      v.classList.remove('active');
+      v.style.display = 'none';
+    }
+  });
+
+  // Failsafe: if targetViewId was viewAttendance but not found or not activated, force viewAttendance
+  if (!activated) {
+    const defaultView = document.getElementById('viewAttendance');
+    if (defaultView) {
+      defaultView.classList.add('active');
+      defaultView.style.display = 'block';
+    }
+  }
+
+  const dockItems = document.querySelectorAll('.dock-item');
+  dockItems.forEach(d => {
+    if (d.getAttribute('data-view') === targetViewId) {
+      d.classList.add('active');
+    } else {
+      d.classList.remove('active');
+    }
+  });
+
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 // Helper: Format student display name (Preserves full name if <= 3 parts, e.g. Mohamed Ahmed Matany)
