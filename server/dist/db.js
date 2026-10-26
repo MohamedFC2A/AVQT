@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 dotenv.config();
 // AVQR Sovereign Cloud Infrastructure for Future University in Egypt (FUE) & Matany Group
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_YepumAOX06iW@ep-holy-smoke-av9d4czd-pooler.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require';
+const DATABASE_URL = (process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_YepumAOX06iW@ep-holy-smoke-av9d4czd-pooler.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require').trim().replace(/^\uFEFF/, '');
 export function generateEmergencyAccessKey() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const seg = (len) => Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -64,8 +64,9 @@ let lastPoolError = 'NONE';
 export function getPool() {
     if (pool)
         return pool;
-    const dbUrl = process.env.DATABASE_URL || DATABASE_URL;
-    if (dbUrl && dbUrl.startsWith('postgres')) {
+    const rawUrl = process.env.DATABASE_URL || DATABASE_URL || '';
+    const dbUrl = rawUrl.trim().replace(/^\uFEFF/, '');
+    if (dbUrl && (dbUrl.startsWith('postgres') || dbUrl.includes('postgres'))) {
         try {
             pool = new Pool({
                 connectionString: dbUrl,
