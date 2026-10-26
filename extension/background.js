@@ -1,7 +1,7 @@
 // AVQR Background Service Worker - Matany Group x FUE
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('⚡ AVQR - ATT Vision QR Tool Extension Installed');
+  console.log(' AVQR - ATT Vision QR Tool Extension Installed');
   chrome.storage.local.set({
     avqr_session_id: 'AVQR-2026',
     avqr_is_active: false

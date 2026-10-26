@@ -470,12 +470,12 @@ function updatePortalStatusUI(connected, count) {
     banner.style.border = '1.5px solid #059669';
     banner.style.background = '#ECFDF5';
     banner.style.color = '#065F46';
-    txt.textContent = `✅ صفحة كشف الغياب متصلة وجاهزة (${count} خانة طالب متوفرة للرصد الآلي).`;
+    txt.textContent = ` صفحة كشف الغياب متصلة وجاهزة (${count} خانة طالب متوفرة للرصد الآلي).`;
   } else {
     banner.style.border = '1.5px solid #DC2626';
     banner.style.background = '#FEF2F2';
     banner.style.color = '#991B1B';
-    txt.textContent = '⚠️ تنبيه للدكتور: لم يتم رصد صفحة كشف الغياب (يجب فتح صفحة الحضور التي تحتوي على 15 خانة طالب على الأقل في المتصفح لرصد الحضور آلياً).';
+    txt.textContent = '️ تنبيه للدكتور: لم يتم رصد صفحة كشف الغياب (يجب فتح صفحة الحضور التي تحتوي على 15 خانة طالب على الأقل في المتصفح لرصد الحضور آلياً).';
   }
 
   if (currentSessionId && activeServerUrl) {
@@ -499,7 +499,7 @@ function startAutoSaveTimer() {
       clearInterval(autoSaveInterval);
       await triggerAutoSave();
       stopActiveSession();
-      alert('⏰ انتهت مهلة الـ 3 دقائق المخصصة للجلسة. تم حفظ كشف الحضور وإغلاق الجلسة تلقائياً بنجاح.');
+      alert(' انتهت مهلة الـ 3 دقائق المخصصة للجلسة. تم حفظ كشف الحضور وإغلاق الجلسة تلقائياً بنجاح.');
     }
   }, 1000);
 }
@@ -524,7 +524,7 @@ async function triggerAutoSave() {
         }
       }
     }
-    console.log('✅ Auto-save completed silently with 0% error.');
+    console.log(' Auto-save completed silently with 0% error.');
   } catch (err) {
     console.error('Auto save error:', err);
   }

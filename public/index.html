@@ -115,11 +115,25 @@
           </video>
         </div>
 
-        <!-- AUTH STEP 1: SCAN CAMERA -->
-        <div id="authCardStep" class="auth-form-wrap">
+        <!-- AUTH STEP 1: SCAN CAMERA & NFC SMART CARD -->
+        <div id="authCardStep" class="auth-form-wrap" style="display: flex; flex-direction: column; gap: 10px;">
           <button id="btnStartCardScan" class="neo-btn btn-primary-blue btn-full btn-large">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             مسح وتوثيق الكارنيه بالكاميرا
+          </button>
+
+          <!-- NFC Smart Card Button [Beta] (Image 1 requested) -->
+          <button id="btnStartNfcScan" class="neo-btn btn-nfc-emerald btn-full btn-large">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12a10 10 0 0 1 10-10"></path>
+              <path d="M4 17a15 15 0 0 1 15-15"></path>
+              <path d="M4 7a5 5 0 0 1 5-5"></path>
+              <rect x="2" y="3" width="20" height="18" rx="3"></rect>
+            </svg>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>تسجيل الدخول والتوثيق بـ NFC</span>
+              <span class="badge-nfc-beta">BETA</span>
+            </div>
           </button>
         </div>
 
@@ -523,6 +537,38 @@
           قواعد أمنية صارمة: يستحيل تسجيل الدخول بهذا الكارنيه على هاتف آخر إلا بموافقتك البيومترية من هذا الجهاز.
         </p>
 
+        <!-- NFC SMART STUDENT CARD LINKING (BETA) -->
+        <div class="card-inner-divider"></div>
+        <div class="card-head-row mt-2">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M4 12a10 10 0 0 1 10-10"></path><path d="M4 17a15 15 0 0 1 15-15"></path><rect x="2" y="3" width="20" height="18" rx="3"></rect></svg>
+            <h4 class="card-subtitle-text" style="margin: 0;">بطاقة الطالب الذكية (NFC Card)</h4>
+          </div>
+          <span class="badge-nfc-beta">BETA</span>
+        </div>
+        <p class="card-desc mt-1" style="font-size: 0.78rem;">
+          اربط بطاقتك الجامعية الذكية (NFC) بحسابك لتسجيل الدخول الفوري وملامسة الكارت بظهر الهاتف بثوانٍ.
+        </p>
+        <div class="nfc-security-card-box mt-2" id="secNfcStatusBox" style="background: #F8FAFC; border: 2px solid #0F172A; border-radius: 8px; padding: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="bind-lbl">حالة بطاقة NFC:</span>
+            <span id="secNfcStatusBadge" class="status-pill pill-yellow font-xs">غير مربوطة</span>
+          </div>
+          <div class="device-bind-row mt-1" id="secNfcSerialRow" style="display: none; justify-content: space-between; align-items: center;">
+            <span class="bind-lbl">الرقم التسلسلي (UID):</span>
+            <strong id="secNfcSerialText" style="font-family: monospace; letter-spacing: 0.5px;">--:--:--:--</strong>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <button id="btnSecLinkNfc" class="neo-btn btn-nfc-emerald btn-small" style="flex: 1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12a10 10 0 0 1 10-10"></path><path d="M4 17a15 15 0 0 1 15-15"></path><rect x="2" y="3" width="20" height="18" rx="3"></rect></svg>
+              <span>مسح وربط بطاقة NFC</span>
+            </button>
+            <button id="btnSecUnlinkNfc" class="neo-btn btn-subtle-dark btn-small hidden">
+              إلغاء الربط
+            </button>
+          </div>
+        </div>
+
         <!-- Divider -->
         <div class="card-inner-divider"></div>
 
@@ -643,11 +689,79 @@
           <div class="reticle-corner rc-br"></div>
           <div class="camera-laser-beam"></div>
         </div>
+
+        <!-- SMART PROGRESSIVE AUTO-ZOOM HUD BADGE -->
+        <div id="cameraZoomBadge" class="camera-zoom-badge hidden" title="مستوى التقريب التلقائي">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          <span id="cameraZoomValText">1.0x</span>
+        </div>
+
+        <!-- CAMERA LENS CLEAN / PROXIMITY ADVICE BANNER (TRIGGERED AT 5 SECONDS) -->
+        <div id="cameraLensCleanBanner" class="camera-lens-clean-banner hidden">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>يرجى مسح وتلميع عدسة الكاميرا جيداً والاقتراب قليلاً من الشاشة لتحسين القراءة</span>
+        </div>
       </div>
 
       <p class="camera-modal-hint" id="cameraModalHint">ضع الكارنيه داخل الإطار الكبير • سيلتقط المربع الرمز تلقائياً</p>
 
       <button id="btnCancelScan" class="neo-btn btn-subtle-dark btn-full mt-2">إلغاء المسح</button>
+    </div>
+  </div>
+
+  <!-- NFC SMART CARD INTERACTIVE SCANNING MODAL -->
+  <div id="nfcModal" class="modal-overlay hidden" style="z-index: 999999;">
+    <div class="modal-card nfc-modal-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="nfc-modal-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5"><path d="M4 12a10 10 0 0 1 10-10"></path><path d="M4 17a15 15 0 0 1 15-15"></path><rect x="2" y="3" width="20" height="18" rx="3"></rect></svg>
+          </div>
+          <h3 id="nfcModalTitle" style="margin: 0; font-size: 1.05rem;">قارئ بطاقة الكارنيه الذكية (NFC)</h3>
+          <span class="badge-nfc-beta">BETA</span>
+        </div>
+        <button id="btnCloseNfcModal" class="btn-icon-close">X</button>
+      </div>
+
+      <div class="nfc-modal-body" style="text-align: center; padding: 20px 14px;">
+        <!-- Contactless Phone & Card Graphic with SVG Radar Waves (Zero Blur / Zero Glow) -->
+        <div class="nfc-visual-radar-stage">
+          <div class="nfc-pulse-wave wave-1"></div>
+          <div class="nfc-pulse-wave wave-2"></div>
+          <div class="nfc-phone-illustration">
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              <path d="M8 8a6 6 0 0 1 6-6" stroke="#10B981" stroke-width="2.5"></path>
+              <path d="M9 11a3 3 0 0 1 3-3" stroke="#10B981" stroke-width="2.5"></path>
+            </svg>
+          </div>
+        </div>
+
+        <h4 id="nfcStatusHeading" style="margin: 14px 0 6px 0; font-size: 1.1rem; font-weight: 900; color: #0F172A;">
+          قرب بطاقة الطالب الجامعية من ظهر الهاتف الآن
+        </h4>
+        <p id="nfcStatusDesc" style="margin: 0 auto; max-width: 320px; font-size: 0.84rem; color: #64748B; font-weight: 600; line-height: 1.5;">
+          تأكد من تفعيل ميزة NFC في إعدادات هاتفك • سيتم التقاط الكارت والتعرف التلقائي في أجزاء من الثانية.
+        </p>
+
+        <!-- Quick Test / Verified UID Helper -->
+        <div class="nfc-uid-direct-box mt-3" style="background: #F8FAFC; border: 2px dashed #CBD5E1; border-radius: 8px; padding: 10px; margin-top: 16px;">
+          <span style="font-size: 0.72rem; color: #64748B; font-weight: 800; display: block; margin-bottom: 6px;">
+            أو اختبار سريع بكارت الكلية المعتمد (2A:73:9C:69):
+          </span>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="nfcManualUidInput" class="neo-input" value="2A:73:9C:69" placeholder="مثال: 2A:73:9C:69" style="text-align: center; font-family: monospace; font-weight: 800; letter-spacing: 1px; font-size: 0.88rem; padding: 6px 8px;">
+            <button id="btnSubmitNfcManual" class="neo-btn btn-nfc-emerald" style="padding: 6px 14px; white-space: nowrap;">
+              تأكيد الكارت
+            </button>
+          </div>
+        </div>
+
+        <button id="btnCancelNfcScan" class="neo-btn btn-subtle-dark btn-full mt-3">
+          إلغاء والعودة
+        </button>
+      </div>
     </div>
   </div>
 

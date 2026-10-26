@@ -25,6 +25,8 @@ export interface Student {
   is_banned: boolean; // Permanent riot/tamper ban
   ban_reason?: string;
   active_session_token?: string; // Concurrency invalidation token
+  nfc_card_serial?: string; // Universal NFC Serial (e.g. 2A:73:9C:69)
+  nfc_verified?: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -174,6 +176,8 @@ function mapStudentRow(r: any): Student {
     is_banned: Boolean(r.is_banned),
     ban_reason: r.ban_reason || undefined,
     active_session_token: r.active_session_token || undefined,
+    nfc_card_serial: r.nfc_card_serial || undefined,
+    nfc_verified: Boolean(r.nfc_verified),
     created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
     updated_at: r.updated_at ? new Date(r.updated_at).toISOString() : undefined
   };
@@ -222,6 +226,8 @@ export async function initDb() {
       ALTER TABLE students ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS ban_reason TEXT;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS active_session_token VARCHAR(255);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS nfc_card_serial VARCHAR(100);
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS nfc_verified BOOLEAN DEFAULT FALSE;
       ALTER TABLE students ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
       CREATE TABLE IF NOT EXISTS device_transfers (
@@ -325,6 +331,96 @@ export const db = {
     return Array.from(memoryStore.students.values()).find(s => s.device_uuid === deviceUuid) || null;
   },
 
+  async getStudentByNfc(serial: string): Promise<Student | null> {
+    if (!serial) return null;
+    const cleanSerial = serial.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const p = getPool();
+    if (p) {
+      try {
+        const res = await p.query(
+          "SELECT * FROM students WHERE REPLACE(UPPER(nfc_card_serial), ':', '') = $1 LIMIT 1",
+          [cleanSerial]
+        );
+        if (res.rows[0]) return mapStudentRow(res.rows[0]);
+      } catch (e) {
+        console.error('getStudentByNfc pool error:', e);
+      }
+    }
+    for (const s of memoryStore.students.values()) {
+      if (s.nfc_card_serial && s.nfc_card_serial.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() === cleanSerial) {
+        return s;
+      }
+    }
+    return null;
+  },
+
+  async linkStudentNfc(studentId: string, serial: string): Promise<Student | null> {
+    if (!studentId || !serial) return null;
+    const cleanSerial = serial.trim().toUpperCase();
+    const cleanId = String(studentId).trim();
+    const p = getPool();
+
+    if (cleanSerial === 'UNLINK') {
+      if (p) {
+        try {
+          const res = await p.query(
+            `UPDATE students 
+             SET nfc_card_serial = NULL, nfc_verified = FALSE, updated_at = CURRENT_TIMESTAMP 
+             WHERE id = $1 
+             RETURNING *`,
+            [cleanId]
+          );
+          if (res.rows[0]) {
+            const updated = mapStudentRow(res.rows[0]);
+            memoryStore.students.set(cleanId, updated);
+            return updated;
+          }
+        } catch (e) {
+          console.error('linkStudentNfc unlink pool error:', e);
+        }
+      }
+      const student = memoryStore.students.get(cleanId);
+      if (student) {
+        student.nfc_card_serial = undefined;
+        student.nfc_verified = false;
+        student.updated_at = new Date().toISOString();
+        memoryStore.students.set(cleanId, student);
+        memoryStore.save();
+        return student;
+      }
+      return null;
+    }
+
+    if (p) {
+      try {
+        const res = await p.query(
+          `UPDATE students 
+           SET nfc_card_serial = $1, nfc_verified = TRUE, updated_at = CURRENT_TIMESTAMP 
+           WHERE id = $2 
+           RETURNING *`,
+          [cleanSerial, cleanId]
+        );
+        if (res.rows[0]) {
+          const updated = mapStudentRow(res.rows[0]);
+          memoryStore.students.set(cleanId, updated);
+          return updated;
+        }
+      } catch (e) {
+        console.error('linkStudentNfc pool error:', e);
+      }
+    }
+    const student = memoryStore.students.get(cleanId);
+    if (student) {
+      student.nfc_card_serial = cleanSerial;
+      student.nfc_verified = true;
+      student.updated_at = new Date().toISOString();
+      memoryStore.students.set(cleanId, student);
+      memoryStore.save();
+      return student;
+    }
+    return null;
+  },
+
   async upsertStudent(student: Partial<Student> & { id: string }): Promise<Student> {
     const cleanId = String(student.id).trim();
     const existing = await this.getStudent(cleanId);
@@ -345,18 +441,21 @@ export const db = {
       is_banned: student.is_banned !== undefined ? student.is_banned : (existing?.is_banned ?? false),
       ban_reason: student.ban_reason !== undefined ? student.ban_reason : existing?.ban_reason,
       active_session_token: student.active_session_token !== undefined ? student.active_session_token : existing?.active_session_token,
+      nfc_card_serial: student.nfc_card_serial !== undefined ? student.nfc_card_serial : existing?.nfc_card_serial,
+      nfc_verified: student.nfc_verified !== undefined ? student.nfc_verified : (existing?.nfc_verified ?? false),
       created_at: existing?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
-    if (pool) {
+    const p = getPool();
+    if (p) {
       try {
-        await pool.query(
+        await p.query(
           `INSERT INTO students (
             id, full_name, faculty, level, photo_url, password_hash, emergency_access_key,
             card_verified, card_ss_uuid, card_verified_at, device_uuid,
-            device_transfers_count, is_banned, ban_reason, active_session_token, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)
+            device_transfers_count, is_banned, ban_reason, active_session_token, nfc_card_serial, nfc_verified, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, CURRENT_TIMESTAMP)
           ON CONFLICT (id) DO UPDATE SET
             full_name = EXCLUDED.full_name,
             faculty = EXCLUDED.faculty,
@@ -372,6 +471,8 @@ export const db = {
             is_banned = EXCLUDED.is_banned,
             ban_reason = EXCLUDED.ban_reason,
             active_session_token = EXCLUDED.active_session_token,
+            nfc_card_serial = COALESCE(EXCLUDED.nfc_card_serial, students.nfc_card_serial),
+            nfc_verified = COALESCE(EXCLUDED.nfc_verified, students.nfc_verified),
             updated_at = CURRENT_TIMESTAMP`,
           [
             merged.id,
@@ -388,7 +489,9 @@ export const db = {
             merged.device_transfers_count,
             merged.is_banned,
             merged.ban_reason || null,
-            merged.active_session_token || null
+            merged.active_session_token || null,
+            merged.nfc_card_serial || null,
+            merged.nfc_verified
           ]
         );
       } catch (err) {

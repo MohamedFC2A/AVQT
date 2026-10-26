@@ -73,7 +73,7 @@
     <div class="aspnet-modal-card">
       <div class="aspnet-modal-header">
         <span>Academic Advisor System - Attendance Confirmation</span>
-        <button id="btnCloseModalX" style="background:none; border:none; color:#FFFFFF; font-size:16px; cursor:pointer;">✕</button>
+        <button id="btnCloseModalX" style="background:none; border:none; color:#FFFFFF; font-size:16px; cursor:pointer;">&times;</button>
       </div>
       <div class="aspnet-modal-body">
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
@@ -90,7 +90,7 @@
         </div>
 
         <div class="auto-close-countdown-bar">
-          <span id="autoCloseCountdownText">⏰ سيتم إغلاق نافذة كشف الغياب تلقائياً لحماية البيانات خلال 60 ثانية...</span>
+          <span id="autoCloseCountdownText">سيتم إغلاق نافذة كشف الغياب تلقائياً لحماية البيانات خلال 60 ثانية...</span>
         </div>
       </div>
       <div class="aspnet-modal-footer">
@@ -245,7 +245,7 @@
         try {
           localStorage.removeItem('e7dar_portal_saved_attendance');
         } catch (e) {}
-        alert('✓ تم مسح وتصفير جميع الاختيارات بنجاح. يمكنك الآن إعادة اختبار رصد الحضور من جديد.');
+        alert('تم مسح وتصفير جميع الاختيارات بنجاح. يمكنك الآن إعادة اختبار رصد الحضور من جديد.');
       });
     }
 
@@ -316,7 +316,7 @@
     function updateAutoCloseText() {
       const textEl = document.getElementById('autoCloseCountdownText');
       if (textEl) {
-        textEl.textContent = `⏰ تم الحفظ بنجاح. سيتم إغلاق نافذة كشف الغياب تلقائياً خلال ${autoCloseSeconds} ثانية لحماية البيانات (أو اضغط زر الإغلاق الآن).`;
+        textEl.textContent = `تم الحفظ بنجاح. سيتم إغلاق نافذة كشف الغياب تلقائياً خلال ${autoCloseSeconds} ثانية لحماية البيانات (أو اضغط زر الإغلاق الآن).`;
       }
     }
 

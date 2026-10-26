@@ -307,12 +307,12 @@ function updatePortalStatusUI(connected, count) {
     banner.style.border = '2px solid #059669';
     banner.style.background = '#ECFDF5';
     banner.style.color = '#065F46';
-    txt.textContent = `✅ صفحة كشف الغياب متصلة وجاهزة (${count} خانة طالب متوفرة للرصد الآلي).`;
+    txt.textContent = ` صفحة كشف الغياب متصلة وجاهزة (${count} خانة طالب متوفرة للرصد الآلي).`;
   } else {
     banner.style.border = '2px solid #DC2626';
     banner.style.background = '#FEF2F2';
     banner.style.color = '#991B1B';
-    txt.textContent = '⚠️ تنبيه للدكتور: لم يتم رصد صفحة كشف الغياب (يجب فتح صفحة الحضور التي تحتوي على 15 خانة طالب على الأقل في المتصفح لرصد الحضور آلياً).';
+    txt.textContent = '️ تنبيه للدكتور: لم يتم رصد صفحة كشف الغياب (يجب فتح صفحة الحضور التي تحتوي على 15 خانة طالب على الأقل في المتصفح لرصد الحضور آلياً).';
   }
 
   if (sessionId && activeServerUrl) {
@@ -355,7 +355,7 @@ async function triggerAutoSaveAndClose() {
     console.error('Auto save error:', err);
   } finally {
     // 4. Alert & close presenter window cleanly
-    alert('⏰ انتهت مهلة الـ 3 دقائق المخصصة للجلسة. تم حفظ كشف الحضور وإغلاق الجلسة تلقائياً بنجاح.');
+    alert(' انتهت مهلة الـ 3 دقائق المخصصة للجلسة. تم حفظ كشف الحضور وإغلاق الجلسة تلقائياً بنجاح.');
     setTimeout(() => {
       window.close();
     }, 400);

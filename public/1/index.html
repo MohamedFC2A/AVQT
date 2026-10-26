@@ -76,8 +76,9 @@
         <div class="form-group-neo">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label class="neo-label" style="margin-bottom: 0;">معرف جلسة المحاضرة (ذكي وفريد):</label>
-            <button type="button" id="btnRegenSessionId" style="background: #F1F5F9; border: 1.5px solid #0F172A; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-              🔄 كود جديد
+            <button type="button" id="btnRegenSessionId" style="background: #F1F5F9; border: 1.5px solid #0F172A; border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              <span>توليد كود جديد</span>
             </button>
           </div>
           <input type="text" id="sessionIdInput" class="neo-input" value="" placeholder="E7DAR-MMDD-HHMM-XXXX" style="font-family: monospace; font-weight: 800; letter-spacing: 0.5px; text-align: center;">
@@ -112,7 +113,7 @@
         <!-- DOCTOR PORTAL SHEET STATUS BANNER (REQUIRES AT LEAST 15 CHECKBOXES) -->
         <div id="portalStatusBanner" class="portal-status-banner portal-status-warning" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; margin-bottom: 8px; border: 1.5px solid #DC2626; background: #FEF2F2; color: #991B1B;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-          <span id="portalStatusText">⚠️ تنبيه للدكتور: لم يتم رصد صفحة كشف الغياب (يجب فتح صفحة الحضور التي تحتوي على 15 خانة طالب على الأقل في المتصفح لرصد الحضور آلياً).</span>
+          <span id="portalStatusText"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5" style="vertical-align: middle; margin-left: 4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>تنبيه للدكتور: لم يتم رصد صفحة كشف الغياب (يجب فتح صفحة الحضور التي تحتوي على 15 خانة طالب على الأقل في المتصفح لرصد الحضور آلياً).</span>
         </div>
 
         <!-- QR CODE & NUMERIC CODE GRID -->

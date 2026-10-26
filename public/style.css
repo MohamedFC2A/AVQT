@@ -3450,12 +3450,147 @@ body {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-.partner-text-upstore {
-  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
-  font-size: 1.4rem;
+/* ============================================================
+   NFC SMART STUDENT CARD (BETA) & CAMERA AUTO-ZOOM HUD
+   ============================================================ */
+.btn-nfc-emerald {
+  background: #10B981 !important;
+  color: #FFFFFF !important;
+  border: 2.5px solid #0F172A !important;
+  box-shadow: 4px 4px 0px #0F172A !important;
+}
+
+.btn-nfc-emerald:hover {
+  background: #059669 !important;
+}
+
+.btn-nfc-emerald:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 2px 2px 0px #0F172A !important;
+}
+
+.badge-nfc-beta {
+  background: #0F172A;
+  color: #F8FAFC;
+  font-size: 0.65rem;
   font-weight: 900;
-  color: #0F172A;
-  letter-spacing: -0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* CAMERA AUTO-ZOOM HUD BADGE */
+.camera-zoom-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: #0F172A;
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 20;
+  box-shadow: 2px 2px 0px #000000;
+  pointer-events: none;
+}
+
+/* CAMERA LENS CLEAN & PROXIMITY ADVICE BANNER */
+.camera-lens-clean-banner {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  background: #FEF3C7;
+  color: #92400E;
+  border: 2px solid #D97706;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+  box-shadow: 3px 3px 0px #0F172A;
+  animation: bannerSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+@keyframes bannerSlideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* NFC MODAL & RADAR WAVES (ZERO GLOW / ZERO BLUR) */
+.nfc-modal-card {
+  max-width: 400px;
+  border: 3px solid #0F172A;
+  box-shadow: 8px 8px 0px #0F172A;
+  border-radius: 12px;
+}
+
+.nfc-modal-icon-badge {
+  background: #10B981;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 2px solid #0F172A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nfc-visual-radar-stage {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nfc-phone-illustration {
+  position: relative;
+  z-index: 5;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nfc-pulse-wave {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid #10B981;
+  box-sizing: border-box;
+  animation: nfcRadarPulse 2s infinite ease-out;
+  pointer-events: none;
+}
+
+.nfc-pulse-wave.wave-1 {
+  width: 90px;
+  height: 90px;
+  animation-delay: 0s;
+}
+
+.nfc-pulse-wave.wave-2 {
+  width: 130px;
+  height: 130px;
+  animation-delay: 0.8s;
+}
+
+@keyframes nfcRadarPulse {
+  0% { transform: scale(0.6); opacity: 1; border-width: 3px; }
+  100% { transform: scale(1.2); opacity: 0; border-width: 1px; }
 }
 
 

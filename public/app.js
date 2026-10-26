@@ -82,6 +82,8 @@ let state = {
   photoUrl: localStorage.getItem('avqr_photo_url') || '',
   biometricRegistered: localStorage.getItem('avqr_bio_registered') === 'true',
   biometricCredentialId: localStorage.getItem('avqr_bio_cred_id') || '',
+  nfcCardSerial: localStorage.getItem('avqr_nfc_card_serial') || '',
+  nfcVerified: localStorage.getItem('avqr_nfc_verified') === 'true',
   isRegistered: isRegisteredStored,
   token: localStorage.getItem('avqr_token') || '',
   sessionToken: localStorage.getItem('avqr_session_token') || '',
@@ -97,6 +99,12 @@ function saveState() {
   if (state.cardUrl) localStorage.setItem('avqr_card_url', state.cardUrl);
   if (state.photoUrl) localStorage.setItem('avqr_photo_url', state.photoUrl);
   if (state.emergencyAccessKey) localStorage.setItem('avqr_emergency_key', state.emergencyAccessKey);
+  if (state.nfcCardSerial) {
+    localStorage.setItem('avqr_nfc_card_serial', state.nfcCardSerial);
+  } else {
+    localStorage.removeItem('avqr_nfc_card_serial');
+  }
+  localStorage.setItem('avqr_nfc_verified', state.nfcVerified ? 'true' : 'false');
   localStorage.setItem('avqr_registered', state.isRegistered ? 'true' : 'false');
   localStorage.setItem('avqr_bio_registered', state.biometricRegistered ? 'true' : 'false');
   if (state.biometricCredentialId) localStorage.setItem('avqr_bio_cred_id', state.biometricCredentialId);
@@ -350,6 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderStudentProfile();
   initAttendanceFlow();
   initBiometrics();
+  initNfcEngine();
   initModals();
   initPhotoUploadFallbackEngine();
   renderHistoryTimeline();
@@ -1337,6 +1346,10 @@ function renderStudentProfile() {
   // Refresh QR code canvas with authentic URL
   renderCardOfficialQr(state.cardUrl);
 
+  // Synchronize NFC smart card security state and login button
+  renderNfcSecurityState();
+  updateNfcButtonVisibility();
+
   // Check if current active session is already attended
   if (state.activeSessionId && isSessionAlreadyAttended(state.activeSessionId)) {
     const badge = document.getElementById('attendanceBadge');
@@ -1452,7 +1465,7 @@ function showSmartAttendanceFeedbackDialog(type, options = {}) {
       iconWrap.innerHTML = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
     }
     title.style.color = '#065F46';
-    title.textContent = 'تمت عملية التسجيل بنجاح ✅';
+    title.textContent = 'تمت عملية التسجيل بنجاح';
     msg.textContent = options.message || 'تمت عملية التسجيل الآن ومسجل ومعتمد في السيستم، تقدر تتفضل دلوقتي.';
     if (btn) btn.textContent = 'حسناً، تمام';
   } else if (type === 'ALREADY_REGISTERED') {
@@ -1473,7 +1486,7 @@ function showSmartAttendanceFeedbackDialog(type, options = {}) {
     }
     title.style.color = '#B45309';
     title.textContent = 'تم التصوير بنجاح ولكن...';
-    msg.textContent = options.message || 'تم التصوير وقراءة الكود بنجاح ✅، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.';
+    msg.textContent = options.message || 'تم التصوير وقراءة الكود بنجاح، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.';
     if (btn) btn.textContent = 'تنبيه الدكتور';
   }
 
@@ -1539,7 +1552,7 @@ function showInstantAttendOverlay(stateType, payload = {}) {
       const infoMsg = document.getElementById('instantInfoMsg');
       if (payload.reason === 'PORTAL_NOT_OPEN') {
         if (infoHeading) infoHeading.textContent = 'تم التصوير بنجاح ولكن...';
-        if (infoMsg) infoMsg.textContent = payload.message || 'تم التصوير وقراءة الكود بنجاح ✅، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.';
+        if (infoMsg) infoMsg.textContent = payload.message || 'تم التصوير وقراءة الكود بنجاح، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.';
       } else {
         if (infoHeading) infoHeading.textContent = payload.heading || 'أنت مسجل بالفعل في المحاضرة';
         if (infoMsg) infoMsg.textContent = payload.message || 'تم رصد وتثبيت حضورك مسبقاً في هذه الجلسة بنجاح، تقدر تتفضل دلوقتي.';
@@ -1739,7 +1752,7 @@ async function performAttendanceSubmission(payload) {
 
       const firstSuccessMsg = data.message || 'تمت عملية التسجيل الآن ومسجل ومعتمد في السيستم، تقدر تتفضل دلوقتي.';
       showSmartAttendanceFeedbackDialog('FIRST_SUCCESS', { message: firstSuccessMsg });
-      showStatusBanner('success', 'تمت عملية التسجيل بنجاح ✅', firstSuccessMsg);
+      showStatusBanner('success', 'تمت عملية التسجيل بنجاح', firstSuccessMsg);
 
       if (isCameraScan) {
         showInstantAttendOverlay('SUCCESS', {
@@ -1950,13 +1963,84 @@ let cameraScanInterval = null;
 let currentScanMode = 'CARD'; // 'CARD' | 'ATTENDANCE'
 let cameraCardScanStartTime = 0;
 let isCardScanProcessing = false;
+let lectureZoomTimer = null;
+let currentLectureZoom = 1.0;
+
+async function applyCameraZoom(zoomFactor) {
+  const video = document.getElementById('scannerVideo');
+  const zoomBadge = document.getElementById('cameraZoomBadge');
+  const zoomValText = document.getElementById('cameraZoomValText');
+
+  if (zoomBadge) zoomBadge.classList.remove('hidden');
+  if (zoomValText) zoomValText.textContent = `${zoomFactor.toFixed(1)}x`;
+
+  // 1. Hardware digital zoom on mobile camera stream track if supported
+  if (cameraStream) {
+    try {
+      const track = cameraStream.getVideoTracks()[0];
+      if (track && track.getCapabilities) {
+        const caps = track.getCapabilities();
+        if (caps.zoom) {
+          const hwZoom = Math.min(caps.zoom.max || 10, Math.max(caps.zoom.min || 1, zoomFactor));
+          await track.applyConstraints({ advanced: [{ zoom: hwZoom }] });
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2. High-performance CSS transform zoom on video container
+  if (video) {
+    video.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    video.style.transform = `scale(${zoomFactor})`;
+    video.style.transformOrigin = 'center center';
+  }
+}
 
 async function openCameraScanner(mode = 'CARD') {
   currentScanMode = mode;
   if (mode === 'CARD') {
     cameraCardScanStartTime = Date.now();
     isCardScanProcessing = false;
+  } else {
+    // Lecture QR Scan Mode: Reset and start Progressive Auto-Zoom Engine
+    currentLectureZoom = 1.0;
+    const zoomBadge = document.getElementById('cameraZoomBadge');
+    const zoomValText = document.getElementById('cameraZoomValText');
+    const lensBanner = document.getElementById('cameraLensCleanBanner');
+    if (zoomBadge) zoomBadge.classList.add('hidden');
+    if (lensBanner) lensBanner.classList.add('hidden');
+    if (zoomValText) zoomValText.textContent = '1.0x';
+
+    const lectureScanStartTime = Date.now();
+    if (lectureZoomTimer) clearInterval(lectureZoomTimer);
+
+    lectureZoomTimer = setInterval(() => {
+      if (currentScanMode !== 'ATTENDANCE' || !cameraStream) {
+        if (lectureZoomTimer) clearInterval(lectureZoomTimer);
+        return;
+      }
+      const elapsed = (Date.now() - lectureScanStartTime) / 1000;
+      let targetZoom = 1.0;
+
+      // Smart progressive zoom: >2s -> 1.3x, >3s -> 1.7x, >4s -> 2.2x, >=5s -> 2.6x + lens wipe advice
+      if (elapsed >= 5.0) {
+        targetZoom = 2.6;
+        if (lensBanner) lensBanner.classList.remove('hidden');
+      } else if (elapsed >= 4.0) {
+        targetZoom = 2.2;
+      } else if (elapsed >= 3.0) {
+        targetZoom = 1.7;
+      } else if (elapsed >= 2.0) {
+        targetZoom = 1.3;
+      }
+
+      if (targetZoom > currentLectureZoom) {
+        currentLectureZoom = targetZoom;
+        applyCameraZoom(currentLectureZoom);
+      }
+    }, 400);
   }
+
   const modal = document.getElementById('cameraModal');
   const video = document.getElementById('scannerVideo');
   const title = document.getElementById('cameraModalTitle');
@@ -1987,8 +2071,15 @@ async function openCameraScanner(mode = 'CARD') {
   if (modal) modal.classList.remove('hidden');
 
   try {
-    // Resilient Multi-Tier Camera Constraints (Ultra-HD with universal mobile fallback)
+    // Ultra-Fast Zero-Lag Camera Constraints (720p instant spin-up, then 1080p fallback)
     const constraintsList = [
+      {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      },
       {
         video: {
           facingMode: { ideal: 'environment' },
@@ -1996,13 +2087,6 @@ async function openCameraScanner(mode = 'CARD') {
           height: { ideal: 1080 },
           aspectRatio: { ideal: 16 / 9 },
           advanced: [{ focusMode: 'continuous' }]
-        }
-      },
-      {
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
         }
       },
       {
@@ -2149,7 +2233,7 @@ async function openCameraScanner(mode = 'CARD') {
           }
         } catch (err) {}
       }
-    }, 120);
+    }, 60);
 
   } catch (err) {
     console.error('Camera access error:', err);
@@ -2324,7 +2408,7 @@ async function handleScannedCardQrWith4sRule(val) {
   // Visual feedback inside camera HUD
   const hintEl = document.getElementById('cameraModalHint');
   if (hintEl) {
-    hintEl.innerHTML = '<span style="color:#10B981; font-weight:800;">✓ تم التقاط رمز الكارنيه • جاري فحص وتوثيق الشفرة الجامعية...</span>';
+    hintEl.innerHTML = '<span style="color:#10B981; font-weight:800;">تم التقاط رمز الكارنيه • جاري التوثيق الفوري...</span>';
   }
   const reticleEl = document.getElementById('cameraCardQrReticle');
   if (reticleEl) {
@@ -2346,9 +2430,9 @@ async function handleScannedCardQrWith4sRule(val) {
     return { ok: res.ok, status: res.status, data };
   }).catch(err => ({ ok: false, status: 500, data: { error: err.message } }));
 
-  // 2. Minimum 2 seconds rule from camera start (fast intelligent feedback)
+  // 2. Ultra-fast professional verification (minimal 250ms threshold)
   const elapsed = Date.now() - (cameraCardScanStartTime || Date.now());
-  const waitMs = Math.max(0, 2000 - elapsed);
+  const waitMs = Math.max(0, 250 - elapsed);
   const timerPromise = new Promise(resolve => setTimeout(resolve, waitMs));
 
   const [verifyResult] = await Promise.all([dbPromise, timerPromise]);
@@ -2404,13 +2488,28 @@ function closeCameraScanner() {
     clearInterval(cameraScanInterval);
     cameraScanInterval = null;
   }
+  if (lectureZoomTimer) {
+    clearInterval(lectureZoomTimer);
+    lectureZoomTimer = null;
+  }
   if (cameraStream) {
     cameraStream.getTracks().forEach(t => t.stop());
     cameraStream = null;
   }
+  const video = document.getElementById('scannerVideo');
+  if (video) {
+    video.style.transition = '';
+    video.style.transform = 'scale(1)';
+  }
+  const zoomBadge = document.getElementById('cameraZoomBadge');
+  if (zoomBadge) zoomBadge.classList.add('hidden');
+  const lensCleanBanner = document.getElementById('cameraLensCleanBanner');
+  if (lensCleanBanner) lensCleanBanner.classList.add('hidden');
+
   const reticle = document.getElementById('cameraCardQrReticle');
   if (reticle) reticle.classList.remove('reticle-success');
   isCardScanProcessing = false;
+  currentLectureZoom = 1.0;
 }
 
 function handleScannedQrContent(val) {
@@ -2814,6 +2913,332 @@ function initBiometrics() {
       await executeBiometricVerification();
     });
   }
+}
+
+// -------------------------------------------------------------
+// 5.1 Smart NFC Card Authentication & Registration Engine [BETA]
+// -------------------------------------------------------------
+let currentNfcMode = 'AUTH'; // 'AUTH' | 'LINK'
+let nfcScanAbortController = null;
+
+function renderNfcSecurityState() {
+  const statusBadge = document.getElementById('secNfcStatusBadge');
+  const serialRow = document.getElementById('secNfcSerialRow');
+  const serialText = document.getElementById('secNfcSerialText');
+  const btnLink = document.getElementById('btnSecLinkNfc');
+  const btnUnlink = document.getElementById('btnSecUnlinkNfc');
+
+  const serial = state.nfcCardSerial || localStorage.getItem('avqr_nfc_card_serial');
+  const isVerified = (state.nfcVerified || localStorage.getItem('avqr_nfc_verified') === 'true') && Boolean(serial);
+
+  if (isVerified && serial) {
+    if (statusBadge) {
+      statusBadge.textContent = 'مربوطة ومعتمدة';
+      statusBadge.className = 'status-pill pill-green font-xs';
+    }
+    if (serialRow) serialRow.style.display = 'flex';
+    if (serialText) serialText.textContent = serial;
+    if (btnUnlink) btnUnlink.classList.remove('hidden');
+    if (btnLink) {
+      const span = btnLink.querySelector('span');
+      if (span) span.textContent = 'تغيير بطاقة NFC';
+    }
+  } else {
+    if (statusBadge) {
+      statusBadge.textContent = 'غير مربوطة';
+      statusBadge.className = 'status-pill pill-yellow font-xs';
+    }
+    if (serialRow) serialRow.style.display = 'none';
+    if (btnUnlink) btnUnlink.classList.add('hidden');
+    if (btnLink) {
+      const span = btnLink.querySelector('span');
+      if (span) span.textContent = 'مسح وربط بطاقة NFC';
+    }
+  }
+}
+
+function updateNfcButtonVisibility() {
+  const btnNfc = document.getElementById('btnStartNfcScan');
+  if (!btnNfc) return;
+  const serial = state.nfcCardSerial || localStorage.getItem('avqr_nfc_card_serial');
+  // As requested: appears when student registered or linked NFC card
+  if (serial || state.isRegistered || localStorage.getItem('avqr_registered') === 'true') {
+    btnNfc.style.display = 'flex';
+    btnNfc.classList.remove('hidden');
+  } else {
+    btnNfc.style.display = 'none';
+    btnNfc.classList.add('hidden');
+  }
+}
+
+function openNfcModal(mode = 'AUTH') {
+  currentNfcMode = mode;
+  const modal = document.getElementById('nfcModal');
+  const title = document.getElementById('nfcModalTitle');
+  const heading = document.getElementById('nfcStatusHeading');
+  const desc = document.getElementById('nfcStatusDesc');
+  const uidInput = document.getElementById('nfcManualUidInput');
+
+  if (title) {
+    title.textContent = mode === 'LINK' ? 'ربط بطاقة الكارنيه الذكية (NFC)' : 'قارئ بطاقة الكارنيه الذكية (NFC)';
+  }
+  if (heading) {
+    heading.textContent = mode === 'LINK'
+      ? 'قرب بطاقتك الجامعية من ظهر الهاتف لربطها'
+      : 'قرب بطاقة الطالب الجامعية من ظهر الهاتف الآن';
+  }
+  if (desc) {
+    desc.textContent = mode === 'LINK'
+      ? 'سيتم قراءة الرقم التسلسلي (UID) للشريحة وتثبيته في قاعدة بيانات Neon.tech الجامعية بحسابك الرسمي.'
+      : 'تأكد من تفعيل ميزة NFC في إعدادات هاتفك • سيتم التقاط الكارت والتعرف التلقائي في أجزاء من الثانية.';
+  }
+
+  if (uidInput && !uidInput.value) {
+    uidInput.value = '2A:73:9C:69';
+  }
+
+  if (modal) modal.classList.remove('hidden');
+  startWebNfcScan();
+}
+
+function closeNfcModal() {
+  const modal = document.getElementById('nfcModal');
+  if (modal) modal.classList.add('hidden');
+  if (nfcScanAbortController) {
+    try {
+      nfcScanAbortController.abort();
+    } catch (e) {}
+    nfcScanAbortController = null;
+  }
+}
+
+async function startWebNfcScan() {
+  if ('NDEFReader' in window) {
+    try {
+      if (nfcScanAbortController) {
+        nfcScanAbortController.abort();
+      }
+      nfcScanAbortController = new AbortController();
+      const ndef = new NDEFReader();
+      await ndef.scan({ signal: nfcScanAbortController.signal });
+
+      const heading = document.getElementById('nfcStatusHeading');
+      if (heading) {
+        heading.innerHTML = '<span style="color: #10B981; font-weight: 800;">مستشعر NFC نشط • المس الكارت بظهر الهاتف</span>';
+      }
+
+      ndef.onreading = (event) => {
+        let serial = event.serialNumber || '';
+        if (serial) {
+          serial = serial.toUpperCase();
+          handleScannedNfcCard(serial);
+        }
+      };
+
+      ndef.onreadingerror = () => {
+        const heading = document.getElementById('nfcStatusHeading');
+        if (heading) {
+          heading.innerHTML = '<span style="color: #EF4444; font-weight: 800;">تعذر قراءة الكارت • جرب تقريبه مرة أخرى</span>';
+        }
+      };
+    } catch (err) {
+      console.warn('Web NFC reader setup notice:', err);
+    }
+  }
+}
+
+async function handleScannedNfcCard(serial) {
+  if (!serial) return;
+  const cleanSerial = serial.trim().toUpperCase();
+
+  playHaptic();
+  playAudioChime();
+
+  const heading = document.getElementById('nfcStatusHeading');
+  if (heading) {
+    heading.innerHTML = `<span style="color: #10B981; font-weight: 800;">تم التعرف على الكارت (${cleanSerial}) • جاري التوثيق...</span>`;
+  }
+
+  if (currentNfcMode === 'LINK') {
+    if (!state.studentId) {
+      alert('يرجى تسجيل الدخول بحسابك الجامعي أولاً لتتمكن من ربط بطاقة NFC.');
+      closeNfcModal();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${SERVER_URL}/api/student/nfc/link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: state.studentId,
+          nfcSerial: cleanSerial
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.message || data.error || 'تعذر ربط بطاقة NFC.');
+        if (heading) heading.textContent = 'فشل الربط، يرجى المحاولة ثانية';
+        return;
+      }
+
+      state.nfcCardSerial = cleanSerial;
+      state.nfcVerified = true;
+      saveState();
+
+      closeNfcModal();
+      renderNfcSecurityState();
+      updateNfcButtonVisibility();
+
+      showStatusBanner(
+        'success',
+        'تم ربط واعتماد بطاقة NFC بنجاح',
+        `تم حفظ الرقم التسلسلي (${cleanSerial}) في قاعدة بيانات Neon.tech الجامعية، يمكنك الآن تسجيل الدخول بالكارت فوراً.`
+      );
+    } catch (err) {
+      alert('خطأ في الاتصال بالسيرفر: ' + err.message);
+    }
+
+  } else {
+    // Authenticate Student via NFC Card
+    try {
+      const devName = navigator.userAgent.includes('iPhone') ? 'Apple iPhone' : (navigator.userAgent.includes('Android') ? 'Android Device' : 'متصفح ويب');
+      const res = await fetch(`${SERVER_URL}/api/student/nfc/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nfcSerial: cleanSerial,
+          deviceUuid: state.deviceUuid,
+          deviceName: devName
+        })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.banned) {
+          closeNfcModal();
+          showPermanentBanScreen(data.message);
+          return;
+        }
+        alert(data.message || data.error || 'تعذر تسجيل الدخول ببطاقة NFC.');
+        if (heading) heading.textContent = data.message || 'الكارت غير مسجل بالنظام';
+        return;
+      }
+
+      // Success
+      const student = data.student || {};
+      state.studentId = student.id;
+      state.fullName = student.full_name;
+      state.faculty = student.faculty || 'Engineering';
+      state.level = student.level || 'LEVEL 01';
+      state.photoUrl = student.photo_url || '';
+      state.cardUrl = student.card_url || '';
+      state.boundStudentId = student.id;
+      state.isRegistered = true;
+      state.nfcCardSerial = cleanSerial;
+      state.nfcVerified = true;
+      if (data.token) state.token = data.token;
+      if (data.sessionToken) state.sessionToken = data.sessionToken;
+
+      saveState();
+      closeNfcModal();
+
+      renderStudentProfile();
+      hideAuthGateAndUnlockApp();
+      syncLatestActiveSession();
+
+      showStatusBanner(
+        'success',
+        `أهلاً بك يا ${student.full_name}`,
+        'تم تسجيل الدخول والتوثيق بنجاح عبر بطاقة الطالب الذكية (NFC).'
+      );
+    } catch (err) {
+      alert('خطأ أثناء المصادقة بـ NFC: ' + err.message);
+    }
+  }
+}
+
+async function unlinkNfcCard() {
+  if (!confirm('هل أنت متأكد من رغبتك في إلغاء ربط بطاقة NFC الذكية بحسابك؟')) return;
+  try {
+    await fetch(`${SERVER_URL}/api/student/nfc/link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId: state.studentId,
+        nfcSerial: 'UNLINK'
+      })
+    });
+  } catch (e) {}
+
+  state.nfcCardSerial = '';
+  state.nfcVerified = false;
+  saveState();
+  renderNfcSecurityState();
+  updateNfcButtonVisibility();
+
+  showStatusBanner('info', 'تم إلغاء ربط بطاقة NFC', 'تم إزالة ارتباط البطاقة بحسابك بنجاح.');
+}
+
+function initNfcEngine() {
+  const btnStartNfc = document.getElementById('btnStartNfcScan');
+  const btnSecLinkNfc = document.getElementById('btnSecLinkNfc');
+  const btnSecUnlinkNfc = document.getElementById('btnSecUnlinkNfc');
+  const btnCloseNfc = document.getElementById('btnCloseNfcModal');
+  const btnCancelNfc = document.getElementById('btnCancelNfcScan');
+  const btnSubmitManual = document.getElementById('btnSubmitNfcManual');
+  const manualInput = document.getElementById('nfcManualUidInput');
+
+  if (btnStartNfc) {
+    btnStartNfc.addEventListener('click', () => {
+      openNfcModal('AUTH');
+    });
+  }
+
+  if (btnSecLinkNfc) {
+    btnSecLinkNfc.addEventListener('click', () => {
+      openNfcModal('LINK');
+    });
+  }
+
+  if (btnSecUnlinkNfc) {
+    btnSecUnlinkNfc.addEventListener('click', () => {
+      unlinkNfcCard();
+    });
+  }
+
+  if (btnCloseNfc) {
+    btnCloseNfc.addEventListener('click', () => {
+      closeNfcModal();
+    });
+  }
+
+  if (btnCancelNfc) {
+    btnCancelNfc.addEventListener('click', () => {
+      closeNfcModal();
+    });
+  }
+
+  if (btnSubmitManual && manualInput) {
+    btnSubmitManual.addEventListener('click', () => {
+      const val = manualInput.value.trim();
+      if (!val) {
+        alert('يرجى إدخال الرقم التسلسلي (UID) للكارت.');
+        return;
+      }
+      handleScannedNfcCard(val);
+    });
+
+    manualInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = manualInput.value.trim();
+        if (val) handleScannedNfcCard(val);
+      }
+    });
+  }
+
+  renderNfcSecurityState();
+  updateNfcButtonVisibility();
 }
 
 // -------------------------------------------------------------

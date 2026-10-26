@@ -493,6 +493,112 @@ app.get('/api/student/profile/:id', async (req: Request, res: Response) => {
 });
 
 // -------------------------------------------------------------
+// NFC Smart Student Card Endpoints (Beta)
+// -------------------------------------------------------------
+
+// 1. Link NFC Card Serial to Student in Neon.tech
+app.post('/api/student/nfc/link', async (req: Request, res: Response) => {
+  try {
+    const { studentId, nfcSerial } = req.body;
+    if (!studentId || !nfcSerial) {
+      return res.status(400).json({ error: 'رقم الطالب والرقم التسلسلي لشريحة NFC مطلوبان' });
+    }
+
+    const cleanId = String(studentId).trim();
+    const cleanSerial = String(nfcSerial).trim().toUpperCase();
+
+    if (cleanSerial !== 'UNLINK') {
+      // Check if card is already linked to another student
+      const existingNfcHolder = await db.getStudentByNfc(cleanSerial);
+      if (existingNfcHolder && existingNfcHolder.id !== cleanId) {
+        return res.status(409).json({
+          error: 'NFC_CARD_ALREADY_LINKED',
+          message: `بطاقة NFC هذه مرتبطة بالفعل بحساب طالب آخر (${existingNfcHolder.full_name}). لا يمكن مشاركة البطاقات.`
+        });
+      }
+    }
+
+    const updated = await db.linkStudentNfc(cleanId, cleanSerial);
+    if (!updated) {
+      return res.status(404).json({ error: 'لم يتم العثور على حساب الطالب لربط البطاقة' });
+    }
+
+    res.json({
+      success: true,
+      message: cleanSerial === 'UNLINK'
+        ? 'تم إلغاء ربط بطاقة NFC بنجاح من قاعدة البيانات'
+        : 'تم ربط واعتماد بطاقة الطالب الذكية (NFC) بنجاح في قاعدة بيانات Neon.tech الجامعية',
+      student: updated,
+      nfcSerial: cleanSerial
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2. Authenticate & Login via Smart NFC Card
+app.post('/api/student/nfc/auth', async (req: Request, res: Response) => {
+  try {
+    const { nfcSerial, deviceUuid, deviceName } = req.body;
+    if (!nfcSerial) {
+      return res.status(400).json({ error: 'الرقم التسلسلي لبطاقة NFC مطلوب' });
+    }
+
+    const cleanSerial = String(nfcSerial).trim().toUpperCase();
+    const student = await db.getStudentByNfc(cleanSerial);
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        error: 'NFC_NOT_REGISTERED',
+        message: 'بطاقة NFC هذه غير مسجلة بالنظام. يرجى تسجيل الدخول بالكارنيه أولاً ثم ربط البطاقة من الإعدادات.'
+      });
+    }
+
+    // 1. Ban check
+    if (student.is_banned) {
+      return res.status(403).json({
+        error: 'ACCOUNT_BANNED',
+        banned: true,
+        message: student.ban_reason || BAN_MESSAGE
+      });
+    }
+
+    // 2. Strict Device Binding Check
+    if (student.device_uuid && deviceUuid && student.device_uuid !== deviceUuid) {
+      return res.status(403).json({
+        error: 'DEVICE_MISMATCH',
+        message: `تم قفل هذا الحساب على جهازك المعتمد سابقاً (${student.device_uuid.substring(0, 8)}...). يرجى تقديم طلب نقل جهاز للمتابعة.`
+      });
+    }
+
+    // Bind device if not bound & update session token
+    const sessionToken = generateSessionToken();
+    const updatedStudent = await db.upsertStudent({
+      id: student.id,
+      device_uuid: student.device_uuid || deviceUuid,
+      active_session_token: sessionToken
+    });
+
+    const token = jwt.sign(
+      { id: student.id, full_name: student.full_name, faculty: student.faculty, level: student.level },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      success: true,
+      message: `أهلاً بك يا ${student.full_name} • تم التعرف والتوثيق ببطاقة NFC بنجاح`,
+      student: { ...updatedStudent, active_session_token: sessionToken },
+      token,
+      sessionToken
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// -------------------------------------------------------------
 // 2.1 Biometric Sovereign Device Transfer Endpoints
 // -------------------------------------------------------------
 app.get('/api/device-transfer/pending/:studentId', async (req: Request, res: Response) => {
@@ -988,7 +1094,7 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
         isNew: true,
         portalConnected: false,
         reason: 'PORTAL_NOT_OPEN',
-        message: 'تم التصوير وقراءة الكود بنجاح ✅، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.',
+        message: 'تم التصوير وقراءة الكود بنجاح، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.',
         student: activeStudent,
         record
       });
