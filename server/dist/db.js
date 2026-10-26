@@ -5,7 +5,7 @@ import path from 'path';
 dotenv.config();
 const { Pool } = pg;
 // AVQR Sovereign Cloud Infrastructure for Future University in Egypt (FUE) & Matany Group
-const DATABASE_URL = process.env.DATABASE_URL;
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_YepumAOX06iW@ep-holy-smoke-av9d4czd-pooler.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require';
 export function generateEmergencyAccessKey() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const seg = (len) => Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -61,26 +61,31 @@ class MemoryStore {
 }
 const memoryStore = new MemoryStore();
 let pool = null;
-if (DATABASE_URL && DATABASE_URL.startsWith('postgres')) {
-    try {
-        pool = new Pool({
-            connectionString: DATABASE_URL,
-            ssl: { rejectUnauthorized: false },
-            max: 10,
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 5000
-        });
-        console.log('[AVQR Cloud] Connected to Sovereign Neon.tech PostgreSQL cluster');
-        initDb().catch(e => console.error('Auto initDb error:', e));
+export function getPool() {
+    if (pool)
+        return pool;
+    const dbUrl = process.env.DATABASE_URL || DATABASE_URL;
+    if (dbUrl && dbUrl.startsWith('postgres')) {
+        try {
+            pool = new Pool({
+                connectionString: dbUrl,
+                ssl: { rejectUnauthorized: false },
+                max: 10,
+                idleTimeoutMillis: 30000,
+                connectionTimeoutMillis: 5000
+            });
+            console.log('[AVQR Cloud] Connected to Sovereign Neon.tech PostgreSQL cluster');
+            initDb().catch(e => console.error('Auto initDb error:', e));
+            return pool;
+        }
+        catch (err) {
+            console.warn('[AVQR Cloud] Sovereign Cloud fallback engaged:', err);
+            pool = null;
+        }
     }
-    catch (err) {
-        console.warn('[AVQR Cloud] Sovereign Cloud fallback engaged:', err);
-        pool = null;
-    }
+    return null;
 }
-else {
-    console.log('[AVQR Cloud] Running in High-Resilience Sovereign mode (Zero downtime)');
-}
+pool = getPool();
 function mapStudentRow(r) {
     return {
         id: String(r.id),
@@ -758,9 +763,10 @@ export const db = {
         return memoryStore.records.filter(r => r.session_id === sessionId);
     },
     async savePortalAttendanceLog(log) {
-        if (pool) {
+        const p = getPool();
+        if (p) {
             try {
-                const res = await pool.query(`INSERT INTO portal_attendance_logs (session_id, doctor_name, course_name, total_students, present_count, present_students)
+                const res = await p.query(`INSERT INTO portal_attendance_logs (session_id, doctor_name, course_name, total_students, present_count, present_students)
            VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING *`, [
                     log.sessionId || 'PORTAL-SESSION-2026',
@@ -774,10 +780,19 @@ export const db = {
             }
             catch (e) {
                 console.error('savePortalAttendanceLog pool error:', e);
+                return {
+                    id: Date.now(),
+                    dbError: e.message,
+                    session_id: log.sessionId,
+                    present_count: log.presentCount,
+                    present_students: log.presentStudents,
+                    saved_at: new Date().toISOString()
+                };
             }
         }
         return {
             id: Date.now(),
+            dbError: 'POOL_IS_NULL (DATABASE_URL ' + (process.env.DATABASE_URL ? 'EXISTS' : 'MISSING') + ')',
             session_id: log.sessionId,
             present_count: log.presentCount,
             present_students: log.presentStudents,
@@ -785,14 +800,15 @@ export const db = {
         };
     },
     async getPortalAttendanceLogs(sessionId) {
-        if (pool) {
+        const p = getPool();
+        if (p) {
             try {
                 if (sessionId) {
-                    const res = await pool.query('SELECT * FROM portal_attendance_logs WHERE session_id = $1 ORDER BY saved_at DESC', [sessionId]);
+                    const res = await p.query('SELECT * FROM portal_attendance_logs WHERE session_id = $1 ORDER BY saved_at DESC', [sessionId]);
                     return res.rows;
                 }
                 else {
-                    const res = await pool.query('SELECT * FROM portal_attendance_logs ORDER BY saved_at DESC LIMIT 50');
+                    const res = await p.query('SELECT * FROM portal_attendance_logs ORDER BY saved_at DESC LIMIT 50');
                     return res.rows;
                 }
             }
