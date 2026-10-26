@@ -6,7 +6,16 @@ const SERVER_URL = (typeof window !== 'undefined' && window.location && window.l
   : 'https://e7dar.com';
 const LOCAL_FALLBACK_URL = 'http://localhost:3001';
 
-let currentSessionId = 'E7DAR-2026';
+function generateSmartSessionId() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const datePart = `${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const timePart = `${pad(d.getHours())}${pad(d.getMinutes())}`;
+  const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `E7DAR-${datePart}-${timePart}-${randPart}`;
+}
+
+let currentSessionId = generateSmartSessionId();
 let sseSource = null;
 let rotationInterval = null;
 let autoSaveInterval = null;
@@ -216,26 +225,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnStartSession = document.getElementById('btnStartSession');
   const btnOpenPresenterFull = document.getElementById('btnOpenPresenterFull');
   const btnStopSession = document.getElementById('btnStopSession');
+  const btnRegenSessionId = document.getElementById('btnRegenSessionId');
+
+  if (btnRegenSessionId) {
+    btnRegenSessionId.addEventListener('click', () => {
+      currentSessionId = generateSmartSessionId();
+      if (sessionIdInput) sessionIdInput.value = currentSessionId;
+    });
+  }
+
+  // Set fresh smart session ID initially
+  currentSessionId = generateSmartSessionId();
+  if (sessionIdInput) sessionIdInput.value = currentSessionId;
 
   // Check saved state in storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(['avqr_session_id', 'avqr_is_active', 'avqr_start_time'], (res) => {
-      if (res.avqr_session_id) {
-        currentSessionId = res.avqr_session_id;
-        sessionIdInput.value = currentSessionId;
-      }
-      if (res.avqr_is_active) {
+      if (res.avqr_is_active && res.avqr_session_id) {
         if (res.avqr_start_time) {
           const elapsed = Math.floor((Date.now() - res.avqr_start_time) / 1000);
-          autoSaveSeconds = Math.max(0, TOTAL_AUTOSAVE_SECONDS - elapsed);
+          if (elapsed < TOTAL_AUTOSAVE_SECONDS) {
+            currentSessionId = res.avqr_session_id;
+            if (sessionIdInput) sessionIdInput.value = currentSessionId;
+            autoSaveSeconds = Math.max(0, TOTAL_AUTOSAVE_SECONDS - elapsed);
+            startActiveSession(currentSessionId, false);
+            return;
+          }
         }
-        startActiveSession(currentSessionId, false);
       }
+      // If inactive or finished, enforce a fresh unique session ID
+      currentSessionId = generateSmartSessionId();
+      if (sessionIdInput) sessionIdInput.value = currentSessionId;
     });
   }
 
   function openFullPresenter(sid) {
-    const effectiveSid = sid || currentSessionId || 'E7DAR-2026';
+    const effectiveSid = sid || currentSessionId || generateSmartSessionId();
     const url = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
       ? chrome.runtime.getURL(`presenter.html?sid=${encodeURIComponent(effectiveSid)}`)
       : `presenter.html?sid=${encodeURIComponent(effectiveSid)}`;
@@ -248,7 +273,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Start Session Button
   btnStartSession.addEventListener('click', async () => {
-    const sid = sessionIdInput.value.trim() || 'E7DAR-2026';
+    let sid = sessionIdInput ? sessionIdInput.value.trim() : '';
+    if (!sid || sid === 'E7DAR-2026' || sid === 'AVQR-2026') {
+      sid = generateSmartSessionId();
+      if (sessionIdInput) sessionIdInput.value = sid;
+    }
     currentSessionId = sid;
     const startTime = Date.now();
     autoSaveSeconds = TOTAL_AUTOSAVE_SECONDS;

@@ -593,7 +593,12 @@ app.post('/api/student/unban', async (req: Request, res: Response) => {
 app.post('/api/session/create', async (req: Request, res: Response) => {
   try {
     const { courseName, doctorName, roomHall, autoSaveSeconds } = req.body;
-    const sessionId = 'AVQR-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const datePart = `${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const sessionId = `E7DAR-${datePart}-${timePart}-${randPart}`;
     const dynamicPayload = generateDynamicQrToken(sessionId);
 
     const session = await db.createSession({
@@ -612,6 +617,43 @@ app.post('/api/session/create', async (req: Request, res: Response) => {
       success: true,
       session,
       dynamicQr: dynamicPayload
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get Latest Active Session for Students & Extensions
+app.get('/api/session/active/latest', async (req: Request, res: Response) => {
+  try {
+    let session = await db.getLatestActiveSession();
+    if (!session) {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const datePart = `${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+      const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}`;
+      const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const newSid = `E7DAR-${datePart}-${timePart}-${randPart}`;
+      const dynamicQr = generateDynamicQrToken(newSid);
+      session = await db.createSession({
+        id: newSid,
+        course_name: 'هندسة البرمجيات المتقدمة (CSE 2026)',
+        doctor_name: 'د. محمد مطعني (Matany Group)',
+        room_hall: 'مدرج A - FUE',
+        current_token: dynamicQr.token,
+        token_rotated_at: new Date().toISOString(),
+        auto_save_seconds: 180,
+        status: 'ACTIVE',
+        created_at: new Date().toISOString()
+      });
+    }
+    const dynamicQr = generateDynamicQrToken(session.id);
+    const records = await db.getSessionRecords(session.id);
+    res.json({
+      success: true,
+      session,
+      dynamicQr,
+      recordsCount: records.length
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -788,7 +830,7 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
 
     // Extract token if raw qrString or URL was passed
     let effectiveToken = (token && String(token).trim()) ? String(token).trim() : undefined;
-    let effectiveSessionId = (sessionId && String(sessionId).trim()) ? String(sessionId).trim() : 'AVQR-2026';
+    let effectiveSessionId = (sessionId && String(sessionId).trim()) ? String(sessionId).trim() : '';
     let effectiveNumericCode = (numericCode && String(numericCode).trim()) ? String(numericCode).trim() : undefined;
 
     if (qrString) {
@@ -804,6 +846,15 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
           effectiveNumericCode = urlObj.searchParams.get('c') || urlObj.searchParams.get('code') || effectiveNumericCode;
           effectiveToken = urlObj.searchParams.get('k') || urlObj.searchParams.get('token') || effectiveToken;
         } catch (e) {}
+      }
+    }
+
+    if (!effectiveSessionId || effectiveSessionId === 'AVQR-2026' || effectiveSessionId === 'E7DAR-2026') {
+      const latest = await db.getLatestActiveSession();
+      if (latest) {
+        effectiveSessionId = latest.id;
+      } else {
+        effectiveSessionId = effectiveSessionId || 'E7DAR-DEFAULT';
       }
     }
 

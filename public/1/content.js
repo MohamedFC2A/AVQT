@@ -3,8 +3,17 @@
 // Zero-Lag, Ultra-Lightweight, Deterministic Checkbox Actuation Engine
 
 (function () {
-  let activeSessionId = 'AVQR-2026';
-  let serverUrl = window.location.hostname.includes('localhost') ? 'http://localhost:3001' : 'https://avqr-matany-fue.vercel.app';
+  function generateSmartSessionId() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const datePart = `${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+    const timePart = `${pad(d.getHours())}${pad(d.getMinutes())}`;
+    const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `E7DAR-${datePart}-${timePart}-${randPart}`;
+  }
+
+  let activeSessionId = generateSmartSessionId();
+  let serverUrl = window.location.hostname.includes('localhost') ? 'http://localhost:3001' : 'https://e7dar.com';
   let sseSource = null;
   let pollInterval = null;
   let isSyncActive = false;
@@ -530,7 +539,7 @@
 
     widget.innerHTML = `
       <div class="avqr-widget-header">
-        <span class="avqr-widget-tag">AVQR • رصد الحضور الذكي</span>
+        <span class="avqr-widget-tag">e7dar • رصد الحضور الذكي</span>
         <div class="avqr-header-actions">
           <button id="avqrWidgetClose" class="avqr-close-btn" title="إغلاق وإخفاء">×</button>
         </div>
@@ -561,6 +570,9 @@
         dismissWidget();
 
         const now = Date.now();
+        // Always generate a fresh unique session ID for the new session
+        activeSessionId = generateSmartSessionId();
+
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
           chrome.storage.local.set({
             avqr_session_id: activeSessionId,
@@ -575,9 +587,14 @@
         try {
           if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
             chrome.runtime.sendMessage({ action: 'OPEN_PRESENTER', sessionId: activeSessionId });
+          } else {
+            const presenterUrl = window.location.origin.includes('e7dar.com')
+              ? `/presenter.html?sid=${encodeURIComponent(activeSessionId)}`
+              : `/1/presenter.html?sid=${encodeURIComponent(activeSessionId)}`;
+            window.open(presenterUrl, '_blank');
           }
         } catch (e) {
-          console.warn('AVQR: Open presenter error:', e);
+          console.warn('e7dar: Open presenter error:', e);
         }
 
         startDualSync(activeSessionId);

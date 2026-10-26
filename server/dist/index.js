@@ -524,7 +524,12 @@ app.post('/api/student/unban', async (req, res) => {
 app.post('/api/session/create', async (req, res) => {
     try {
         const { courseName, doctorName, roomHall, autoSaveSeconds } = req.body;
-        const sessionId = 'AVQR-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const datePart = `${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+        const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}`;
+        const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const sessionId = `E7DAR-${datePart}-${timePart}-${randPart}`;
         const dynamicPayload = generateDynamicQrToken(sessionId);
         const session = await db.createSession({
             id: sessionId,
@@ -541,6 +546,43 @@ app.post('/api/session/create', async (req, res) => {
             success: true,
             session,
             dynamicQr: dynamicPayload
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// Get Latest Active Session for Students & Extensions
+app.get('/api/session/active/latest', async (req, res) => {
+    try {
+        let session = await db.getLatestActiveSession();
+        if (!session) {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const datePart = `${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+            const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}`;
+            const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+            const newSid = `E7DAR-${datePart}-${timePart}-${randPart}`;
+            const dynamicQr = generateDynamicQrToken(newSid);
+            session = await db.createSession({
+                id: newSid,
+                course_name: 'هندسة البرمجيات المتقدمة (CSE 2026)',
+                doctor_name: 'د. محمد مطعني (Matany Group)',
+                room_hall: 'مدرج A - FUE',
+                current_token: dynamicQr.token,
+                token_rotated_at: new Date().toISOString(),
+                auto_save_seconds: 180,
+                status: 'ACTIVE',
+                created_at: new Date().toISOString()
+            });
+        }
+        const dynamicQr = generateDynamicQrToken(session.id);
+        const records = await db.getSessionRecords(session.id);
+        res.json({
+            success: true,
+            session,
+            dynamicQr,
+            recordsCount: records.length
         });
     }
     catch (error) {
@@ -700,7 +742,7 @@ app.post('/api/session/attend', async (req, res) => {
         }
         // Extract token if raw qrString or URL was passed
         let effectiveToken = (token && String(token).trim()) ? String(token).trim() : undefined;
-        let effectiveSessionId = (sessionId && String(sessionId).trim()) ? String(sessionId).trim() : 'AVQR-2026';
+        let effectiveSessionId = (sessionId && String(sessionId).trim()) ? String(sessionId).trim() : '';
         let effectiveNumericCode = (numericCode && String(numericCode).trim()) ? String(numericCode).trim() : undefined;
         if (qrString) {
             if (qrString.startsWith('AVQR:') || qrString.startsWith('e7dar:') || qrString.startsWith('EHDAR:')) {
@@ -717,6 +759,15 @@ app.post('/api/session/attend', async (req, res) => {
                     effectiveToken = urlObj.searchParams.get('k') || urlObj.searchParams.get('token') || effectiveToken;
                 }
                 catch (e) { }
+            }
+        }
+        if (!effectiveSessionId || effectiveSessionId === 'AVQR-2026' || effectiveSessionId === 'E7DAR-2026') {
+            const latest = await db.getLatestActiveSession();
+            if (latest) {
+                effectiveSessionId = latest.id;
+            }
+            else {
+                effectiveSessionId = effectiveSessionId || 'E7DAR-DEFAULT';
             }
         }
         // Check if student already attended this session

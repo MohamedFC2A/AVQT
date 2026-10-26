@@ -85,7 +85,7 @@ let state = {
   isRegistered: isRegisteredStored,
   token: localStorage.getItem('avqr_token') || '',
   sessionToken: localStorage.getItem('avqr_session_token') || '',
-  activeSessionId: 'AVQR-2026'
+  activeSessionId: ''
 };
 
 function saveState() {
@@ -242,11 +242,9 @@ function markSessionAsAttended(sid) {
 }
 
 function isSessionAlreadyAttended(sid) {
-  if (!sid) return false;
+  if (!sid || sid === 'AVQR-2026' || sid === 'E7DAR-2026') return false;
   const attendedList = getAttendedSessions();
-  if (attendedList.includes(sid)) return true;
-  const history = getHistoryRecords();
-  return history.some(h => h.sessionId === sid);
+  return attendedList.includes(sid);
 }
 
 // Student Attendance History Helper with Auto-Deduplication
@@ -356,6 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPhotoUploadFallbackEngine();
   renderHistoryTimeline();
   checkLiveSessionStatus();
+  syncLatestActiveSession();
   checkUrlParamsForAutoAttendance();
   initDeviceTransferListener();
 });
@@ -1339,13 +1338,36 @@ function renderStudentProfile() {
   renderCardOfficialQr(state.cardUrl);
 
   // Check if current active session is already attended
-  if (isSessionAlreadyAttended(state.activeSessionId)) {
+  if (state.activeSessionId && isSessionAlreadyAttended(state.activeSessionId)) {
     const badge = document.getElementById('attendanceBadge');
     if (badge) {
       badge.textContent = 'تم تسجيل الحضور مسبقاً';
       badge.className = 'status-pill pill-green';
     }
   }
+}
+
+async function syncLatestActiveSession() {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/session/active/latest`);
+    const data = await res.json();
+    if (data?.session?.id) {
+      state.activeSessionId = data.session.id;
+      const heroSessionEl = document.getElementById('heroSessionId');
+      if (heroSessionEl) heroSessionEl.textContent = data.session.id;
+
+      const badge = document.getElementById('attendanceBadge');
+      if (badge) {
+        if (isSessionAlreadyAttended(state.activeSessionId)) {
+          badge.textContent = 'تم تسجيل الحضور مسبقاً';
+          badge.className = 'status-pill pill-green';
+        } else {
+          badge.textContent = 'بانتظار تسجيلك';
+          badge.className = 'status-pill pill-yellow';
+        }
+      }
+    }
+  } catch (e) {}
 }
 
 // -------------------------------------------------------------
@@ -1604,7 +1626,7 @@ async function performAttendanceSubmission(payload) {
   }
   isAttendanceSubmissionInFlight = true;
 
-  const sid = payload.sessionId || state.activeSessionId;
+  let sid = payload.sessionId || state.activeSessionId;
   const isCameraScan = Boolean(payload.fromCameraScan);
   const btn = document.getElementById('btnSubmitManualCode');
   const originalText = btn ? btn.textContent : 'تأكيد الحضور';
@@ -1614,8 +1636,20 @@ async function performAttendanceSubmission(payload) {
     btn.textContent = 'جاري التحقق...';
   }
 
+  // If session ID is missing or legacy, resolve latest active session from server
+  if (!sid || sid === 'AVQR-2026' || sid === 'E7DAR-2026') {
+    try {
+      const activeRes = await fetch(`${SERVER_URL}/api/session/active/latest`);
+      const activeData = await activeRes.json();
+      if (activeData?.session?.id) {
+        sid = activeData.session.id;
+        state.activeSessionId = sid;
+      }
+    } catch (e) {}
+  }
+
   // Pre-check if student already recorded attendance locally for this open session
-  if (isSessionAlreadyAttended(sid)) {
+  if (sid && isSessionAlreadyAttended(sid)) {
     isAttendanceSubmissionInFlight = false;
     if (btn) {
       btn.disabled = false;
@@ -2393,7 +2427,7 @@ function handleScannedQrContent(val) {
   if (val.includes('?') || val.startsWith('http://') || val.startsWith('https://')) {
     try {
       const url = new URL(val.startsWith('http') ? val : `https://dummy.com/${val}`);
-      const sid = url.searchParams.get('s') || url.searchParams.get('sid') || state.activeSessionId || 'AVQR-2026';
+      const sid = url.searchParams.get('s') || url.searchParams.get('sid') || state.activeSessionId || '';
       const code = url.searchParams.get('c') || url.searchParams.get('code') || '';
       const token = url.searchParams.get('k') || url.searchParams.get('token') || '';
       performAttendanceSubmission({ sessionId: sid, numericCode: code, token, qrString: val, fromCameraScan: true });

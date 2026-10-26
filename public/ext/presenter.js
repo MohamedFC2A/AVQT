@@ -6,8 +6,25 @@ const SERVER_URL = (typeof window !== 'undefined' && window.location && window.l
   : 'https://e7dar.com';
 const LOCAL_FALLBACK_URL = 'http://localhost:3001';
 
+function generateSmartSessionId() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const datePart = `${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const timePart = `${pad(d.getHours())}${pad(d.getMinutes())}`;
+  const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `E7DAR-${datePart}-${timePart}-${randPart}`;
+}
+
 const urlParams = new URLSearchParams(window.location.search);
-const sessionId = urlParams.get('sid') || urlParams.get('sessionId') || 'AVQR-2026';
+let sessionId = urlParams.get('sid') || urlParams.get('sessionId');
+if (!sessionId || sessionId === 'AVQR-2026' || sessionId === 'E7DAR-2026') {
+  sessionId = generateSmartSessionId();
+  try {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('sid', sessionId);
+    window.history.replaceState({}, '', newUrl.toString());
+  } catch (e) {}
+}
 
 let activeServerUrl = SERVER_URL;
 let rotationSeconds = 5;

@@ -787,15 +787,32 @@ export const db = {
   },
 
   async getSession(id: string): Promise<AttendanceSession | null> {
-    if (pool) {
+    const p = getPool();
+    if (p) {
       try {
-        const res = await pool.query('SELECT * FROM attendance_sessions WHERE id = $1', [id]);
+        const res = await p.query('SELECT * FROM attendance_sessions WHERE id = $1', [id]);
         if (res.rows[0]) return res.rows[0];
       } catch (e) {
         console.error('getSession pool error:', e);
       }
     }
     return memoryStore.sessions.get(id) || null;
+  },
+
+  async getLatestActiveSession(): Promise<AttendanceSession | null> {
+    const p = getPool();
+    if (p) {
+      try {
+        const res = await p.query("SELECT * FROM attendance_sessions WHERE status = 'ACTIVE' ORDER BY created_at DESC LIMIT 1");
+        if (res.rows[0]) return res.rows[0];
+      } catch (e) {
+        console.error('getLatestActiveSession pool error:', e);
+      }
+    }
+    const active = Array.from(memoryStore.sessions.values())
+      .filter(s => s.status === 'ACTIVE')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return active[0] || null;
   },
 
   async updateSessionToken(id: string, token: string): Promise<void> {

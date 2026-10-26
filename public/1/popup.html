@@ -74,8 +74,13 @@
         </div>
 
         <div class="form-group-neo">
-          <label class="neo-label">معرف جلسة المحاضرة:</label>
-          <input type="text" id="sessionIdInput" class="neo-input" value="E7DAR-2026" placeholder="E7DAR-2026">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="neo-label" style="margin-bottom: 0;">معرف جلسة المحاضرة (ذكي وفريد):</label>
+            <button type="button" id="btnRegenSessionId" style="background: #F1F5F9; border: 1.5px solid #0F172A; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              🔄 كود جديد
+            </button>
+          </div>
+          <input type="text" id="sessionIdInput" class="neo-input" value="" placeholder="E7DAR-MMDD-HHMM-XXXX" style="font-family: monospace; font-weight: 800; letter-spacing: 0.5px; text-align: center;">
         </div>
 
         <button id="btnStartSession" class="neo-btn btn-primary-red btn-large">
