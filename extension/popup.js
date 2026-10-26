@@ -1,7 +1,9 @@
 // AVQR Chrome Extension Popup Engine - Neubrutalism & Real-Time Sync
 // Designed by Matany Group for Future University in Egypt (FUE)
 
-const SERVER_URL = 'https://avqr-matany-fue.vercel.app';
+const SERVER_URL = (typeof window !== 'undefined' && window.location && window.location.origin && !window.location.origin.startsWith('chrome-extension://'))
+  ? window.location.origin
+  : 'https://e7dar.com';
 const LOCAL_FALLBACK_URL = 'http://localhost:3001';
 
 let currentSessionId = 'AVQR-2026';

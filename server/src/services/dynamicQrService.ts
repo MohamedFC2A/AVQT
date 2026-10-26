@@ -33,7 +33,7 @@ export function generateDynamicQrToken(sessionId: string): DynamicQrPayload {
   const token = hmac.digest('hex').substring(0, 16);
   const numericCode = tokenTo8DigitCode(token);
 
-  const baseUrl = process.env.APP_URL || 'https://avqr-matany-fue.vercel.app';
+  const baseUrl = process.env.APP_URL || 'https://e7dar.com';
   // Canonical short path (~55 chars) for 100% instant camera scanning on all Xiaomi/Samsung/iPhone phones
   const actionUrl = `${baseUrl}/attend?s=${encodeURIComponent(sessionId)}&c=${numericCode}`;
 

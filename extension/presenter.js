@@ -1,7 +1,9 @@
 // AVQR Presenter Engine - 3-Minute AutoSave & Full-Page Dynamic QR
 // Designed by Matany Group for Future University in Egypt (FUE)
 
-const SERVER_URL = 'https://avqr-matany-fue.vercel.app';
+const SERVER_URL = (typeof window !== 'undefined' && window.location && window.location.origin && !window.location.origin.startsWith('chrome-extension://'))
+  ? window.location.origin
+  : 'https://e7dar.com';
 const LOCAL_FALLBACK_URL = 'http://localhost:3001';
 
 const urlParams = new URLSearchParams(window.location.search);
