@@ -242,24 +242,57 @@ function markSessionAsAttended(sid) {
 }
 
 function isSessionAlreadyAttended(sid) {
-  return getAttendedSessions().includes(sid);
+  if (!sid) return false;
+  const attendedList = getAttendedSessions();
+  if (attendedList.includes(sid)) return true;
+  const history = getHistoryRecords();
+  return history.some(h => h.sessionId === sid);
 }
 
-// Student Attendance History Helper
+// Student Attendance History Helper with Auto-Deduplication
 function getHistoryRecords() {
   try {
     const raw = localStorage.getItem('avqr_history_' + state.studentId);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // Deduplicate records by unique key (sessionId or dateText + timeText)
+        const seen = new Set();
+        const unique = [];
+        for (const item of parsed) {
+          const key = item.sessionId ? String(item.sessionId) : `${item.dateText || ''}_${item.timeText || ''}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            unique.push(item);
+          }
+        }
+        if (unique.length !== parsed.length) {
+          localStorage.setItem('avqr_history_' + state.studentId, JSON.stringify(unique));
+        }
+        return unique;
+      }
+    }
   } catch (e) {}
 
   return [];
 }
 
 function saveHistoryRecord(record) {
+  if (!state.studentId) return;
   const list = getHistoryRecords();
-  list.unshift(record);
-  localStorage.setItem('avqr_history_' + state.studentId, JSON.stringify(list));
-  renderHistoryTimeline();
+  const recordKey = record.sessionId ? String(record.sessionId) : `${record.dateText || ''}_${record.timeText || ''}`;
+
+  // Guard against duplicate insertion
+  const exists = list.some(item => {
+    const itemKey = item.sessionId ? String(item.sessionId) : `${item.dateText || ''}_${item.timeText || ''}`;
+    return itemKey === recordKey;
+  });
+
+  if (!exists) {
+    list.unshift(record);
+    localStorage.setItem('avqr_history_' + state.studentId, JSON.stringify(list));
+    renderHistoryTimeline();
+  }
 }
 
 function renderHistoryTimeline() {
@@ -335,6 +368,14 @@ function initCinematicSmartSplash() {
   const splash = document.getElementById('avqrSmartSplash');
   if (!splash) return;
 
+  // On page reload or revisit within same session, bypass splash completely to eliminate white screen / waiting
+  if (sessionStorage.getItem('e7dar_splash_viewed')) {
+    splash.classList.add('dismissed');
+    splash.style.display = 'none';
+    return;
+  }
+  sessionStorage.setItem('e7dar_splash_viewed', 'true');
+
   const video = document.getElementById('splashVideo');
   const withLabel = document.getElementById('splashWithLabel');
   const slideFue = document.getElementById('splashSlideFue');
@@ -357,28 +398,22 @@ function initCinematicSmartSplash() {
       withLabel.textContent = text;
       withLabel.style.opacity = '1';
       withLabel.style.transform = 'translateY(0)';
-    }, 150);
+    }, 120);
   }
 
-  // Force reset splash visibility on every single execution
+  // Force reset splash visibility on first execution
   splash.classList.remove('dismissed');
   splash.style.display = 'flex';
   splash.style.opacity = '1';
   splash.style.visibility = 'visible';
 
-  // Require double-tap on screen to skip loading screen smoothly
-  let lastSplashTap = 0;
-  function handleSplashDoubleTap(e) {
-    const now = Date.now();
-    if (now - lastSplashTap < 450) {
-      dismissSplash();
-    } else {
-      lastSplashTap = now;
-    }
+  // Single tap / double tap on screen skips loading screen instantly
+  function handleSplashDismiss() {
+    dismissSplash();
   }
 
-  splash.onclick = handleSplashDoubleTap;
-  splash.addEventListener('touchend', handleSplashDoubleTap, { passive: true });
+  splash.onclick = handleSplashDismiss;
+  splash.addEventListener('touchend', handleSplashDismiss, { passive: true });
 
   if (withLabel) {
     withLabel.textContent = 'With';
@@ -409,7 +444,7 @@ function initCinematicSmartSplash() {
       if (video) {
         try { video.pause(); } catch (e) {}
       }
-    }, 450);
+    }, 300);
   }
 
   // Hardware-accelerated direct video playback (zero canvas lag, zero dropped frames, zero glitches)
@@ -425,24 +460,27 @@ function initCinematicSmartSplash() {
     } catch (e) {}
 
     video.addEventListener('timeupdate', () => {
-      if (video.currentTime >= 3.9) {
+      if (video.currentTime >= 1.6) {
         try { video.pause(); } catch (e) {}
       }
     });
 
     video.addEventListener('ended', () => {
-      try { video.pause(); } catch (e) {}
+      dismissSplash();
     });
+
+    video.onerror = () => dismissSplash();
+    video.onstalled = () => dismissSplash();
   }
 
-  // 3. Partner Showcase Carousel
-  // Stage 1: FUE (0s - 1.2s) -> Label: 'With'
+  // 3. Ultra-Fast Partner Showcase Carousel (Total 1.6s, 400ms per slide)
+  // Stage 1: FUE (0s - 0.4s) -> Label: 'With'
   if (slideFue) {
     slideFue.classList.remove('exit');
     slideFue.classList.add('active');
   }
 
-  // Stage 2: Moodle (1.2s - 2.4s) -> Label: 'With'
+  // Stage 2: Moodle (0.4s - 0.8s) -> Label: 'With'
   setTimeout(() => {
     if (dismissed) return;
     if (slideFue) {
@@ -453,9 +491,9 @@ function initCinematicSmartSplash() {
       slideMoodle.classList.remove('exit');
       slideMoodle.classList.add('active');
     }
-  }, 1200);
+  }, 400);
 
-  // Stage 3: Matany Group (2.4s - 3.8s) -> Label: 'Built By' (clean typography with monogram)
+  // Stage 3: Matany Group (0.8s - 1.2s) -> Label: 'Built By'
   setTimeout(() => {
     if (dismissed) return;
     setWithLabel('Built By');
@@ -468,9 +506,9 @@ function initCinematicSmartSplash() {
       slideMatany.classList.add('active');
     }
     try { playHaptic(); } catch (e) {}
-  }, 2400);
+  }, 800);
 
-  // Stage 4: upstore.one (3.8s - 5.2s) -> Label: 'Design By' (yellow Up logo + upstore.one)
+  // Stage 4: upstore.one (1.2s - 1.6s) -> Label: 'Design By'
   setTimeout(() => {
     if (dismissed) return;
     setWithLabel('Design By');
@@ -483,24 +521,18 @@ function initCinematicSmartSplash() {
       slideUpstore.classList.add('active');
     }
     try { playHaptic(); } catch (e) {}
-  }, 3800);
+  }, 1200);
 
-  // Stage 5: Cinematic Exit (5.2s)
+  // Stage 5: Cinematic Exit (1.6s)
   setTimeout(() => {
     dismissSplash();
-  }, 5200);
+  }, 1600);
 
   // Emergency safety timeout in case of any stall
   setTimeout(() => {
     dismissSplash();
-  }, 6000);
+  }, 2000);
 }
-
-window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    initCinematicSmartSplash();
-  }
-});
 
 // -------------------------------------------------------------
 // 0. Card-First Authentication Gate & Strict Device Binding
@@ -1388,11 +1420,56 @@ async function checkLiveSessionStatus() {
   }
 }
 
+function showSmartAttendanceFeedbackDialog(type, options = {}) {
+  const modal = document.getElementById('attendanceFeedbackModal');
+  const iconWrap = document.getElementById('attendFeedbackIconWrap');
+  const title = document.getElementById('attendFeedbackTitle');
+  const msg = document.getElementById('attendFeedbackMessage');
+  const btn = document.getElementById('btnDismissAttendFeedback');
+  if (!modal || !title || !msg) return;
+
+  if (type === 'FIRST_SUCCESS') {
+    if (iconWrap) {
+      iconWrap.style.background = '#ECFDF5';
+      iconWrap.style.borderColor = '#059669';
+      iconWrap.innerHTML = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    }
+    title.style.color = '#065F46';
+    title.textContent = 'تمت عملية التسجيل بنجاح ✅';
+    msg.textContent = options.message || 'تمت عملية التسجيل الآن ومسجل ومعتمد في السيستم، تقدر تتفضل دلوقتي.';
+    if (btn) btn.textContent = 'حسناً، تمام';
+  } else if (type === 'ALREADY_REGISTERED') {
+    if (iconWrap) {
+      iconWrap.style.background = '#EFF6FF';
+      iconWrap.style.borderColor = '#2563EB';
+      iconWrap.innerHTML = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+    }
+    title.style.color = '#1E40AF';
+    title.textContent = 'أنت مسجل بالفعل في هذه المحاضرة';
+    msg.textContent = options.message || 'أنت مسجل بالفعل في هذه المحاضرة! حضورك معتمد ومسجل مسبقاً، وتقدر تتفضل دلوقتي.';
+    if (btn) btn.textContent = 'تأكيد الخروج';
+  } else if (type === 'PORTAL_NOT_OPEN') {
+    if (iconWrap) {
+      iconWrap.style.background = '#FFFBEB';
+      iconWrap.style.borderColor = '#D97706';
+      iconWrap.innerHTML = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+    }
+    title.style.color = '#B45309';
+    title.textContent = 'تم التصوير بنجاح ولكن...';
+    msg.textContent = options.message || 'تم التصوير وقراءة الكود بنجاح ✅، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.';
+    if (btn) btn.textContent = 'تنبيه الدكتور';
+  }
+
+  modal.classList.remove('hidden');
+  try { playHaptic(); } catch (e) {}
+}
+
 function showInstantAttendOverlay(stateType, payload = {}) {
   const overlay = document.getElementById('instantAttendOverlay');
   const loadingBlock = document.getElementById('instantAttendLoading');
   const successBlock = document.getElementById('instantAttendSuccess');
   const errorBlock = document.getElementById('instantAttendError');
+  const infoBlock = document.getElementById('instantAttendInfo');
 
   if (!overlay || !loadingBlock || !successBlock || !errorBlock) return;
 
@@ -1402,6 +1479,7 @@ function showInstantAttendOverlay(stateType, payload = {}) {
     loadingBlock.classList.remove('hidden');
     successBlock.classList.add('hidden');
     errorBlock.classList.add('hidden');
+    if (infoBlock) infoBlock.classList.add('hidden');
 
     const nameEl = document.getElementById('instantLoadingName');
     const idEl = document.getElementById('instantLoadingId');
@@ -1410,6 +1488,7 @@ function showInstantAttendOverlay(stateType, payload = {}) {
   } else if (stateType === 'SUCCESS') {
     loadingBlock.classList.add('hidden');
     errorBlock.classList.add('hidden');
+    if (infoBlock) infoBlock.classList.add('hidden');
     successBlock.classList.remove('hidden');
 
     const headingEl = document.getElementById('instantSuccessHeading');
@@ -1433,9 +1512,27 @@ function showInstantAttendOverlay(stateType, payload = {}) {
 
     playHaptic();
     playAudioChime();
+  } else if (stateType === 'INFO') {
+    loadingBlock.classList.add('hidden');
+    successBlock.classList.add('hidden');
+    errorBlock.classList.add('hidden');
+    if (infoBlock) {
+      infoBlock.classList.remove('hidden');
+      const infoHeading = document.getElementById('instantInfoHeading');
+      const infoMsg = document.getElementById('instantInfoMsg');
+      if (payload.reason === 'PORTAL_NOT_OPEN') {
+        if (infoHeading) infoHeading.textContent = 'تم التصوير بنجاح ولكن...';
+        if (infoMsg) infoMsg.textContent = payload.message || 'تم التصوير وقراءة الكود بنجاح ✅، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.';
+      } else {
+        if (infoHeading) infoHeading.textContent = payload.heading || 'أنت مسجل بالفعل في المحاضرة';
+        if (infoMsg) infoMsg.textContent = payload.message || 'تم رصد وتثبيت حضورك مسبقاً في هذه الجلسة بنجاح، تقدر تتفضل دلوقتي.';
+      }
+    }
+    playHaptic();
   } else if (stateType === 'ERROR') {
     loadingBlock.classList.add('hidden');
     successBlock.classList.add('hidden');
+    if (infoBlock) infoBlock.classList.add('hidden');
     errorBlock.classList.remove('hidden');
 
     const headingEl = document.getElementById('instantErrorHeading');
@@ -1462,6 +1559,8 @@ function showInstantAttendOverlay(stateType, payload = {}) {
 function hideInstantAttendOverlay() {
   const overlay = document.getElementById('instantAttendOverlay');
   if (overlay) overlay.classList.add('hidden');
+  const infoBlock = document.getElementById('instantAttendInfo');
+  if (infoBlock) infoBlock.classList.add('hidden');
 }
 
 async function checkUrlParamsForAutoAttendance() {
@@ -1501,7 +1600,15 @@ async function checkUrlParamsForAutoAttendance() {
   }
 }
 
+let isAttendanceSubmissionInFlight = false;
+
 async function performAttendanceSubmission(payload) {
+  if (isAttendanceSubmissionInFlight) {
+    console.warn('Attendance submission already in-flight, skipping duplicate scan trigger.');
+    return;
+  }
+  isAttendanceSubmissionInFlight = true;
+
   const sid = payload.sessionId || state.activeSessionId;
   const isCameraScan = Boolean(payload.fromCameraScan);
   const btn = document.getElementById('btnSubmitManualCode');
@@ -1510,6 +1617,25 @@ async function performAttendanceSubmission(payload) {
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'جاري التحقق...';
+  }
+
+  // Pre-check if student already recorded attendance locally for this open session
+  if (isSessionAlreadyAttended(sid)) {
+    isAttendanceSubmissionInFlight = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+    const alreadyMsg = 'أنت مسجل بالفعل في هذه المحاضرة! حضورك معتمد ومسجل مسبقاً، تقدر تتفضل دلوقتي.';
+    showSmartAttendanceFeedbackDialog('ALREADY_REGISTERED', { message: alreadyMsg });
+    showStatusBanner('already', 'أنت مسجل بالفعل في هذه المحاضرة', alreadyMsg);
+    if (isCameraScan) {
+      showInstantAttendOverlay('SUCCESS', {
+        alreadyAttended: true,
+        message: alreadyMsg
+      });
+    }
+    return;
   }
 
   try {
@@ -1539,38 +1665,58 @@ async function performAttendanceSubmission(payload) {
     }
 
     if (res.ok && data.success) {
+      // 1. Doctor sheet not open or has less than 15 checkboxes
+      if (data.reason === 'PORTAL_NOT_OPEN' || data.portalConnected === false) {
+        showSmartAttendanceFeedbackDialog('PORTAL_NOT_OPEN', { message: data.message });
+        showStatusBanner('warning', 'تم التصوير بنجاح ولكن...', data.message);
+        if (isCameraScan) {
+          showInstantAttendOverlay('INFO', {
+            reason: 'PORTAL_NOT_OPEN',
+            message: data.message
+          });
+        }
+        return;
+      }
+
+      // 2. Already Attended in database
+      if (data.alreadyAttended) {
+        markSessionAsAttended(sid);
+        showSmartAttendanceFeedbackDialog('ALREADY_REGISTERED', { message: data.message });
+        showStatusBanner('already', 'أنت مسجل بالفعل في هذه المحاضرة', data.message);
+        if (isCameraScan) {
+          showInstantAttendOverlay('SUCCESS', {
+            record: data.record,
+            alreadyAttended: true,
+            message: data.message
+          });
+        }
+        return;
+      }
+
+      // 3. First time successful attendance recording
       markSessionAsAttended(sid);
       updateAttendanceBadge(true);
       displayAttendanceSuccessCard(data.record);
 
+      saveHistoryRecord({
+        sessionId: sid,
+        courseName: 'المحاضرة المعتمدة (FUE 2026)',
+        dateText: formatArabicDate(data.record?.check_time || new Date()),
+        timeText: formatArabicTime(data.record?.check_time || new Date()),
+        doctor: 'د. محمد مطعني',
+        hall: 'مدرج الهندسة A',
+        status: 'حاضر (معتمد)'
+      });
+
+      const firstSuccessMsg = data.message || 'تمت عملية التسجيل الآن ومسجل ومعتمد في السيستم، تقدر تتفضل دلوقتي.';
+      showSmartAttendanceFeedbackDialog('FIRST_SUCCESS', { message: firstSuccessMsg });
+      showStatusBanner('success', 'تمت عملية التسجيل بنجاح ✅', firstSuccessMsg);
+
       if (isCameraScan) {
         showInstantAttendOverlay('SUCCESS', {
           record: data.record,
-          alreadyAttended: data.alreadyAttended,
-          message: data.message
-        });
-      }
-
-      if (data.alreadyAttended) {
-        showStatusBanner(
-          'already',
-          'أنت مسجل بالفعل في هذه المحاضرة',
-          data.message || 'تم تسجيل حضورك مسبقاً في هذه المحاضرة بنجاح. حضورك معتمد ولا حاجة لإعادة التسجيل.'
-        );
-      } else {
-        showStatusBanner(
-          'success',
-          'تم إثبات الحضور بنجاح',
-          data.message || 'تم تسجيل حضورك واعتماده رسمياً في سجل المحاضرة بنجاح.'
-        );
-
-        saveHistoryRecord({
-          courseName: 'المحاضرة المعتمدة (FUE 2026)',
-          dateText: formatArabicDate(data.record?.check_time || new Date()),
-          timeText: formatArabicTime(data.record?.check_time || new Date()),
-          doctor: 'د. محمد مطعني',
-          hall: 'مدرج الهندسة A',
-          status: 'حاضر (معتمد)'
+          alreadyAttended: false,
+          message: firstSuccessMsg
         });
       }
     } else {
@@ -1633,6 +1779,7 @@ async function performAttendanceSubmission(payload) {
       'يرجى التأكد من اتصال الإنترنت ثم المحاولة مجدداً. لم يتم تسجيل الحضور بعد.'
     );
   } finally {
+    isAttendanceSubmissionInFlight = false;
     if (btn) {
       btn.disabled = false;
       btn.textContent = originalText;
@@ -2614,13 +2761,24 @@ function initModals() {
 
   const btnDismissInstantSuccess = document.getElementById('btnDismissInstantSuccess');
   const btnDismissInstantError = document.getElementById('btnDismissInstantError');
+  const btnDismissInstantInfo = document.getElementById('btnDismissInstantInfo');
   const btnInstantRetryScan = document.getElementById('btnInstantRetryScan');
+  const btnDismissAttendFeedback = document.getElementById('btnDismissAttendFeedback');
+  const attendanceFeedbackModal = document.getElementById('attendanceFeedbackModal');
 
   if (btnDismissInstantSuccess) {
     btnDismissInstantSuccess.addEventListener('click', () => hideInstantAttendOverlay());
   }
   if (btnDismissInstantError) {
     btnDismissInstantError.addEventListener('click', () => hideInstantAttendOverlay());
+  }
+  if (btnDismissInstantInfo) {
+    btnDismissInstantInfo.addEventListener('click', () => hideInstantAttendOverlay());
+  }
+  if (btnDismissAttendFeedback && attendanceFeedbackModal) {
+    btnDismissAttendFeedback.addEventListener('click', () => {
+      attendanceFeedbackModal.classList.add('hidden');
+    });
   }
   if (btnInstantRetryScan) {
     btnInstantRetryScan.addEventListener('click', () => {

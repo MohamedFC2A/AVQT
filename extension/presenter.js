@@ -18,6 +18,7 @@ let autoSaveSeconds = 180; // 3 Minutes countdown
 let autoSaveInterval = null;
 let sseSource = null;
 let pollRecordsInterval = null;
+let portalStatusInterval = null;
 let currentAttendeeCount = 0;
 
 function updateAttendeeCounter(count) {
@@ -79,6 +80,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Start 3-minute Countdown with Auto-Close & Auto-Save
   start3MinuteCountdown();
+
+  // Start continuous portal sheet verification (Requires >= 15 checkboxes)
+  checkPortalSheetStatus();
+  clearInterval(portalStatusInterval);
+  portalStatusInterval = setInterval(checkPortalSheetStatus, 2500);
 
   // Connect Real-Time Dual Listener to Broadcast Attendance to Portal Tabs
   startPresenterSync();
@@ -240,8 +246,76 @@ function updateTimerDisplay() {
   el.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
+async function checkPortalSheetStatus() {
+  let hasValidSheet = false;
+  let maxCount = 0;
+
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+    try {
+      const tabs = await chrome.tabs.query({});
+      for (const tab of tabs) {
+        if (tab && tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+          try {
+            const resp = await chrome.tabs.sendMessage(tab.id, { action: 'CHECK_PORTAL_STATUS' });
+            if (resp && resp.checkboxCount !== undefined) {
+              if (resp.checkboxCount > maxCount) maxCount = resp.checkboxCount;
+              if (resp.checkboxCount >= 15) {
+                hasValidSheet = true;
+              }
+            }
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Fallback for online / simulator mode (/1 or web popup):
+  if (!hasValidSheet && typeof localStorage !== 'undefined') {
+    const simPortalCount = Number(localStorage.getItem('e7dar_portal_checkbox_count') || 0);
+    if (simPortalCount >= 15) {
+      hasValidSheet = true;
+      maxCount = simPortalCount;
+    }
+  }
+
+  updatePortalStatusUI(hasValidSheet, maxCount);
+}
+
+function updatePortalStatusUI(connected, count) {
+  const banner = document.getElementById('presenterPortalBanner');
+  const txt = document.getElementById('presenterPortalText');
+  if (!banner || !txt) return;
+
+  if (connected) {
+    banner.style.border = '2px solid #059669';
+    banner.style.background = '#ECFDF5';
+    banner.style.color = '#065F46';
+    txt.textContent = `✅ صفحة كشف الغياب متصلة وجاهزة (${count} خانة طالب متوفرة للرصد الآلي).`;
+  } else {
+    banner.style.border = '2px solid #DC2626';
+    banner.style.background = '#FEF2F2';
+    banner.style.color = '#991B1B';
+    txt.textContent = '⚠️ تنبيه للدكتور: لم يتم رصد صفحة كشف الغياب (يجب فتح صفحة الحضور التي تحتوي على 15 خانة طالب على الأقل في المتصفح لرصد الحضور آلياً).';
+  }
+
+  if (sessionId && activeServerUrl) {
+    fetch(`${activeServerUrl}/api/session/${sessionId}/portal-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portalConnected: connected, checkboxCount: count })
+    }).catch(() => {});
+  }
+}
+
 async function triggerAutoSaveAndClose() {
   try {
+    clearInterval(portalStatusInterval);
+    clearInterval(pollRecordsInterval);
+    clearInterval(rotationInterval);
+    if (sseSource) {
+      try { sseSource.close(); } catch (e) {}
+    }
+
     // 1. Inform server to mark session auto-saved
     await fetch(`${activeServerUrl}/api/session/${sessionId}/auto-save`, { method: 'POST' });
 
@@ -263,9 +337,10 @@ async function triggerAutoSaveAndClose() {
   } catch (err) {
     console.error('Auto save error:', err);
   } finally {
-    // 4. Close the presenter window cleanly
+    // 4. Alert & close presenter window cleanly
+    alert('⏰ انتهت مهلة الـ 3 دقائق المخصصة للجلسة. تم حفظ كشف الحضور وإغلاق الجلسة تلقائياً بنجاح.');
     setTimeout(() => {
       window.close();
-    }, 600);
+    }, 400);
   }
 }

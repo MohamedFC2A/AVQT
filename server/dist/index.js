@@ -703,7 +703,7 @@ app.post('/api/session/attend', async (req, res) => {
         let effectiveSessionId = (sessionId && String(sessionId).trim()) ? String(sessionId).trim() : 'AVQR-2026';
         let effectiveNumericCode = (numericCode && String(numericCode).trim()) ? String(numericCode).trim() : undefined;
         if (qrString) {
-            if (qrString.startsWith('AVQR:')) {
+            if (qrString.startsWith('AVQR:') || qrString.startsWith('e7dar:') || qrString.startsWith('EHDAR:')) {
                 const parts = qrString.split(':');
                 effectiveSessionId = parts[1] || effectiveSessionId;
                 effectiveToken = parts[2] || effectiveToken;
@@ -734,8 +734,10 @@ app.post('/api/session/attend', async (req, res) => {
             return res.json({
                 success: true,
                 alreadyAttended: true,
+                isNew: false,
+                portalConnected: true,
                 reason: 'ALREADY_ATTENDED',
-                message: `تم تسجيل حضورك مسبقاً في هذه المحاضرة بنجاح (بتاريخ: ${arabicTime}). حضورك معتمد ولا حاجة لإعادة التسجيل.`,
+                message: `أنت مسجل بالفعل في هذه المحاضرة! حضورك معتمد ومسجل مسبقاً (بتاريخ: ${arabicTime})، تقدر تتفضل دلوقتي.`,
                 record: existingRecord
             });
         }
@@ -818,12 +820,38 @@ app.post('/api/session/attend', async (req, res) => {
             }).format(new Date(record.check_time));
         }
         catch (e) { }
-        res.json({
+        if (!isNew) {
+            return res.json({
+                success: true,
+                alreadyAttended: true,
+                isNew: false,
+                portalConnected: true,
+                reason: 'ALREADY_RECORDED',
+                message: 'أنت مسجل بالفعل في هذه المحاضرة! حضورك معتمد ومسجل مسبقاً، تقدر تتفضل دلوقتي.',
+                student: activeStudent,
+                record
+            });
+        }
+        const isPortalLinked = session ? Boolean(session.portal_connected && (session.checkbox_count ?? 0) >= 15) : false;
+        if (!isPortalLinked) {
+            return res.json({
+                success: true,
+                alreadyAttended: false,
+                isNew: true,
+                portalConnected: false,
+                reason: 'PORTAL_NOT_OPEN',
+                message: 'تم التصوير وقراءة الكود بنجاح ✅، ولكن لم يتم التأشير على اسمك بعد نظراً لعدم فتح الدكتور لصفحة كشف الغياب في جهازه. يرجى تنبيه الدكتور لفتح صفحة الكشف لتسجيل اسمك.',
+                student: activeStudent,
+                record
+            });
+        }
+        return res.json({
             success: true,
             alreadyAttended: false,
             isNew: true,
+            portalConnected: true,
             reason: 'ATTENDANCE_RECORDED',
-            message: `تم إثبات وتسجيل حضورك بنجاح واعتماده في كشف المحاضر (بتاريخ: ${arabicTime}).`,
+            message: 'تمت عملية التسجيل واعتماد حضورك بنجاح! الآن تقدر تتفضل.',
             student: activeStudent,
             record
         });
@@ -831,6 +859,26 @@ app.post('/api/session/attend', async (req, res) => {
     catch (error) {
         console.error('Attendance recording error:', error);
         res.status(500).json({ error: error.message || 'خطأ في تسجيل الحضور' });
+    }
+});
+// Doctor Updates Portal Sheet Status (Checkboxes count >= 15)
+app.post('/api/session/:id/portal-status', async (req, res) => {
+    try {
+        const sessionId = req.params.id;
+        const { portalConnected, checkboxCount } = req.body;
+        const count = Number(checkboxCount) || 0;
+        const connected = Boolean(portalConnected && count >= 15);
+        await db.updateSessionPortalStatus(sessionId, connected, count);
+        broadcastToSession(sessionId, 'PORTAL_STATUS_UPDATED', {
+            sessionId,
+            portalConnected: connected,
+            checkboxCount: count,
+            timestamp: new Date().toISOString()
+        });
+        res.json({ success: true, portalConnected: connected, checkboxCount: count });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 // Doctor Triggers Auto-Save or 3-Minute Expiry

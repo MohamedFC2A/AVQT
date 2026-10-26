@@ -6,55 +6,6 @@ const SERVER_URL = (typeof window !== 'undefined' && window.location && window.l
   : 'https://e7dar.com';
 const LOCAL_FALLBACK_URL = 'http://localhost:3001';
 
-// Web Browser Environment Shim for standalone testing without extension installation
-if (typeof chrome === 'undefined' || !chrome.storage) {
-  window.chrome = window.chrome || {};
-  chrome.storage = {
-    local: {
-      get: (keys, cb) => {
-        const res = {};
-        if (Array.isArray(keys)) {
-          keys.forEach(k => {
-            try {
-              const val = localStorage.getItem(k);
-              res[k] = val !== null ? JSON.parse(val) : undefined;
-            } catch (e) {
-              res[k] = localStorage.getItem(k);
-            }
-          });
-        }
-        if (typeof cb === 'function') cb(res);
-      },
-      set: (items, cb) => {
-        if (items && typeof items === 'object') {
-          Object.entries(items).forEach(([k, v]) => {
-            localStorage.setItem(k, JSON.stringify(v));
-          });
-        }
-        if (typeof cb === 'function') cb();
-      },
-      remove: (keys, cb) => {
-        if (Array.isArray(keys)) {
-          keys.forEach(k => localStorage.removeItem(k));
-        }
-        if (typeof cb === 'function') cb();
-      }
-    }
-  };
-  chrome.tabs = {
-    query: (queryInfo, cb) => {
-      if (typeof cb === 'function') cb([]);
-    },
-    create: (props) => {
-      if (props && props.url) window.open(props.url, '_blank');
-    },
-    sendMessage: () => Promise.resolve()
-  };
-  chrome.runtime = {
-    getURL: (path) => path
-  };
-}
-
 let currentSessionId = 'E7DAR-2026';
 let sseSource = null;
 let rotationInterval = null;
@@ -106,9 +57,6 @@ function initCinematicSmartSplash() {
   splash.onclick = () => {
     dismissSplash();
   };
-  splash.ontouchstart = () => {
-    dismissSplash();
-  };
 
   if (withLabel) {
     withLabel.textContent = 'With';
@@ -145,7 +93,7 @@ function initCinematicSmartSplash() {
 
   // 1. Instant poster fallback (0ms latency, zero black flash)
   const posterImg = new Image();
-  posterImg.src = '/1/assets/splash-poster.png';
+  posterImg.src = 'assets/splash-poster.png';
   posterImg.onload = () => {
     if (ctx && (!video || video.paused || video.currentTime === 0)) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -195,10 +143,6 @@ function initCinematicSmartSplash() {
 
     video.addEventListener('ended', () => {
       video.pause();
-    });
-
-    video.addEventListener('error', () => {
-      dismissSplash();
     });
 
     renderFrame();
@@ -292,11 +236,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openFullPresenter(sid) {
     const effectiveSid = sid || currentSessionId || 'E7DAR-2026';
-    const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
-    const url = isExtension
+    const url = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
       ? chrome.runtime.getURL(`presenter.html?sid=${encodeURIComponent(effectiveSid)}`)
-      : `/1/presenter.html?sid=${encodeURIComponent(effectiveSid)}`;
-    if (isExtension && chrome.tabs && chrome.tabs.create) {
+      : `presenter.html?sid=${encodeURIComponent(effectiveSid)}`;
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
       chrome.tabs.create({ url });
     } else {
       window.open(url, '_blank');
@@ -380,6 +323,11 @@ async function startActiveSession(sessionId, resetTimer = true) {
   }
   startAutoSaveTimer();
 
+  // Start continuous portal sheet verification (Requires >= 15 checkboxes)
+  checkPortalSheetStatus();
+  clearInterval(portalStatusInterval);
+  portalStatusInterval = setInterval(checkPortalSheetStatus, 2500);
+
   // Connect Real-time SSE + Active Polling
   connectDualSync(sessionId);
 }
@@ -389,6 +337,7 @@ function stopActiveSession() {
   clearInterval(rotationInterval);
   clearInterval(autoSaveInterval);
   clearInterval(pollRecordsInterval);
+  clearInterval(portalStatusInterval);
   if (sseSource) {
     try { sseSource.close(); } catch (e) {}
   }
@@ -475,17 +424,82 @@ function updateRotationDisplay() {
   // Silent background rotation
 }
 
+let portalStatusInterval = null;
+
+async function checkPortalSheetStatus() {
+  let hasValidSheet = false;
+  let maxCount = 0;
+
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+    try {
+      const tabs = await chrome.tabs.query({});
+      for (const tab of tabs) {
+        if (tab && tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+          try {
+            const resp = await chrome.tabs.sendMessage(tab.id, { action: 'CHECK_PORTAL_STATUS' });
+            if (resp && resp.checkboxCount !== undefined) {
+              if (resp.checkboxCount > maxCount) maxCount = resp.checkboxCount;
+              if (resp.checkboxCount >= 15) {
+                hasValidSheet = true;
+              }
+            }
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Fallback for online / simulator mode (/1 or web popup):
+  if (!hasValidSheet && typeof localStorage !== 'undefined') {
+    const simPortalCount = Number(localStorage.getItem('e7dar_portal_checkbox_count') || 0);
+    if (simPortalCount >= 15) {
+      hasValidSheet = true;
+      maxCount = simPortalCount;
+    }
+  }
+
+  updatePortalStatusUI(hasValidSheet, maxCount);
+}
+
+function updatePortalStatusUI(connected, count) {
+  const banner = document.getElementById('portalStatusBanner');
+  const txt = document.getElementById('portalStatusText');
+  if (!banner || !txt) return;
+
+  if (connected) {
+    banner.style.border = '1.5px solid #059669';
+    banner.style.background = '#ECFDF5';
+    banner.style.color = '#065F46';
+    txt.textContent = `✅ صفحة كشف الغياب متصلة وجاهزة (${count} خانة طالب متوفرة للرصد الآلي).`;
+  } else {
+    banner.style.border = '1.5px solid #DC2626';
+    banner.style.background = '#FEF2F2';
+    banner.style.color = '#991B1B';
+    txt.textContent = '⚠️ تنبيه للدكتور: لم يتم رصد صفحة كشف الغياب (يجب فتح صفحة الحضور التي تحتوي على 15 خانة طالب على الأقل في المتصفح لرصد الحضور آلياً).';
+  }
+
+  if (currentSessionId && activeServerUrl) {
+    fetch(`${activeServerUrl}/api/session/${currentSessionId}/portal-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portalConnected: connected, checkboxCount: count })
+    }).catch(() => {});
+  }
+}
+
 function startAutoSaveTimer() {
   clearInterval(autoSaveInterval);
   updateAutoSaveDisplay();
 
-  autoSaveInterval = setInterval(() => {
+  autoSaveInterval = setInterval(async () => {
     if (autoSaveSeconds > 0) {
       autoSaveSeconds--;
       updateAutoSaveDisplay();
     } else {
       clearInterval(autoSaveInterval);
-      triggerAutoSave();
+      await triggerAutoSave();
+      stopActiveSession();
+      alert('⏰ انتهت مهلة الـ 3 دقائق المخصصة للجلسة. تم حفظ كشف الحضور وإغلاق الجلسة تلقائياً بنجاح.');
     }
   }, 1000);
 }

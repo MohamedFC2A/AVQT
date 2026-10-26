@@ -19,6 +19,12 @@
     <div class="splash-inner-content">
       <!-- CENTER: SEAMLESS INTRO VIDEO (HARDWARE-ACCELERATED, PURE WHITE, ZERO GLITCH, IMPOSSIBLE TO DOWNLOAD) -->
       <div class="splash-video-container" oncontextmenu="return false;">
+        <div class="splash-brand-fallback" id="splashBrandFallback">
+          <img src="assets/ehdar-icon.svg" class="splash-fallback-logo" alt="e7dar" width="76" height="76">
+          <div class="splash-fallback-title">e7dar.com</div>
+          <div class="splash-fallback-sub">منظومة الحضور الذكي • جامعة المستقبل FUE</div>
+          <div class="splash-fallback-spinner"></div>
+        </div>
         <video id="splashVideo" class="splash-video-element" 
                playsinline webkit-playsinline muted autoplay preload="auto" 
                poster="assets/splash-poster.webp"
@@ -874,6 +880,38 @@
           إغلاق ومحاولة يدوية
         </button>
       </div>
+
+      <!-- 4. ALREADY ATTENDED / INFO / WARNING STATE -->
+      <div id="instantAttendInfo" class="instant-state-block hidden">
+        <div class="instant-info-icon-wrap" id="instantInfoIconWrap" style="width:68px; height:68px; border-radius:50%; background:#EFF6FF; border:3px solid #0B63E5; display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto;">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#0B63E5" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </div>
+        <h3 class="instant-attend-title" id="instantInfoHeading" style="color: #0F172A;">أنت مسجل بالفعل في المحاضرة</h3>
+        <p class="instant-attend-sub" id="instantInfoMsg">تم رصد وتثبيت حضورك مسبقاً في هذه الجلسة بنجاح، تقدر تتفضل دلوقتي.</p>
+        <button id="btnDismissInstantInfo" class="neo-btn btn-primary-blue btn-full btn-large mt-3">
+          حسناً، فهمت
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMART ATTENDANCE CONFIRMATION & SMART INFO DIALOG -->
+  <div id="attendanceFeedbackModal" class="modal-overlay hidden" style="z-index: 9999999;">
+    <div class="modal-card" style="text-align: center; max-width: 380px; padding: 24px 20px;">
+      <div id="attendFeedbackIconWrap" style="margin-bottom: 12px; display: inline-flex; align-items: center; justify-content: center; width: 68px; height: 68px; border-radius: 50%; background: #ECFDF5; border: 3px solid #059669; margin: 0 auto 14px auto;">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h3 id="attendFeedbackTitle" style="font-size: 1.25rem; font-weight: 900; color: #0F172A; margin: 0 0 8px 0;">تمت عملية التسجيل بنجاح</h3>
+      <p id="attendFeedbackMessage" style="font-size: 0.92rem; font-weight: 700; color: #334155; line-height: 1.5; margin: 0 0 20px 0;">تم اعتماد حضورك في كشف المحاضرة بنسبة 100%. الآن تقدر تتفضل.</p>
+      <button id="btnDismissAttendFeedback" class="neo-btn btn-primary-blue btn-full btn-large" style="font-size: 1rem; font-weight: 900;">
+        حسناً، تمام
+      </button>
     </div>
   </div>
 

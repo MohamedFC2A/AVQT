@@ -1,9 +1,13 @@
-import { test, describe, after } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
 import crypto from 'crypto';
 import { generateDynamicQrToken, verifyDynamicQrToken, verifyDynamicNumericCode, verifyDynamicTokenDetailed } from '../services/dynamicQrService.js';
 import { fetchFueStudentCard, parseFueCardHtml } from '../services/fueCardScraper.js';
-import { db } from '../db.js';
+import { db, initDb } from '../db.js';
+
+before(async () => {
+  await initDb();
+});
 
 describe('AVQR Anti-Cheating Dynamic QR & 8-Digit Code Engine', () => {
   test('generates valid cryptographic token and 8-digit numeric code', () => {

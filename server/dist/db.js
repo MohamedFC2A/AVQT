@@ -71,6 +71,7 @@ if (DATABASE_URL && DATABASE_URL.startsWith('postgres')) {
             connectionTimeoutMillis: 5000
         });
         console.log('[AVQR Cloud] Connected to Sovereign Neon.tech PostgreSQL cluster');
+        initDb().catch(e => console.error('Auto initDb error:', e));
     }
     catch (err) {
         console.warn('[AVQR Cloud] Sovereign Cloud fallback engaged:', err);
@@ -175,8 +176,12 @@ export async function initDb() {
         token_rotated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         auto_save_seconds INT DEFAULT 180,
         status VARCHAR(20) DEFAULT 'ACTIVE',
+        portal_connected BOOLEAN DEFAULT FALSE,
+        checkbox_count INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      ALTER TABLE attendance_sessions ADD COLUMN IF NOT EXISTS portal_connected BOOLEAN DEFAULT FALSE;
+      ALTER TABLE attendance_sessions ADD COLUMN IF NOT EXISTS checkbox_count INT DEFAULT 0;
 
       CREATE TABLE IF NOT EXISTS attendance_records (
         id SERIAL PRIMARY KEY,
@@ -579,9 +584,19 @@ export const db = {
     async createSession(session) {
         if (pool) {
             try {
-                await pool.query(`INSERT INTO attendance_sessions (id, course_name, doctor_name, room_hall, current_token, auto_save_seconds, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
-           ON CONFLICT (id) DO NOTHING`, [session.id, session.course_name, session.doctor_name, session.room_hall, session.current_token, session.auto_save_seconds, session.status]);
+                await pool.query(`INSERT INTO attendance_sessions (id, course_name, doctor_name, room_hall, current_token, auto_save_seconds, status, portal_connected, checkbox_count)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (id) DO NOTHING`, [
+                    session.id,
+                    session.course_name,
+                    session.doctor_name,
+                    session.room_hall,
+                    session.current_token,
+                    session.auto_save_seconds,
+                    session.status,
+                    Boolean(session.portal_connected),
+                    Number(session.checkbox_count || 0)
+                ]);
             }
             catch (e) {
                 console.error('createSession pool error:', e);
@@ -590,6 +605,22 @@ export const db = {
         memoryStore.sessions.set(session.id, session);
         memoryStore.save();
         return session;
+    },
+    async updateSessionPortalStatus(id, connected, count) {
+        if (pool) {
+            try {
+                await pool.query('UPDATE attendance_sessions SET portal_connected = $1, checkbox_count = $2 WHERE id = $3', [connected, count, id]);
+            }
+            catch (e) {
+                console.error('updateSessionPortalStatus pool error:', e);
+            }
+        }
+        const session = memoryStore.sessions.get(id);
+        if (session) {
+            session.portal_connected = connected;
+            session.checkbox_count = count;
+            memoryStore.save();
+        }
     },
     async getSession(id) {
         if (pool) {

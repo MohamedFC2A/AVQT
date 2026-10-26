@@ -672,7 +672,15 @@
   if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       try {
-        if (msg.action === 'ACTIVATE_AUTOSYNC') {
+        if (msg.action === 'CHECK_PORTAL_STATUS') {
+          const count = countPageCheckboxes();
+          sendResponse({
+            hasPortal: count >= 15,
+            checkboxCount: count,
+            url: window.location.href
+          });
+          return true;
+        } else if (msg.action === 'ACTIVATE_AUTOSYNC') {
           activeSessionId = msg.sessionId || activeSessionId;
           if (msg.serverUrl) serverUrl = msg.serverUrl;
           removePromptWidget();
