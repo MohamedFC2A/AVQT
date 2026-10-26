@@ -1,11 +1,10 @@
 import pg from 'pg';
+import { Pool } from '@neondatabase/serverless';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
 dotenv.config();
-
-const { Pool } = pg;
 
 // AVQR Sovereign Cloud Infrastructure for Future University in Egypt (FUE) & Matany Group
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_YepumAOX06iW@ep-holy-smoke-av9d4czd-pooler.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require';
@@ -126,9 +125,10 @@ class MemoryStore {
 }
 
 const memoryStore = new MemoryStore();
-let pool: pg.Pool | null = null;
+let pool: any = null;
+let lastPoolError: string = 'NONE';
 
-export function getPool(): pg.Pool | null {
+export function getPool(): any {
   if (pool) return pool;
   const dbUrl = process.env.DATABASE_URL || DATABASE_URL;
   if (dbUrl && dbUrl.startsWith('postgres')) {
@@ -143,10 +143,13 @@ export function getPool(): pg.Pool | null {
       console.log('[AVQR Cloud] Connected to Sovereign Neon.tech PostgreSQL cluster');
       initDb().catch(e => console.error('Auto initDb error:', e));
       return pool;
-    } catch (err) {
+    } catch (err: any) {
       console.warn('[AVQR Cloud] Sovereign Cloud fallback engaged:', err);
+      lastPoolError = err?.message || String(err);
       pool = null;
     }
+  } else {
+    lastPoolError = 'DB_URL_MISSING_OR_INVALID: ' + (dbUrl ? dbUrl.substring(0, 15) : 'EMPTY');
   }
   return null;
 }
@@ -929,7 +932,7 @@ export const db = {
     }
     return {
       id: Date.now(),
-      dbError: 'POOL_IS_NULL (DATABASE_URL ' + (process.env.DATABASE_URL ? 'EXISTS' : 'MISSING') + ')',
+      dbError: 'POOL_IS_NULL (' + lastPoolError + ')',
       session_id: log.sessionId,
       present_count: log.presentCount,
       present_students: log.presentStudents,
