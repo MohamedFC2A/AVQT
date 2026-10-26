@@ -89,7 +89,7 @@
       <div class="auth-gate-card">
         <div class="auth-header">
           <div class="auth-logo-center">
-            <img src="assets/ehdar-logo-full.svg" alt="e7dar ATTD Logo" class="auth-matany-img">
+            <img src="assets/ehdar-logo-full.svg" alt="e7dar Logo" class="auth-matany-img">
           </div>
           <h2 class="auth-title">توثيق الطالب ومسح الكارنيه</h2>
           <p class="auth-desc">امسح الكارنيه بالكاميرا مباشرة لتوثيق الهوية وقفل الحساب بالجهاز</p>
@@ -170,15 +170,16 @@
                     <!-- Center Column: Info -->
                     <div class="fue-info-col">
                       <div class="fue-info-block">
-                        <div class="fue-lbl-bilingual">الاسم / Name</div>
+                        <span class="fue-lbl-bilingual">Name / الاسم</span>
                         <div class="fue-val-name" id="authCardFullName">طالب المستقبل</div>
                       </div>
                       <div class="fue-info-block">
-                        <div class="fue-lbl-bilingual">التخصص / Faculty</div>
+                        <span class="fue-lbl-bilingual">Faculty / الكلية</span>
                         <div class="fue-val-fac" id="authCardFaculty">Engineering</div>
                       </div>
                       <div class="fue-id-block">
-                        <span class="fue-id-txt">ID: <span id="authCardStudentId">--------</span></span>
+                        <span class="fue-lbl-bilingual">Student ID</span>
+                        <div class="fue-id-txt" id="authCardStudentId">--------</div>
                       </div>
                     </div>
 
@@ -194,7 +195,7 @@
                   <div class="fue-front-footer">
                     <div class="fue-footer-phone-col">
                       <div class="fue-phone-line">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                         <span class="fue-phone-num">16383</span>
                       </div>
                       <div class="fue-web-link">www.fue.edu.eg</div>
@@ -209,17 +210,16 @@
                 <div class="card-face card-face-back">
                   <div class="card-glare" id="authCardGlareBack"></div>
                   <img src="assets/fue-shield-official-clean.png" class="fue-back-crest" alt="FUE Official Crest">
-                  <div class="fue-back-title">
-                    جامعة المستقبل في مصر
-                    <div style="font-size:0.75rem; color:#475569; font-weight:700;">FUTURE UNIVERSITY IN EGYPT</div>
+                  <div class="fue-back-title-wrap">
+                    <div class="fue-back-title">جامعة المستقبل في مصر</div>
+                    <div class="fue-back-title-en">FUTURE UNIVERSITY IN EGYPT</div>
                   </div>
-                  <p class="fue-back-notice">
-                    If found, please send it to FUE-STUDENT Affairs Dept.
-                    <br>
-                    في حالة العثور على الكارنيه يرجى تسليمه لشؤون الطلاب
-                  </p>
+                  <div class="fue-back-notice">
+                    <div>If found, please return to FUE Student Affairs Dept.</div>
+                    <div>في حالة العثور على الكارنيه يرجى تسليمه لشؤون الطلاب</div>
+                  </div>
                   <div class="fue-back-phone-pill">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                     <span>الخط الساخن: 16383 • www.fue.edu.eg</span>
                   </div>
                 </div>
@@ -351,22 +351,23 @@
                 <div class="fue-serial-dots" id="cardSerialDots">******</div>
               </div>
 
-              <!-- Center Column: Bilingual Info -->
+              <!-- Center Column: Info -->
               <div class="fue-info-col">
                 <div class="fue-info-block">
-                  <div class="fue-lbl-bilingual">الاسم / Name</div>
+                  <span class="fue-lbl-bilingual">Name / الاسم</span>
                   <div class="fue-val-name" id="cardFullName">طالب المستقبل</div>
                 </div>
                 <div class="fue-info-block">
-                  <div class="fue-lbl-bilingual">التخصص / Faculty</div>
+                  <span class="fue-lbl-bilingual">Faculty / الكلية</span>
                   <div class="fue-val-fac" id="cardFaculty">Engineering</div>
                 </div>
                 <div class="fue-id-block">
-                  <span class="fue-id-txt">ID: <span id="cardStudentId">--------</span></span>
+                  <span class="fue-lbl-bilingual">Student ID</span>
+                  <div class="fue-id-txt" id="cardStudentId">--------</div>
                 </div>
               </div>
 
-              <!-- Right Column: High-Contrast Unclipped QR Canvas -->
+              <!-- Right Column: High-Contrast QR Canvas -->
               <div class="fue-qr-col">
                 <div class="fue-qr-canvas-wrapper">
                   <canvas id="cardOfficialQrCanvas"></canvas>
@@ -378,32 +379,31 @@
             <div class="fue-front-footer">
               <div class="fue-footer-phone-col">
                 <div class="fue-phone-line">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                   <span class="fue-phone-num">16383</span>
                 </div>
                 <div class="fue-web-link">www.fue.edu.eg</div>
               </div>
               <div class="fue-footer-badges-col">
-                <img src="assets/fue-rankings-badge.png" class="fue-rankings-badge-img" alt="QS World University Rankings & Webometrics #1">
+                <img src="assets/fue-rankings-badge.png" class="fue-rankings-badge-img" alt="QS World University Rankings">
               </div>
             </div>
           </div>
 
-          <!-- BACK FACE (AUTHENTIC UNIVERSITY NOTICES) -->
+          <!-- BACK FACE -->
           <div class="card-face card-face-back">
             <div class="card-glare" id="cardGlareBack"></div>
             <img src="assets/fue-shield-official-clean.png" class="fue-back-crest" alt="FUE Official Crest">
-            <div class="fue-back-title">
-              جامعة المستقبل في مصر
-              <div style="font-size:0.75rem; color:#475569; font-weight:700;">FUTURE UNIVERSITY IN EGYPT</div>
+            <div class="fue-back-title-wrap">
+              <div class="fue-back-title">جامعة المستقبل في مصر</div>
+              <div class="fue-back-title-en">FUTURE UNIVERSITY IN EGYPT</div>
             </div>
-            <p class="fue-back-notice">
-              If found, please send it to FUE-STUDENT Affairs Dept.
-              <br>
-              في حالة العثور على الكارنيه يرجى تسليمه لشؤون الطلاب
-            </p>
+            <div class="fue-back-notice">
+              <div>If found, please return to FUE Student Affairs Dept.</div>
+              <div>في حالة العثور على الكارنيه يرجى تسليمه لشؤون الطلاب</div>
+            </div>
             <div class="fue-back-phone-pill">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
               <span>الخط الساخن: 16383 • www.fue.edu.eg</span>
             </div>
           </div>
@@ -722,9 +722,9 @@
         </div>
         <div class="contact-entry mt-2">
           <span class="lbl">إضافة المتصفح (Chrome Extension):</span>
-          <a href="/AVQR-Extension.zip" download="AVQR-Extension.zip" class="neo-btn btn-emerald btn-full mt-1">
+          <a href="/e7dar-Extension.zip" download="e7dar-Extension.zip" class="neo-btn btn-emerald btn-full mt-1">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            تحميل وتحديث إضافة المتصفح للجامعة
+            تحميل وتحديث إضافة e7dar للمتصفح
           </a>
         </div>
       </div>

@@ -729,12 +729,18 @@ body {
 .interactive-fue-card {
   width: 100%;
   aspect-ratio: 1.586 / 1;
-  height: auto;
-  max-height: 220px;
+  height: 226px;
   position: relative;
   transform-style: preserve-3d;
   transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.4, 1);
   cursor: pointer;
+  border-radius: 14px;
+}
+
+@media (max-width: 380px) {
+  .interactive-fue-card {
+    height: 208px;
+  }
 }
 
 .interactive-fue-card.is-dragging {
@@ -824,11 +830,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   background: #FFFFFF;
-  padding: 18px;
+  padding: 14px 16px 12px 16px;
   text-align: center;
-  gap: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Realistic Plastic Glare Effect */
@@ -848,11 +855,12 @@ body {
 .fue-front-topbar {
   background: #8A151B;
   color: #FFFFFF;
-  padding: 4px 12px;
+  padding: 0 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 42px;
+  height: 38px;
+  min-height: 38px;
   box-sizing: border-box;
   position: relative;
   direction: ltr !important;
@@ -861,30 +869,32 @@ body {
 .fue-topbar-left {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .fue-year-txt {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 900;
   letter-spacing: 0.5px;
   color: #FFFFFF;
-  font-family: Arial, sans-serif;
+  font-family: 'Cairo', Arial, sans-serif;
+  line-height: 1;
 }
 
 .fue-topbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .fue-brand-header-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 
 .fue-official-logo-img {
-  height: 32px;
+  height: 26px;
   width: auto;
   max-width: 140px;
   object-fit: contain;
@@ -893,8 +903,8 @@ body {
 }
 
 .fue-shield-img {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   border-radius: 2px;
 }
@@ -929,30 +939,31 @@ body {
 .fue-level-badge-row {
   display: flex;
   align-items: center;
-  margin-left: 4px;
 }
 
 .fue-level-tag {
   background: #FFFFFF;
   color: #8A151B;
   font-weight: 900;
-  font-size: 0.72rem;
-  padding: 3px 6px;
-  border-radius: 3px;
+  font-size: 0.68rem;
+  padding: 2.5px 7px;
+  border-radius: 4px;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 /* Card Center Details: Photo Left, Info Center, QR Right */
 .fue-front-body {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 8px 10px;
   flex: 1;
   background: #FFFFFF;
-  gap: 6px;
+  gap: 8px;
   box-sizing: border-box;
   direction: ltr !important;
   overflow: hidden;
@@ -962,21 +973,19 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 66px;
+  width: 70px;
   flex-shrink: 0;
-  position: relative;
-  z-index: 5;
 }
 
 .fue-photo-frame {
-  width: 64px;
-  height: 76px;
-  border-radius: 32px 32px 26px 26px;
-  border: 3px solid #FFFFFF;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), 0 0 0 1px #CBD5E1;
+  width: 66px;
+  height: 78px;
+  border-radius: 8px;
+  border: 2px solid #CBD5E1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   overflow: hidden;
-  background: #E2E8F0;
-  margin-top: -12px;
+  background: #F8FAFC;
+  margin-top: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -990,13 +999,14 @@ body {
 }
 
 .fue-serial-dots {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 900;
   color: #8A151B;
-  margin-top: 3px;
-  letter-spacing: 1px;
+  margin-top: 4px;
+  letter-spacing: 2px;
   font-family: monospace;
   line-height: 1;
+  text-align: center;
 }
 
 .fue-info-col {
@@ -1006,8 +1016,8 @@ body {
   flex-direction: column;
   justify-content: center;
   text-align: left;
-  gap: 3px;
-  padding: 0 2px;
+  gap: 5px;
+  padding: 0 4px;
   direction: ltr !important;
   overflow: hidden;
 }
@@ -1019,73 +1029,78 @@ body {
 }
 
 .fue-lbl-bilingual {
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 800;
   color: #64748B;
+  white-space: nowrap;
+  line-height: 1;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
 .fue-val-name {
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 900;
   color: #0F172A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .fue-val-fac {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 800;
   color: #1E293B;
-  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
 }
 
 .fue-id-block {
   margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .fue-id-txt {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 900;
   color: #8A151B;
   font-family: 'Courier New', Courier, monospace;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+  line-height: 1;
 }
 
 /* High-Contrast Unclipped QR Code Column */
 .fue-qr-col {
-  width: 66px;
-  height: 66px;
+  width: 70px;
+  height: 70px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
-  align-self: center;
-  border: none;
-  background: transparent;
-  box-shadow: none;
 }
 
 .fue-qr-canvas-wrapper {
-  width: 62px;
-  height: 62px;
+  width: 66px;
+  height: 66px;
   padding: 2px;
   background: #FFFFFF;
   border: 1.5px solid #CBD5E1;
-  border-radius: 6px;
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  overflow: visible;
 }
 
 .fue-qr-canvas-wrapper canvas {
-  width: 58px !important;
-  height: 58px !important;
+  width: 62px !important;
+  height: 62px !important;
   display: block;
 }
 
@@ -1093,14 +1108,13 @@ body {
 .fue-front-footer {
   background: #8A151B;
   color: #FFFFFF;
-  padding: 4px 12px;
+  padding: 0 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.65rem;
-  font-weight: 800;
+  height: 30px;
+  min-height: 30px;
   box-sizing: border-box;
-  min-height: 28px;
   direction: ltr !important;
 }
 
@@ -1124,7 +1138,7 @@ body {
 }
 
 .fue-web-link {
-  font-size: 0.60rem;
+  font-size: 0.58rem;
   opacity: 0.9;
 }
 
@@ -1136,69 +1150,61 @@ body {
   text-align: right;
 }
 
-.fue-ranking-title {
-  font-size: 0.52rem;
-  font-weight: 900;
-  letter-spacing: 0.3px;
-  opacity: 0.95;
-}
-
-.fue-ranking-badges {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.ranking-pill.pill-gold {
-  background: #F59E0B;
-  color: #000000;
-  font-size: 0.52rem;
-  font-weight: 900;
-  padding: 1px 4px;
-  border-radius: 2px;
-  line-height: 1.1;
-}
-
 .fue-rankings-badge-img {
-  height: 20px;
-  max-width: 160px;
+  height: 18px;
+  max-width: 145px;
   object-fit: contain;
   display: block;
 }
 
 /* Back Card Elements */
 .fue-back-crest {
-  width: 60px;
-  height: 60px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
 }
 
+.fue-back-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
 .fue-back-title {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 900;
   color: #8A151B;
   line-height: 1.2;
 }
 
+.fue-back-title-en {
+  font-size: 0.65rem;
+  color: #475569;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
 .fue-back-notice {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: #334155;
-  margin: 4px 0;
+  margin: 0;
   line-height: 1.35;
 }
 
 .fue-back-phone-pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   background: #FEE2E2;
   color: #8A151B;
   border: 1.5px solid #8A151B;
-  border-radius: 20px;
-  padding: 4px 14px;
+  border-radius: 999px;
+  padding: 3.5px 14px;
   font-weight: 900;
-  font-size: 0.88rem;
+  font-size: 0.76rem;
+  line-height: 1;
 }
 
 /* 3D Interaction Controls */
@@ -2763,7 +2769,7 @@ body {
 }
 
 .auth-3d-preview-scene {
-  max-width: 330px;
+  max-width: 360px;
   margin: 10px auto 14px auto;
 }
 

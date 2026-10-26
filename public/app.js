@@ -601,24 +601,8 @@ function initAuthGateFlow() {
       state.emergencyAccessKey = `FUE-SEC-${seg(4)}-${seg(4)}-${seg(4)}-2026`;
     }
 
-    // Populate Step 2 3D Card
-    const authFullName = document.getElementById('authCardFullName');
-    if (authFullName) authFullName.textContent = formatBinaryName(fullName);
-
-    const authStudentId = document.getElementById('authCardStudentId');
-    if (authStudentId) authStudentId.textContent = studentId;
-
-    const authFaculty = document.getElementById('authCardFaculty');
-    if (authFaculty) authFaculty.textContent = faculty;
-
-    const authLevelTag = document.getElementById('authCardLevelTag');
-    if (authLevelTag) authLevelTag.textContent = level;
-
-    const authPhoto = document.getElementById('authCardStudentPhoto');
-    if (authPhoto && photoUrl) authPhoto.src = photoUrl;
-
-    // Render QR Code on Step 2 3D Card Canvas
-    renderCardOfficialQr(cardUrl || `https://services.fue.edu.eg/FueCards/StudentCard.aspx?id=${studentId}`, 'authCardOfficialQrCanvas');
+    // Populate Both 3D Cards (Auth step & Internal profile)
+    syncAllStudentCards({ fullName, studentId, faculty, level, photoUrl, cardUrl });
 
     // Hide Step 1 & 3D video, reveal Step 2 3D interactive card
     const auth3DCardStage = document.getElementById('auth3DCardStage');
@@ -973,26 +957,81 @@ function switchToView(viewId) {
   if (targetItem) targetItem.click();
 }
 
-// Helper: Format short binary name (First and Last name)
-function formatBinaryName(fullName) {
+// Helper: Format student display name (Preserves full name if <= 3 parts, e.g. Mohamed Ahmed Matany)
+function formatStudentDisplayName(fullName) {
   if (!fullName) return 'طالب مقيد';
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length <= 2) return fullName;
-  return `${parts[0]} ${parts[parts.length - 1]}`;
+  if (parts.length <= 3) return fullName.trim();
+  return `${parts[0]} ${parts[1]} ${parts[parts.length - 1]}`;
+}
+
+// Backward compatibility alias
+function formatBinaryName(fullName) {
+  return formatStudentDisplayName(fullName);
+}
+
+// Helper: Format academic level cleanly (e.g. "1-First" or "1" -> "LEVEL 01")
+function formatLevelTag(rawLevel) {
+  if (!rawLevel) return 'LEVEL 01';
+  const str = String(rawLevel).trim();
+  if (str.includes('1') || /first/i.test(str)) return 'LEVEL 01';
+  if (str.includes('2') || /second/i.test(str)) return 'LEVEL 02';
+  if (str.includes('3') || /third/i.test(str)) return 'LEVEL 03';
+  if (str.includes('4') || /fourth/i.test(str)) return 'LEVEL 04';
+  if (str.includes('5') || /fifth/i.test(str)) return 'LEVEL 05';
+  return str.toUpperCase();
 }
 
 // Helper: Render Official FUE Student Card QR Code on Canvas
 function renderCardOfficialQr(targetUrl, canvasId = 'cardOfficialQrCanvas') {
   const qrCanvas = document.getElementById(canvasId);
   if (!qrCanvas || !window.QRCode || typeof window.QRCode.toCanvas !== 'function') return;
-  const url = targetUrl || state.cardUrl || (state.studentId ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?SS=cc011cc7-ceb7-4867-973a-79d0a44e5214` : 'https://fue.edu.eg');
+  const url = targetUrl || state.cardUrl || (state.studentId ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?id=${state.studentId}` : 'https://fue.edu.eg');
   window.QRCode.toCanvas(qrCanvas, url, {
-    width: 58,
+    width: 62,
     margin: 1,
     color: { dark: '#0F172A', light: '#FFFFFF' }
   }, (err) => {
     if (err) console.warn('Card QR render err:', err);
   });
+}
+
+// Synchronize all student cards (auth step card + profile card) simultaneously with realistic formatting
+function syncAllStudentCards(data = {}) {
+  const name = formatStudentDisplayName(data.fullName || state.fullName);
+  const id = data.studentId || state.studentId || '--------';
+  const fac = data.faculty || state.faculty || 'Engineering';
+  const lvl = formatLevelTag(data.level || state.level);
+  const photo = data.photoUrl || state.photoUrl || 'assets/avatar-silhouette.svg';
+  const url = data.cardUrl || state.cardUrl || (id !== '--------' ? `https://services.fue.edu.eg/FueCards/StudentCard.aspx?id=${id}` : 'https://fue.edu.eg');
+
+  // Step 2 Onboarding Card (#authInteractiveCard)
+  const authName = document.getElementById('authCardFullName');
+  if (authName) authName.textContent = name;
+  const authId = document.getElementById('authCardStudentId');
+  if (authId) authId.textContent = id;
+  const authFac = document.getElementById('authCardFaculty');
+  if (authFac) authFac.textContent = fac;
+  const authLvl = document.getElementById('authCardLevelTag');
+  if (authLvl) authLvl.textContent = lvl;
+  const authPhoto = document.getElementById('authCardStudentPhoto');
+  if (authPhoto) authPhoto.src = photo;
+  renderCardOfficialQr(url, 'authCardOfficialQrCanvas');
+
+  // Internal Profile Card (#interactiveFueCard)
+  const cardName = document.getElementById('cardFullName');
+  if (cardName) cardName.textContent = name;
+  const cardId = document.getElementById('cardStudentId');
+  if (cardId) cardId.textContent = id;
+  const cardFac = document.getElementById('cardFaculty');
+  if (cardFac) cardFac.textContent = fac;
+  const cardLvl = document.getElementById('cardLevelTag');
+  if (cardLvl) cardLvl.textContent = lvl;
+  const cardLvlRow = document.getElementById('cardLevel');
+  if (cardLvlRow) cardLvlRow.textContent = lvl;
+  const cardPhoto = document.getElementById('cardStudentPhoto');
+  if (cardPhoto) cardPhoto.src = photo;
+  renderCardOfficialQr(url, 'cardOfficialQrCanvas');
 }
 
 // -------------------------------------------------------------
@@ -1237,25 +1276,8 @@ function renderStudentProfile() {
     if (topbarId) topbarId.textContent = state.studentId;
   }
 
-  const cardName = document.getElementById('cardFullName');
-  if (cardName) cardName.textContent = formatBinaryName(state.fullName);
-
-  const cardPhoto = document.getElementById('cardStudentPhoto');
-  if (cardPhoto) {
-    cardPhoto.src = state.photoUrl || 'assets/avatar-silhouette.svg';
-  }
-
-  const cardId = document.getElementById('cardStudentId');
-  if (cardId) cardId.textContent = state.studentId || '--------';
-
-  const cardFac = document.getElementById('cardFaculty');
-  if (cardFac) cardFac.textContent = state.faculty || 'Engineering';
-
-  const cardLvl = document.getElementById('cardLevel');
-  if (cardLvl) cardLvl.textContent = state.level || 'LEVEL 01';
-
-  const cardLvlTag = document.getElementById('cardLevelTag');
-  if (cardLvlTag) cardLvlTag.textContent = state.level || 'LEVEL 01';
+  // Synchronize both 3D student cards
+  syncAllStudentCards();
 
   const secBoundId = document.getElementById('secBoundStudentId');
   if (secBoundId) secBoundId.textContent = state.boundStudentId || state.studentId || 'غير مقترن';
@@ -2191,7 +2213,7 @@ function handleScannedQrContent(val) {
     } catch (e) {}
   }
 
-  if (val.startsWith('AVQR:')) {
+  if (val.startsWith('AVQR:') || val.startsWith('e7dar:') || val.startsWith('EHDAR:')) {
     const parts = val.split(':');
     const sid = parts[1] || state.activeSessionId;
     const token = parts[2] || '';
@@ -2505,7 +2527,7 @@ async function executeBiometricVerification() {
         publicKey: {
           challenge: challenge,
           rp: {
-            name: "AVQR - FUE Academic System",
+            name: "e7dar - FUE Academic System",
             id: window.location.hostname
           },
           user: {

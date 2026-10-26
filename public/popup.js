@@ -55,7 +55,7 @@ if (typeof chrome === 'undefined' || !chrome.storage) {
   };
 }
 
-let currentSessionId = 'AVQR-2026';
+let currentSessionId = 'E7DAR-2026';
 let sseSource = null;
 let rotationInterval = null;
 let autoSaveInterval = null;
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function openFullPresenter(sid) {
-    const effectiveSid = sid || currentSessionId || 'AVQR-2026';
+    const effectiveSid = sid || currentSessionId || 'E7DAR-2026';
     const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
     const url = isExtension
       ? chrome.runtime.getURL(`presenter.html?sid=${encodeURIComponent(effectiveSid)}`)
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Start Session Button
   btnStartSession.addEventListener('click', async () => {
-    const sid = sessionIdInput.value.trim() || 'AVQR-2026';
+    const sid = sessionIdInput.value.trim() || 'E7DAR-2026';
     currentSessionId = sid;
     const startTime = Date.now();
     autoSaveSeconds = TOTAL_AUTOSAVE_SECONDS;

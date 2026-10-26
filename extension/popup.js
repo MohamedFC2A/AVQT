@@ -6,7 +6,7 @@ const SERVER_URL = (typeof window !== 'undefined' && window.location && window.l
   : 'https://e7dar.com';
 const LOCAL_FALLBACK_URL = 'http://localhost:3001';
 
-let currentSessionId = 'AVQR-2026';
+let currentSessionId = 'E7DAR-2026';
 let sseSource = null;
 let rotationInterval = null;
 let autoSaveInterval = null;
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function openFullPresenter(sid) {
-    const effectiveSid = sid || currentSessionId || 'AVQR-2026';
+    const effectiveSid = sid || currentSessionId || 'E7DAR-2026';
     const url = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
       ? chrome.runtime.getURL(`presenter.html?sid=${encodeURIComponent(effectiveSid)}`)
       : `presenter.html?sid=${encodeURIComponent(effectiveSid)}`;
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Start Session Button
   btnStartSession.addEventListener('click', async () => {
-    const sid = sessionIdInput.value.trim() || 'AVQR-2026';
+    const sid = sessionIdInput.value.trim() || 'E7DAR-2026';
     currentSessionId = sid;
     const startTime = Date.now();
     autoSaveSeconds = TOTAL_AUTOSAVE_SECONDS;
