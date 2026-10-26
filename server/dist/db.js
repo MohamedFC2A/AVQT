@@ -609,18 +609,36 @@ export const db = {
     async updateSessionPortalStatus(id, connected, count) {
         if (pool) {
             try {
-                await pool.query('UPDATE attendance_sessions SET portal_connected = $1, checkbox_count = $2 WHERE id = $3', [connected, count, id]);
+                await pool.query(`INSERT INTO attendance_sessions (id, course_name, doctor_name, room_hall, current_token, auto_save_seconds, status, portal_connected, checkbox_count)
+           VALUES ($1, 'محاضرة FUE', 'د. محمد مطعني', 'مدرج الهندسة', 'PORTAL_TOKEN', 180, 'ACTIVE', $2, $3)
+           ON CONFLICT (id) DO UPDATE SET portal_connected = EXCLUDED.portal_connected, checkbox_count = EXCLUDED.checkbox_count`, [id, connected, count]);
             }
             catch (e) {
                 console.error('updateSessionPortalStatus pool error:', e);
             }
         }
-        const session = memoryStore.sessions.get(id);
-        if (session) {
+        let session = memoryStore.sessions.get(id);
+        if (!session) {
+            session = {
+                id,
+                course_name: 'محاضرة FUE',
+                doctor_name: 'د. محمد مطعني',
+                room_hall: 'مدرج الهندسة',
+                current_token: 'PORTAL_TOKEN',
+                token_rotated_at: new Date().toISOString(),
+                auto_save_seconds: 180,
+                status: 'ACTIVE',
+                portal_connected: connected,
+                checkbox_count: count,
+                created_at: new Date().toISOString()
+            };
+            memoryStore.sessions.set(id, session);
+        }
+        else {
             session.portal_connected = connected;
             session.checkbox_count = count;
-            memoryStore.save();
         }
+        memoryStore.save();
     },
     async getSession(id) {
         if (pool) {

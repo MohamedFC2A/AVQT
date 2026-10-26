@@ -927,7 +927,8 @@ app.post('/api/session/attend', async (req: Request, res: Response) => {
       });
     }
 
-    const isPortalLinked = session ? Boolean(session.portal_connected && (session.checkbox_count ?? 0) >= 15) : false;
+    const latestSession = await db.getSession(effectiveSessionId);
+    const isPortalLinked = latestSession ? Boolean(latestSession.portal_connected && (latestSession.checkbox_count ?? 0) >= 15) : false;
 
     if (!isPortalLinked) {
       return res.json({
