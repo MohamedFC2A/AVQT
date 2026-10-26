@@ -882,6 +882,39 @@ app.post('/api/session/:id/portal-status', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// Doctor Portal: Save Attendance directly to Neon.tech Database
+app.post('/api/portal/save-attendance', async (req, res) => {
+    try {
+        const { sessionId, doctorName, courseName, totalStudents, presentCount, presentStudents } = req.body;
+        const savedRecord = await db.savePortalAttendanceLog({
+            sessionId,
+            doctorName,
+            courseName,
+            totalStudents: Number(totalStudents) || 112,
+            presentCount: Number(presentCount) || (Array.isArray(presentStudents) ? presentStudents.length : 0),
+            presentStudents: Array.isArray(presentStudents) ? presentStudents : []
+        });
+        res.json({
+            success: true,
+            message: 'تم حفظ وتثبيت كشف الحضور بنجاح في قاعدة بيانات Neon.tech الجامعية',
+            log: savedRecord
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// Doctor Portal: Get Saved Attendance Logs from Neon.tech
+app.get('/api/portal/saved-attendance', async (req, res) => {
+    try {
+        const sessionId = req.query.sessionId;
+        const logs = await db.getPortalAttendanceLogs(sessionId);
+        res.json({ success: true, logs });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 // Doctor Triggers Auto-Save or 3-Minute Expiry
 app.post('/api/session/:id/auto-save', async (req, res) => {
     try {

@@ -250,10 +250,13 @@
         <div class="banner-icon-wrap" id="bannerIcon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
         </div>
-        <div class="banner-body">
+        <div class="banner-body" style="flex: 1; padding-left: 20px;">
           <strong class="banner-title" id="bannerTitle">حالة الحضور</strong>
           <p class="banner-desc" id="bannerDesc">جاري فحص حالة الحضور...</p>
         </div>
+        <button id="btnCloseStatusBanner" class="banner-close-btn" title="إغلاق الإشعار" aria-label="إغلاق الإشعار" style="position: absolute; top: 10px; left: 10px; background: transparent; border: none; cursor: pointer; color: inherit; opacity: 0.65; padding: 2px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
 
       <!-- Attendance Actions Card -->
@@ -290,7 +293,10 @@
       </div>
 
       <!-- SUCCESS CONFIRMATION BOX -->
-      <div id="attendanceSuccessBox" class="attendance-success-card hidden">
+      <div id="attendanceSuccessBox" class="attendance-success-card hidden" style="position: relative;">
+        <button id="btnCloseSuccessCard" class="success-card-close-btn" title="إغلاق" aria-label="إغلاق" style="position: absolute; top: 10px; left: 10px; background: rgba(255, 255, 255, 0.25); border: none; border-radius: 50%; width: 26px; height: 26px; color: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
         <div class="success-icon-wrap">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>

@@ -1,3 +1,9 @@
+/* ============================================================
+   Future University in Egypt (FUE) - Academic Advisor Client
+   Student Attendance Registration (StudentAbsence.aspx)
+   100% Pure Replica of University Intranet Portal
+   ============================================================ */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -5,298 +11,327 @@
 }
 
 body {
-  font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f4f6f9;
-  color: #1f2937;
-  direction: rtl;
-  min-height: 100vh;
+  font-family: Arial, Tahoma, "Segoe UI", -apple-system, sans-serif;
+  background-color: #FFFFFF;
+  color: #1F2937;
+  direction: ltr;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
-.fue-header {
-  background: linear-gradient(135deg, #b31b1b 0%, #800000 100%);
-  color: #ffffff;
-  padding: 18px 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.header-container {
-  max-width: 1200px;
-  margin: 0 auto;
+/* TOP ASP.NET INTRANET HEADER */
+.intranet-topbar {
+  background: #F1F5F9;
+  border-bottom: 1px solid #CBD5E1;
+  padding: 6px 14px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  font-size: 11px;
+  color: #64748B;
+}
+
+.intranet-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.intranet-tab {
+  padding: 6px 14px;
+  background: #E2E8F0;
+  color: #475569;
+  border-radius: 4px 4px 0 0;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid #CBD5E1;
+  border-bottom: none;
+}
+
+.intranet-tab.active {
+  background: #FFFFFF;
+  color: #1E3A8A;
+  font-weight: 700;
+  border-bottom: 2px solid #FFFFFF;
+  margin-bottom: -1px;
+}
+
+/* TOTAL STUDENTS STATS BANNER (MATCHES IMAGE 4 & 5 EXACTLY) */
+.aspnet-stats-bar {
+  background: #FFFFFF;
+  padding: 10px 16px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.stats-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1D4F91;
+  letter-spacing: 0.3px;
+  display: flex;
   align-items: center;
+  gap: 16px;
   flex-wrap: wrap;
-  gap: 16px;
 }
 
-.logo-area {
+.stats-counter-live {
+  color: #059669;
+}
+
+/* FILTER AND ACTION BAR (BLUE BAR IN IMAGE 4 & 5) */
+.aspnet-filter-bar {
+  background: #6082A2;
+  padding: 8px 14px;
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-.fue-badge {
-  background: #ffffff;
-  color: #b31b1b;
-  font-weight: 900;
-  font-size: 24px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  letter-spacing: 1px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-.fue-header h1 {
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-
-.fue-header p {
-  font-size: 0.85rem;
-  opacity: 0.9;
-}
-
-.doc-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  text-align: left;
-}
-
-.doc-tag, .semester-tag {
-  background: rgba(255, 255, 255, 0.15);
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #FFFFFF;
+  font-size: 12px;
   font-weight: 600;
 }
 
-.main-content {
-  max-width: 1200px;
-  margin: 28px auto;
-  padding: 0 20px;
-}
-
-.lecture-meta-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-bottom: 24px;
-  border-right: 5px solid #b31b1b;
-}
-
-.meta-item label {
-  display: block;
-  font-size: 0.8rem;
-  color: #6b7280;
-  margin-bottom: 4px;
-}
-
-.meta-item strong, .meta-item span {
-  font-size: 0.95rem;
-  color: #111827;
-}
-
-.attendance-table-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-}
-
-.table-header-controls {
+.filter-left-group {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 10px;
   flex-wrap: wrap;
-  gap: 12px;
 }
 
-.table-header-controls h2 {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #111827;
+.aspnet-input {
+  height: 26px;
+  padding: 2px 8px;
+  border: 1px solid #94A3B8;
+  border-radius: 2px;
+  background: #FFFFFF;
+  color: #0F172A;
+  font-size: 12px;
+  font-family: inherit;
 }
 
-.subtitle {
-  font-size: 0.85rem;
-  color: #6b7280;
+.input-code {
+  width: 140px;
 }
 
-.counter-badge {
-  background: #f3f4f6;
-  border: 2px solid #e5e7eb;
-  padding: 8px 18px;
-  border-radius: 30px;
-  font-size: 1rem;
+.input-note {
+  width: 180px;
+}
+
+.filter-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aspnet-btn {
+  height: 28px;
+  padding: 0 14px;
+  border: 1px solid #334155;
+  border-radius: 3px;
+  font-size: 12px;
   font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.1s ease;
+  font-family: inherit;
 }
 
-.count-number {
-  color: #10b981;
-  font-size: 1.2rem;
+.btn-save-primary {
+  background: #0284C7;
+  color: #FFFFFF;
+  border-color: #0369A1;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
 
-.students-table {
+.btn-save-primary:hover {
+  background: #0369A1;
+}
+
+.btn-reset-alt {
+  background: #F8FAFC;
+  color: #334155;
+  border-color: #94A3B8;
+}
+
+.btn-reset-alt:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+/* ASP.NET GRIDVIEW TABLE (MATCHES IMAGE 4 & 5 EXACTLY) */
+.portal-container {
+  padding: 0;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.gridview-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 24px;
+  background: #FFFFFF;
+  font-size: 12.5px;
+  border: 1px solid #CBD5E1;
 }
 
-.students-table th {
-  background: #f9fafb;
-  color: #374151;
-  padding: 12px 14px;
-  font-size: 0.85rem;
+.gridview-table thead th {
+  background: #567998;
+  color: #FFFFFF;
   font-weight: 700;
-  border-bottom: 2px solid #e5e7eb;
-  text-align: right;
+  padding: 7px 10px;
+  border: 1px solid #476682;
+  text-align: left;
+  white-space: nowrap;
 }
 
-.students-table td {
-  padding: 14px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 0.9rem;
-}
-
-.student-row:hover {
-  background-color: #fbfbfb;
-}
-
-.student-row.row-attended {
-  background-color: #ecfdf5 !important;
-  transition: background 0.3s ease;
-}
-
-.id-cell strong {
-  font-family: monospace;
-  font-size: 1.05rem;
-  color: #b31b1b;
-}
-
-.attendance-checkbox {
-  width: 22px;
-  height: 22px;
-  cursor: pointer;
-  accent-color: #10b981;
-}
-
-.badge-present {
-  background: #d1fae5;
-  color: #065f46;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  display: inline-block;
-}
-
-.badge-absent {
-  background: #fee2e2;
-  color: #991b1b;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  display: inline-block;
-}
-
-.table-footer-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding-top: 16px;
-  border-top: 2px solid #f3f4f6;
-}
-
-.note-box {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e40af;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-}
-
-.btn-save-attendance {
-  background: #10b981;
-  color: #ffffff;
-  border: none;
-  padding: 12px 28px;
-  font-size: 1rem;
-  font-weight: 800;
-  font-family: inherit;
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-  transition: all 0.2s ease;
-}
-
-.btn-save-attendance:hover {
-  background: #059669;
-  transform: translateY(-1px);
-}
-
-.btn-save-attendance:active {
-  transform: translateY(1px);
-}
-
-.save-toast {
-  position: fixed;
-  bottom: 30px;
-  left: 30px;
-  right: 30px;
-  max-width: 500px;
-  margin: 0 auto;
-  background: #111827;
-  color: #ffffff;
-  padding: 18px 24px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  z-index: 99999;
-  border: 2px solid #10b981;
-  animation: slideUp 0.3s ease;
-}
-
-.save-toast.hidden {
-  display: none;
-}
-
-.save-toast h3 {
-  color: #10b981;
-  font-size: 1.1rem;
-  margin-bottom: 6px;
-}
-
-.save-toast p {
-  font-size: 0.9rem;
-  opacity: 0.9;
-}
-
-.toast-time {
-  display: block;
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-top: 6px;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.fue-footer {
+.gridview-table thead th.col-center {
   text-align: center;
-  padding: 24px;
-  color: #6b7280;
-  font-size: 0.85rem;
-  border-top: 1px solid #e5e7eb;
-  margin-top: 40px;
+}
+
+.gridview-table tbody tr {
+  border-bottom: 1px solid #E2E8F0;
+  transition: background-color 0.12s ease;
+}
+
+.gridview-table tbody tr:nth-child(even) {
+  background-color: #F8FAFC;
+}
+
+.gridview-table tbody tr:hover {
+  background-color: #F1F5F9;
+}
+
+.gridview-table tbody td {
+  padding: 6px 10px;
+  border: 1px solid #E2E8F0;
+  color: #1E293B;
+  vertical-align: middle;
+}
+
+.col-no {
+  width: 45px;
+  text-align: center;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.col-code {
+  width: 120px;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 700;
+  color: #0F172A;
+  font-size: 13px;
+}
+
+.col-name {
+  font-weight: 500;
+  color: #1E293B;
+}
+
+.col-date {
+  width: 120px;
+  text-align: center;
+  color: #475569;
+  font-size: 12px;
+}
+
+.col-attd {
+  width: 70px;
+  text-align: center;
+}
+
+/* CHECKBOX ATTENDED GREEN HIGHLIGHT (EXACT REPLICA OF ROW 2 IN IMAGE 4 & 5) */
+.gridview-table tbody tr.row-attended {
+  background-color: #B9F6CA !important;
+  color: #064E3B !important;
+}
+
+.gridview-table tbody tr.row-attended td {
+  background-color: #B9F6CA !important;
+  color: #064E3B !important;
+  font-weight: 700;
+}
+
+.gridview-table tbody tr.row-attended .col-code {
+  color: #064E3B !important;
+}
+
+/* ASP.NET NATIVE CHECKBOX */
+.aspnet-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #059669;
+}
+
+/* MODAL & DIALOGS */
+.aspnet-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.aspnet-modal-card {
+  background: #FFFFFF;
+  border: 1px solid #64748B;
+  border-radius: 4px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.aspnet-modal-header {
+  background: #1E40AF;
+  color: #FFFFFF;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aspnet-modal-body {
+  padding: 18px 16px;
+  font-size: 13px;
+  color: #1E293B;
+  line-height: 1.5;
+}
+
+.aspnet-modal-footer {
+  background: #F1F5F9;
+  border-top: 1px solid #CBD5E1;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.auto-close-countdown-bar {
+  background: #FEF3C7;
+  border: 1px solid #F59E0B;
+  color: #92400E;
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hidden {
+  display: none !important;
 }

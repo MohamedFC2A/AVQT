@@ -260,6 +260,17 @@ export async function initDb() {
         check_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT unique_student_session UNIQUE (session_id, student_id)
       );
+
+      CREATE TABLE IF NOT EXISTS portal_attendance_logs (
+        id SERIAL PRIMARY KEY,
+        session_id VARCHAR(64),
+        doctor_name VARCHAR(100) DEFAULT 'Dr. Mohamed Matany',
+        course_name VARCHAR(255) DEFAULT 'Advanced Software Engineering (CSE 2026)',
+        total_students INT DEFAULT 112,
+        present_count INT DEFAULT 0,
+        present_students JSONB,
+        saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
     console.log('[AVQR Cloud] Sovereign Academic Schema in Neon.tech verified and ready');
   } catch (error) {
@@ -871,6 +882,60 @@ export const db = {
       }
     }
     return memoryStore.records.filter(r => r.session_id === sessionId);
+  },
+
+  async savePortalAttendanceLog(log: {
+    sessionId?: string;
+    doctorName?: string;
+    courseName?: string;
+    totalStudents?: number;
+    presentCount: number;
+    presentStudents: any[];
+  }): Promise<any> {
+    if (pool) {
+      try {
+        const res = await pool.query(
+          `INSERT INTO portal_attendance_logs (session_id, doctor_name, course_name, total_students, present_count, present_students)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING *`,
+          [
+            log.sessionId || 'PORTAL-SESSION-2026',
+            log.doctorName || 'Dr. Mohamed Matany',
+            log.courseName || 'Advanced Software Engineering (CSE 2026)',
+            log.totalStudents || 112,
+            log.presentCount || 0,
+            JSON.stringify(log.presentStudents || [])
+          ]
+        );
+        return res.rows[0];
+      } catch (e) {
+        console.error('savePortalAttendanceLog pool error:', e);
+      }
+    }
+    return {
+      id: Date.now(),
+      session_id: log.sessionId,
+      present_count: log.presentCount,
+      present_students: log.presentStudents,
+      saved_at: new Date().toISOString()
+    };
+  },
+
+  async getPortalAttendanceLogs(sessionId?: string): Promise<any[]> {
+    if (pool) {
+      try {
+        if (sessionId) {
+          const res = await pool.query('SELECT * FROM portal_attendance_logs WHERE session_id = $1 ORDER BY saved_at DESC', [sessionId]);
+          return res.rows;
+        } else {
+          const res = await pool.query('SELECT * FROM portal_attendance_logs ORDER BY saved_at DESC LIMIT 50');
+          return res.rows;
+        }
+      } catch (e) {
+        console.error('getPortalAttendanceLogs pool error:', e);
+      }
+    }
+    return [];
   },
 
   async closePool(): Promise<void> {

@@ -1407,12 +1407,7 @@ async function checkLiveSessionStatus() {
       if (data.attended && data.record) {
         markSessionAsAttended(state.activeSessionId);
         updateAttendanceBadge(true);
-        displayAttendanceSuccessCard(data.record);
-        showStatusBanner(
-          'already',
-          'أنت مسجل بالفعل في هذه المحاضرة',
-          `تم اعتماد حضورك مسبقاً في كشف المحاضر بتاريخ: ${formatArabicDate(data.record.check_time)} - ${formatArabicTime(data.record.check_time)}. لا حاجة لإعادة التسجيل.`
-        );
+        // Silent sync on reload: do not pop up intrusive banners that take up screen space
       }
     }
   } catch (e) {
@@ -1787,7 +1782,9 @@ async function performAttendanceSubmission(payload) {
   }
 }
 
-function showStatusBanner(type, title, desc) {
+let statusBannerTimer = null;
+
+function showStatusBanner(type, title, desc, autoDismissSeconds = 12) {
   const banner = document.getElementById('attendanceStatusBanner');
   const bannerIcon = document.getElementById('bannerIcon');
   const bannerTitle = document.getElementById('bannerTitle');
@@ -1813,13 +1810,36 @@ function showStatusBanner(type, title, desc) {
   if (bannerTitle) bannerTitle.textContent = title;
   if (bannerDesc) bannerDesc.textContent = desc;
 
+  banner.style.transition = 'opacity 0.4s ease';
+  banner.style.opacity = '1';
   banner.classList.remove('hidden');
   banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   playHaptic();
+
+  // Auto-dismiss smoothly within 12 seconds
+  clearTimeout(statusBannerTimer);
+  statusBannerTimer = setTimeout(() => {
+    dismissStatusBanner();
+  }, autoDismissSeconds * 1000);
 }
 
-function displayAttendanceSuccessCard(record) {
+function dismissStatusBanner() {
+  clearTimeout(statusBannerTimer);
+  const banner = document.getElementById('attendanceStatusBanner');
+  if (banner) {
+    banner.style.transition = 'opacity 0.35s ease';
+    banner.style.opacity = '0';
+    setTimeout(() => {
+      banner.classList.add('hidden');
+      banner.style.opacity = '1';
+    }, 350);
+  }
+}
+
+let successBoxTimer = null;
+
+function displayAttendanceSuccessCard(record, autoDismissSeconds = 15) {
   playHaptic();
   playAudioChime();
 
@@ -1837,7 +1857,28 @@ function displayAttendanceSuccessCard(record) {
   if (timeEl) timeEl.textContent = `${dateStr} • ${timeStr} • مدرج الهندسة A`;
 
   if (successBox) {
+    successBox.style.transition = 'opacity 0.4s ease';
+    successBox.style.opacity = '1';
     successBox.classList.remove('hidden');
+
+    // Auto-dismiss smoothly within 15 seconds
+    clearTimeout(successBoxTimer);
+    successBoxTimer = setTimeout(() => {
+      dismissSuccessCard();
+    }, autoDismissSeconds * 1000);
+  }
+}
+
+function dismissSuccessCard() {
+  clearTimeout(successBoxTimer);
+  const successBox = document.getElementById('attendanceSuccessBox');
+  if (successBox) {
+    successBox.style.transition = 'opacity 0.35s ease';
+    successBox.style.opacity = '0';
+    setTimeout(() => {
+      successBox.classList.add('hidden');
+      successBox.style.opacity = '1';
+    }, 350);
   }
 }
 
@@ -2765,6 +2806,15 @@ function initModals() {
   const btnInstantRetryScan = document.getElementById('btnInstantRetryScan');
   const btnDismissAttendFeedback = document.getElementById('btnDismissAttendFeedback');
   const attendanceFeedbackModal = document.getElementById('attendanceFeedbackModal');
+  const btnCloseStatusBanner = document.getElementById('btnCloseStatusBanner');
+  const btnCloseSuccessCard = document.getElementById('btnCloseSuccessCard');
+
+  if (btnCloseStatusBanner) {
+    btnCloseStatusBanner.addEventListener('click', () => dismissStatusBanner());
+  }
+  if (btnCloseSuccessCard) {
+    btnCloseSuccessCard.addEventListener('click', () => dismissSuccessCard());
+  }
 
   if (btnDismissInstantSuccess) {
     btnDismissInstantSuccess.addEventListener('click', () => hideInstantAttendOverlay());
